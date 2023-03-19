@@ -1,0 +1,25 @@
+{
+  "name": "portalasigbo",
+  "version": "1.0.0",
+  "description": "proyecto portal asigbo",
+  "main": "./bin/www.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./bin/www.js",
+    "develop": "nodemon ./bin/www.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aq202/portalAsigbo.git"
+  },
+  "author": "Diego Morales, Erick Guerra, Pablo Zamora, Sebastian Silva, Brandon Sicay",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aq202/portalAsigbo/issues"
+  },
+  "homepage": "https://github.com/Aq202/portalAsigbo#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
