@@ -1,9 +1,8 @@
-import express from 'express'
-import {welcomeMessage} from './controller.js'
+import express from 'express';
+import { welcomeMessage } from './controller.js';
 
-const router = express.Router()
+const router = express.Router();
 
+router.get('/', welcomeMessage);
 
-router.get("/", welcomeMessage)
-
-export default router
+export default router;

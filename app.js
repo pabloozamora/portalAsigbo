@@ -1,10 +1,8 @@
-import Express from "express"
-import indexRoutes from "./routes/index.js"
+import Express from 'express';
+import indexRoutes from './routes/index.js';
 
-const app = Express()
+const app = Express();
 
+app.use('/', indexRoutes);
 
-app.use("/", indexRoutes)
-
-
-export default app
+export default app;

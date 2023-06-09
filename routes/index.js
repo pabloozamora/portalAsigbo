@@ -1,11 +1,8 @@
-import express from 'express'
-import generalRouter from '../apiServices/general/route.js'
+import express from 'express';
+import generalRouter from '../apiServices/general/route.js';
 
+const router = express.Router();
 
-const router = express.Router()
+router.get('/', generalRouter);
 
-
-router.get("/", generalRouter)
-
-
-export default router
+export default router;

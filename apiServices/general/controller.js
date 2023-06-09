@@ -1,4 +1,3 @@
 export const welcomeMessage = (req, res) => {
-    res.send("Hola viajero!")
-}
-
+  res.send('Hola viajero!');
+};
