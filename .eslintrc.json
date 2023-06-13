@@ -11,7 +11,7 @@
         "sourceType": "module"
     },
     "rules": {
-        "import/extensions":"off"
-
+        "import/extensions":"off",
+        "no-underscore-dangle": "off"
     }
 }

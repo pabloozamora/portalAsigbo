@@ -5,9 +5,14 @@ const userSchema = Schema({
   code: { type: Number, unique: true, required: true },
   name: { type: String, required: true },
   lastname: { type: String, required: true },
-  email: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
   promotion: { type: Number, required: true },
-  role: { type: String, required: true },
+  role: {
+    type: [{
+      type: String,
+      required: true,
+    }],
+  },
   passwordHash: { type: String, required: true },
   serviceHours: {
     areas: [{
