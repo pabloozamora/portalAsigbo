@@ -5,4 +5,8 @@ export default {
     promotionResponsible: 'promotionResponsible',
     asigboAreaResponsible: 'asigboAreaResponsible',
   },
+  token: {
+    refresh: 'REFRESH',
+    access: 'ACCESS',
+  },
 };
