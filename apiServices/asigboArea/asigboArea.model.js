@@ -27,10 +27,10 @@ const addResponsible = async ({
   const user = await UserSchema.findById(idUser);
   if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
 
-  if (user in area.responsible) throw new CustomError('El usuario ya es encargado de esta área', 400);
+  if (area.responsible.some((resp) => resp._id.toString() === idUser)) throw new CustomError('El usuario ya es encargado de esta área', 400);
 
   area.responsible.push(user);
-  user.role.push('encargado');
+  if (!user.role.includes('encargado')) user.role.push('encargado');
   area.save();
   user.save();
   return area;
