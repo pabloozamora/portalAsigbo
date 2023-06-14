@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { Schema, model } from 'mongoose';
 
 const paymentSchema = Schema({
@@ -7,5 +8,12 @@ const paymentSchema = Schema({
   amount: { type: Number, required: true },
 });
 
+const paymentSubSchema = Schema({
+  _id: { type: ObjectId, ref: 'payment', required: true },
+  name: { type: String, required: true },
+  amount: { type: Number, required: true },
+});
+
 const PaymentSchema = model('payment', paymentSchema);
 export default PaymentSchema;
+export { paymentSubSchema };

@@ -25,5 +25,13 @@ const userSchema = Schema({
   sex: { type: String, required: true },
 });
 
+const userSubSchema = Schema({
+  _id: { type: ObjectId, ref: 'user', required: true },
+  name: { type: String, required: true },
+  lastname: { type: String, required: true },
+  promotion: { type: Number, required: true },
+});
+
 const UserSchema = model('user', userSchema);
 export default UserSchema;
+export { userSubSchema };
