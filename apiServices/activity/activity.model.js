@@ -14,6 +14,7 @@ const createActivity = async ({
   idPayment,
   registrationStartDate,
   registrationEndDate,
+  participatingPromotions,
 }) => {
   // obtener datos de area asigbo
   const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
@@ -31,8 +32,10 @@ const createActivity = async ({
   // obtener datos de encargados
   const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
 
-  if (responsiblesData === null || responsiblesData.length === 0) throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
-  if (responsiblesData.length !== responsible.length) throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
+  if (responsiblesData === null || responsiblesData.length === 0)
+    throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
+  if (responsiblesData.length !== responsible.length)
+    throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
 
   // guardar actividad
   const activity = new ActivitySchema();
@@ -44,6 +47,8 @@ const createActivity = async ({
   activity.payment = paymentData;
   activity.registrationStartDate = registrationStartDate;
   activity.registrationEndDate = registrationEndDate;
+  activity.participatingPromotions =
+    participatingPromotions?.length > 0 ? participatingPromotions : null;
 
   const result = await activity.save();
   return single(result);

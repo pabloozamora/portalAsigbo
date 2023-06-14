@@ -11,6 +11,7 @@ const createActivityController = async (req, res) => {
     paymentAmount,
     registrationStartDate,
     registrationEndDate,
+    participatingPromotions
   } = req.body;
 
   try {
@@ -28,6 +29,7 @@ const createActivityController = async (req, res) => {
       idPayment,
       registrationStartDate,
       registrationEndDate,
+      participatingPromotions
     });
 
     res.send(result);

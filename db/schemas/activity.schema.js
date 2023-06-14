@@ -21,6 +21,7 @@ const activitySchema = Schema({
   payment: { type: paymentSubSchema },
   registrationStartDate: { type: Date, required: true },
   registrationEndDate: { type: Date, required: true },
+  participatingPromotions: { type: [Number], default: null },
 });
 
 const ActivitySchema = model('activity', activitySchema);

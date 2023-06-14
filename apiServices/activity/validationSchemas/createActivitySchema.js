@@ -2,6 +2,17 @@ import yup from 'yup';
 import validateId from '../../../utils/validateId.js';
 
 export default yup.object().shape({
+  participatingPromotions: yup.
+  array()
+  .of(
+    yup.number()
+    .nullable()
+    .typeError("El campo 'participatingPromotions' debe contener solo números.")
+    .integer("El campo 'participatingPromotions' debe contener solo números enteros.")
+    .min(2000, "El campo 'participatingPromotions' debe contener valores mayores o iguales a 2000")
+    .max(2100, "El campo 'participatingPromotions' debe contener valores menores o iguales a 2100")
+  )
+  .typeError("El campo 'participatingPromotions' debe ser una lista."),
   registrationEndDate: yup
     .date()
     .typeError("El campo 'registrationEndDate' debe ser una fecha.")
