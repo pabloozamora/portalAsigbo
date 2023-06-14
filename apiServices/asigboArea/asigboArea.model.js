@@ -19,6 +19,23 @@ const updateAsigboArea = async ({
   }
 };
 
+const addResponsible = async ({
+  idArea, idUser,
+}) => {
+  const area = await AsigboAreaSchema.findById(idArea);
+  if (area === null) throw new CustomError('El área de asigbo especificada no existe.', 404);
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
+
+  if (user in area.responsible) throw new CustomError('El usuario ya es encargado de esta área', 400);
+
+  area.responsible.push(user);
+  user.role.push('encargado');
+  area.save();
+  user.save();
+  return area;
+};
+
 const createAsigboArea = async ({
   name, responsible,
 }) => {
@@ -28,6 +45,8 @@ const createAsigboArea = async ({
       const user = await UserSchema.findById(userId);
       if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
       users.push(user);
+      user.role.push('encargado');
+      user.save();
       return true;
     }));
     const area = new AsigboAreaSchema();
@@ -43,4 +62,4 @@ const createAsigboArea = async ({
   }
 };
 
-export { createAsigboArea, updateAsigboArea };
+export { createAsigboArea, updateAsigboArea, addResponsible };

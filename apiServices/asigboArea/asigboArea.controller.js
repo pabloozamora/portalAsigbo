@@ -1,6 +1,24 @@
 import CustomError from '../../utils/customError.js';
 import { single } from './asigboArea.dto.js';
-import { createAsigboArea, updateAsigboArea } from './asigboArea.model.js';
+import { createAsigboArea, updateAsigboArea, addResponsible } from './asigboArea.model.js';
+
+const addResponsibleController = async (req, res) => {
+  const { idArea, idUser } = req.query || null;
+
+  try {
+    const area = await addResponsible({ idArea, idUser });
+    res.send(single(area));
+  } catch (ex) {
+    let err = 'Ocurrio un error al asignar encargado.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const updateAsigboAreaController = async (req, res) => {
   const { name } = req.body;
@@ -32,7 +50,6 @@ const createAsigboAreaController = async (req, res) => {
     });
     res.send(single(area));
   } catch (ex) {
-    console.log(ex);
     let err = 'Ocurrio un error al crear nueva area.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -44,4 +61,4 @@ const createAsigboAreaController = async (req, res) => {
   }
 };
 
-export { createAsigboAreaController, updateAsigboAreaController };
+export { createAsigboAreaController, updateAsigboAreaController, addResponsibleController };
