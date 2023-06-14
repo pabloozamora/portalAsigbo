@@ -1,4 +1,5 @@
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
+import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 
 const updateAsigboArea = async ({
@@ -22,10 +23,17 @@ const createAsigboArea = async ({
   name, responsible,
 }) => {
   try {
+    const users = [];
+    await Promise.all(responsible.map(async (userId) => {
+      const user = await UserSchema.findById(userId);
+      if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
+      users.push(user);
+      return true;
+    }));
     const area = new AsigboAreaSchema();
 
     area.name = name.trim();
-    area.responsible = responsible;
+    area.responsible = users;
 
     await area.save();
     return area;
@@ -35,5 +43,4 @@ const createAsigboArea = async ({
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
 export { createAsigboArea, updateAsigboArea };

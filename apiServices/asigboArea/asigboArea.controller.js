@@ -32,6 +32,7 @@ const createAsigboAreaController = async (req, res) => {
     });
     res.send(single(area));
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al crear nueva area.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -43,5 +44,4 @@ const createAsigboAreaController = async (req, res) => {
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
 export { createAsigboAreaController, updateAsigboAreaController };
