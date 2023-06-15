@@ -26,5 +26,10 @@ const createUser = async ({
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { createUser };
+const getActiveUsers = async (idUser) => {
+  const users = UserSchema.find({ blocked: false, _id: { $ne: idUser } });
+
+  return users;
+};
+
+export { createUser, getActiveUsers };
