@@ -84,6 +84,12 @@ const createAsigboArea = async ({
   }
 };
 
+const getActiveAreas = async () => {
+  const asigboAreas = AsigboAreaSchema.find({ blocked: false });
+  if (asigboAreas.length === 0) throw new CustomError('No se han encontrado áreas activas.', 404);
+  return asigboAreas;
+};
+
 export {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible,
+  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas,
 };

@@ -1,7 +1,7 @@
 import CustomError from '../../utils/customError.js';
-import { single } from './asigboArea.dto.js';
+import { multiple, single } from './asigboArea.dto.js';
 import {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible,
+  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas,
 } from './asigboArea.model.js';
 
 const addResponsibleController = async (req, res) => {
@@ -81,6 +81,22 @@ const createAsigboAreaController = async (req, res) => {
   }
 };
 
+const getActiveAreasController = async (req, res) => {
+  try {
+    const areas = await getActiveAreas();
+    res.send(multiple(areas));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener areas activas.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
-  createAsigboAreaController, updateAsigboAreaController, addResponsibleController, removeResponsibleController,
+  createAsigboAreaController, updateAsigboAreaController, addResponsibleController, removeResponsibleController, getActiveAreasController,
 };
