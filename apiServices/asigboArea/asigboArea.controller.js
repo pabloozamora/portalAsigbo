@@ -1,7 +1,7 @@
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './asigboArea.dto.js';
 import {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas,
+  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
 } from './asigboArea.model.js';
 
 const addResponsibleController = async (req, res) => {
@@ -81,6 +81,24 @@ const createAsigboAreaController = async (req, res) => {
   }
 };
 
+const deleteAsigboAreaController = async (req, res) => {
+  const { idArea } = req.query || null;
+
+  try {
+    const area = await deleteAsigboArea({ idArea });
+    res.send(single(area));
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar el area.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const getActiveAreasController = async (req, res) => {
   try {
     const areas = await getActiveAreas();
@@ -98,5 +116,5 @@ const getActiveAreasController = async (req, res) => {
 };
 
 export {
-  createAsigboAreaController, updateAsigboAreaController, addResponsibleController, removeResponsibleController, getActiveAreasController,
+  createAsigboAreaController, updateAsigboAreaController, addResponsibleController, removeResponsibleController, getActiveAreasController, deleteAsigboAreaController,
 };

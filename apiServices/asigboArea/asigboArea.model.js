@@ -1,6 +1,17 @@
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
+import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
+
+const updateRoles = async (users) => {
+  await Promise.all(users.map(async (idUser) => {
+    const user = await UserSchema.findById(idUser);
+    const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
+
+    if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
+    user.save();
+  }));
+};
 
 const updateAsigboArea = async ({
   idArea, name,
@@ -84,6 +95,28 @@ const createAsigboArea = async ({
   }
 };
 
+const deleteAsigboArea = async ({ idArea }) => {
+  const area = await AsigboAreaSchema.findById(idArea);
+  if (area === null) throw new CustomError('El área especificada no existe.', 404);
+  if (area.blocked === true) throw new CustomError('El área especificada no se encuentra activa.', 400);
+
+  const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
+  const responsibles = area.responsible.map((resp) => resp._id);
+  await updateRoles(responsibles);
+
+  if (activities.length > 0) {
+    activities.forEach((act) => {
+      // eslint-disable-next-line no-param-reassign
+      act.blocked = true;
+      act.save();
+    });
+  }
+
+  area.blocked = true;
+  area.save();
+  return area;
+};
+
 const getActiveAreas = async () => {
   const asigboAreas = AsigboAreaSchema.find({ blocked: false });
   if (asigboAreas.length === 0) throw new CustomError('No se han encontrado áreas activas.', 404);
@@ -91,5 +124,5 @@ const getActiveAreas = async () => {
 };
 
 export {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas,
+  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
 };
