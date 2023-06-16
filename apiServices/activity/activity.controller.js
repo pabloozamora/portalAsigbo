@@ -1,9 +1,46 @@
 import CustomError from '../../utils/customError.js';
+import { multiple } from './activity.dto.js';
 import {
   assignManyUsersToActivity,
   assignUserToActivity,
   createActivity,
+  getUserActivities,
 } from './activity.model.js';
+
+const getUserActivitiesController = async (req, res) => {
+  const { idUser } = req.query || null;
+  try {
+    const activities = await getUserActivities(idUser);
+    res.send(multiple(activities));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las actividades del usuario.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getLoggedActivitiesController = async (req, res) => {
+  try {
+    const activities = await getUserActivities(req.session.id);
+    res.send(multiple(activities));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las actividades del usuario.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const createActivityController = async (req, res) => {
   const {
@@ -57,7 +94,6 @@ const assignUserToActivityController = async (req, res) => {
 
     res.send(result);
   } catch (ex) {
-    console.log(ex);
     let err = 'Ocurrio un error al asignar usuarios a una actividad.';
     let status = 500;
 
@@ -94,4 +130,6 @@ export {
   createActivityController,
   assignUserToActivityController,
   assignManyUsersToActivityController,
+  getUserActivitiesController,
+  getLoggedActivitiesController,
 };

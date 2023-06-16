@@ -10,7 +10,7 @@ const single = (resource, showSensitiveData) => {
     payment,
     registrationStartDate,
     registrationEndDate,
-    participatingPromotions
+    participatingPromotions,
   } = resource._doc;
   return {
     id: resource._id.valueOf(),
@@ -22,7 +22,7 @@ const single = (resource, showSensitiveData) => {
     payment: parseSingleObject(payment),
     registrationStartDate,
     registrationEndDate,
-    participatingPromotions: showSensitiveData ? participatingPromotions : undefined
+    participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
   };
 };
 

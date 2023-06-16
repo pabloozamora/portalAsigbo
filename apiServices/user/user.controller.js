@@ -22,7 +22,7 @@ const getLoggedUserController = async (req, res) => {
 const getUserController = async (req, res) => {
   const { idUser } = req.query || null;
   try {
-    const user = await getUser({ idUser });
+    const user = await getUser(idUser);
     res.send(single(user, false, true));
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';

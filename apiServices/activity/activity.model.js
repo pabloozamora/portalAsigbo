@@ -8,6 +8,23 @@ import CustomError from '../../utils/customError.js';
 import { single as singleActivityDto } from './activity.dto.js';
 import { single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
+const getUserActivities = async (idUser) => {
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+
+  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
+  if (assignments.length === 0) throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
+
+  const activities = [];
+
+  await Promise.all(assignments.map(async (assignment) => {
+    const activity = await ActivitySchema.findById(assignment.activity._id);
+    activities.push(activity);
+  }));
+
+  return activities;
+};
+
 const createActivity = async ({
   name,
   date,
@@ -123,4 +140,6 @@ const assignManyUsersToActivity = async ({ idUsersList, idActivity, completed })
 };
 
 // eslint-disable-next-line import/prefer-default-export
-export { createActivity, assignUserToActivity, assignManyUsersToActivity };
+export {
+  createActivity, assignUserToActivity, assignManyUsersToActivity, getUserActivities,
+};

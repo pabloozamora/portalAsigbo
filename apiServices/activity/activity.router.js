@@ -1,9 +1,13 @@
 import express from 'express';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
+
 import {
   assignManyUsersToActivityController,
   assignUserToActivityController,
   createActivityController,
+  getLoggedActivitiesController,
+  getUserActivitiesController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
@@ -30,5 +34,14 @@ activityRouter.post(
   validateBody(assignManyUsersToActivitySchema),
   assignManyUsersToActivityController,
 );
-
+activityRouter.get(
+  '/user',
+  ensureAdminAuth,
+  getUserActivitiesController,
+);
+activityRouter.get(
+  '/logged',
+  ensureRefreshTokenAuth,
+  getLoggedActivitiesController,
+);
 export default activityRouter;
