@@ -1,12 +1,15 @@
 import { Schema, model } from 'mongoose';
-import { ObjectId } from 'mongodb';
+import { userSubSchema } from './user.schema.js';
+import { activitySubSchema } from './activity.schema.js';
 
 const activityAssignmentSchema = Schema({
-  idUser: { type: ObjectId, ref: 'user', required: true },
-  idActivity: { type: ObjectId, ref: 'activity', required: true },
-  enrolled: { type: Boolean, default: false },
+  user: { type: userSubSchema, required: true },
+  activity: { type: activitySubSchema, required: true },
+  pendingPayment: { type: Boolean, default: false },
   completed: { type: Boolean, default: false },
 });
+
+activityAssignmentSchema.index({ 'user._id': 1, 'activity._id': 1 }, { unique: true });
 
 const ActivityAssignmentSchema = model('activityAssignment', activityAssignmentSchema);
 export default ActivityAssignmentSchema;

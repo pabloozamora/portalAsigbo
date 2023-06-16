@@ -1,5 +1,9 @@
 import CustomError from '../../utils/customError.js';
-import { createActivity } from './activity.model.js';
+import {
+  assignManyUsersToActivity,
+  assignUserToActivity,
+  createActivity,
+} from './activity.model.js';
 
 const createActivityController = async (req, res) => {
   const {
@@ -11,7 +15,7 @@ const createActivityController = async (req, res) => {
     paymentAmount,
     registrationStartDate,
     registrationEndDate,
-    participatingPromotions
+    participatingPromotions,
   } = req.body;
 
   try {
@@ -29,7 +33,7 @@ const createActivityController = async (req, res) => {
       idPayment,
       registrationStartDate,
       registrationEndDate,
-      participatingPromotions
+      participatingPromotions,
     });
 
     res.send(result);
@@ -45,5 +49,49 @@ const createActivityController = async (req, res) => {
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { createActivityController };
+const assignUserToActivityController = async (req, res) => {
+  try {
+    const { idUser, idActivity, completed } = req.body;
+
+    const result = await assignUserToActivity({ idUser, idActivity, completed });
+
+    res.send(result);
+  } catch (ex) {
+    console.log(ex);
+    let err = 'Ocurrio un error al asignar usuarios a una actividad.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const assignManyUsersToActivityController = async (req, res) => {
+  try {
+    const { idUsersList, idActivity, completed } = req.body;
+
+    const result = await assignManyUsersToActivity({ idUsersList, idActivity, completed });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al asignar lista de usuarios a una actividad.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+export {
+  createActivityController,
+  assignUserToActivityController,
+  assignManyUsersToActivityController,
+};

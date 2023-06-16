@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { ObjectId } from 'mongodb';
 import { asigboAreaSubSchema } from './asigboArea.schema.js';
 import { paymentSubSchema } from './payment.schema.js';
 import { userSubSchema } from './user.schema.js';
@@ -24,5 +25,14 @@ const activitySchema = Schema({
   participatingPromotions: { type: [Number], default: null },
 });
 
+const activitySubSchema = Schema({
+  _id: { type: ObjectId, ref: 'activity', required: true },
+  name: { type: String, required: true },
+  date: { type: Date, required: true },
+  serviceHours: { type: Number, required: true },
+  asigboArea: { type: asigboAreaSubSchema, required: true },
+});
+
 const ActivitySchema = model('activity', activitySchema);
 export default ActivitySchema;
+export { activitySubSchema };
