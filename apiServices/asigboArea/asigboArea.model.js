@@ -118,7 +118,7 @@ const deleteAsigboArea = async ({ idArea }) => {
 };
 
 const getActiveAreas = async () => {
-  const asigboAreas = AsigboAreaSchema.find({ blocked: false });
+  const asigboAreas = await AsigboAreaSchema.find({ blocked: false });
   if (asigboAreas.length === 0) throw new CustomError('No se han encontrado áreas activas.', 404);
   return asigboAreas;
 };

@@ -27,7 +27,9 @@ const createUser = async ({
 };
 
 const getActiveUsers = async (idUser) => {
-  const users = UserSchema.find({ blocked: false, _id: { $ne: idUser } });
+  const users = await UserSchema.find({ blocked: false, _id: { $ne: idUser } });
+
+  if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
   return users;
 };
