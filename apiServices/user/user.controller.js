@@ -1,7 +1,7 @@
 import sha256 from 'js-sha256';
 import CustomError from '../../utils/customError.js';
-import { single } from './user.dto.js';
-import { createUser } from './user.model.js';
+import { multiple, single } from './user.dto.js';
+import { createUser, getActiveUsers } from './user.model.js';
 
 const createUserController = async (req, res) => {
   const {
@@ -27,5 +27,20 @@ const createUserController = async (req, res) => {
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { createUserController };
+const getActiveUsersController = async (req, res) => {
+  try {
+    const users = await getActiveUsers(req.session.id);
+    res.send(multiple(users, false));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los usuarios activos.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+export { createUserController, getActiveUsersController };

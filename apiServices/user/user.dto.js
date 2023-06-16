@@ -15,8 +15,6 @@ const single = (resource, showSensitiveData) => {
   };
 };
 
-const multiple = (resources, showSensitiveData) => {
-  resources.map((resource) => single(resource, showSensitiveData));
-};
+const multiple = (resources, showSensitiveData) => resources.map((resource) => single(resource, showSensitiveData));
 
 export { single, multiple };

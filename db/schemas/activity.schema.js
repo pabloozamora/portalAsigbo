@@ -23,6 +23,7 @@ const activitySchema = Schema({
   registrationStartDate: { type: Date, required: true },
   registrationEndDate: { type: Date, required: true },
   participatingPromotions: { type: [Number], default: null },
+  blocked: { type: Boolean, default: false },
 });
 
 const activitySubSchema = Schema({

@@ -26,5 +26,12 @@ const createUser = async ({
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { createUser };
+const getActiveUsers = async (idUser) => {
+  const users = await UserSchema.find({ blocked: false, _id: { $ne: idUser } });
+
+  if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
+
+  return users;
+};
+
+export { createUser, getActiveUsers };

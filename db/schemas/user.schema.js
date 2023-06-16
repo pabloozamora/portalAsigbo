@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 
 const userSchema = Schema({
-  code: { type: Number, unique: true, required: true },
+  code: { type: Number, unique: true, required: [true, 'El atributo code es oblgatorio'] },
   name: { type: String, required: true },
   lastname: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -13,7 +13,7 @@ const userSchema = Schema({
       required: true,
     }],
   },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String },
   serviceHours: {
     areas: [{
       idAsigboArea: { type: ObjectId, ref: 'asigboArea', required: true },

@@ -1,6 +1,17 @@
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
+import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
+
+const updateRoles = async (users) => {
+  await Promise.all(users.map(async (idUser) => {
+    const user = await UserSchema.findById(idUser);
+    const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
+
+    if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
+    user.save();
+  }));
+};
 
 const updateAsigboArea = async ({
   idArea, name,
@@ -17,6 +28,28 @@ const updateAsigboArea = async ({
     if (ex.code === 11000 && ex.keyValue?.name !== undefined) throw new CustomError('El nombre proporcionado ya existe.', 400);
     throw ex;
   }
+};
+
+const removeResponsible = async ({
+  idArea, idUser,
+}) => {
+  const area = await AsigboAreaSchema.findById(idArea);
+  if (area === null) throw new CustomError('El área de asigbo especificada no existe.', 404);
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
+  if (!user.role.includes('encargado')) throw new CustomError('El usuario indicado no es encargado de área.');
+
+  // Areas bajo la responsabilidad del usuario indicado.
+  const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
+
+  if (!areasInCharge.some((aic) => aic._id.toString() === idArea)) throw new CustomError('El usuario indicado no es encargado de esta área.');
+
+  area.responsible = area.responsible.filter((resp) => resp._id.toString() !== idUser);
+  if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
+
+  area.save();
+  user.save();
+  return area;
 };
 
 const addResponsible = async ({
@@ -62,4 +95,34 @@ const createAsigboArea = async ({
   }
 };
 
-export { createAsigboArea, updateAsigboArea, addResponsible };
+const deleteAsigboArea = async ({ idArea }) => {
+  const area = await AsigboAreaSchema.findById(idArea);
+  if (area === null) throw new CustomError('El área especificada no existe.', 404);
+  if (area.blocked === true) throw new CustomError('El área especificada no se encuentra activa.', 400);
+
+  const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
+  const responsibles = area.responsible.map((resp) => resp._id);
+  await updateRoles(responsibles);
+
+  if (activities.length > 0) {
+    activities.forEach((act) => {
+      // eslint-disable-next-line no-param-reassign
+      act.blocked = true;
+      act.save();
+    });
+  }
+
+  area.blocked = true;
+  area.save();
+  return area;
+};
+
+const getActiveAreas = async () => {
+  const asigboAreas = await AsigboAreaSchema.find({ blocked: false });
+  if (asigboAreas.length === 0) throw new CustomError('No se han encontrado áreas activas.', 404);
+  return asigboAreas;
+};
+
+export {
+  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
+};

@@ -10,6 +10,7 @@ const asigboAreaSchema = Schema({
     email: { type: String, required: true },
     promotion: { type: Number, requred: true },
   }],
+  blocked: { type: Boolean, default: false },
 });
 const asigboAreaSubSchema = Schema({
   _id: { type: ObjectId, ref: 'asigboArea', required: true },
