@@ -13,3 +13,5 @@ activityAssignmentSchema.index({ 'user._id': 1, 'activity._id': 1 }, { unique: t
 
 const ActivityAssignmentSchema = model('activityAssignment', activityAssignmentSchema);
 export default ActivityAssignmentSchema;
+
+// db.runCommand({collMod: "activityAssignment", changeStreamPreAndPostImages: {enabled: true, preAndPostImages: { expireAfterSeconds: 100 }}})

@@ -34,4 +34,32 @@ const getActiveUsers = async (idUser) => {
   return users;
 };
 
-export { createUser, getActiveUsers };
+const updateServiceHours = async ({
+  userId, asigboAreaId, hoursToRemove, hoursToAdd,
+}) => {
+  const userData = await UserSchema.findById(userId);
+
+  if (!userData) throw new CustomError('El usuario no existe.', 400);
+
+  const serviceHoursAreas = userData.serviceHours?.areas ?? {};
+
+  // Se retira el valor anterior y se ingresa el valor actualidado (previous - new)
+  // Si no hay un valor previo en la bd, se ignora y se toma como si fuera 0
+
+  const newAreaHours = serviceHoursAreas[asigboAreaId] !== undefined
+    ? serviceHoursAreas[asigboAreaId] - hoursToRemove + hoursToAdd
+    : hoursToAdd - hoursToRemove;
+
+  const newTotalHours = userData.serviceHours?.total !== undefined
+    ? userData.serviceHours.total - hoursToRemove + hoursToAdd
+    : hoursToAdd - hoursToRemove;
+
+  userData.serviceHours = {
+    areas: { ...serviceHoursAreas, [asigboAreaId]: newAreaHours },
+    total: newTotalHours,
+  };
+
+  return userData.save();
+};
+
+export { createUser, getActiveUsers, updateServiceHours };
