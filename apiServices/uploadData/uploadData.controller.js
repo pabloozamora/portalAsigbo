@@ -1,5 +1,4 @@
 import helper from 'csvtojson';
-import sha256 from 'js-sha256';
 import CustomError from '../../utils/customError.js';
 import { generateUsers } from './uploadData.model.js';
 
@@ -20,7 +19,6 @@ const uploadDataController = async (req, res) => {
               email: row.email,
               promotion: row.promotion,
               sex: row.sex,
-              passwordHash: sha256(row.password),
             };
             data.push(newUser);
           });

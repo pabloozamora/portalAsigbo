@@ -13,7 +13,7 @@ const userSchema = Schema({
       required: true,
     }],
   },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String },
   serviceHours: {
     areas: [{
       idAsigboArea: { type: ObjectId, ref: 'asigboArea', required: true },
