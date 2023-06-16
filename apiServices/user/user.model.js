@@ -1,6 +1,13 @@
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 
+const getUser = async (idUser) => {
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+
+  return user;
+};
+
 const createUser = async ({
   code, name, lastname, email, promotion, role, passwordHash, sex,
 }) => {
@@ -34,4 +41,4 @@ const getActiveUsers = async (idUser) => {
   return users;
 };
 
-export { createUser, getActiveUsers };
+export { createUser, getActiveUsers, getUser };

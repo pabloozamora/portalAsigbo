@@ -19,7 +19,7 @@ const userSchema = Schema({
       idAsigboArea: { type: ObjectId, ref: 'asigboArea', required: true },
       hours: { type: Number, required: true },
     }],
-    total: Number,
+    total: { type: Number, default: 0 },
   },
   blocked: { type: Boolean, default: false },
   sex: { type: String, required: true },

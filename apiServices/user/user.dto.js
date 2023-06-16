@@ -1,4 +1,4 @@
-const single = (resource, showSensitiveData) => {
+const single = (resource, showSensitiveData, showHours) => {
   const {
     code, name, lastname, email, promotion, sex, serviceHours, blocked,
   } = resource._doc;
@@ -10,7 +10,7 @@ const single = (resource, showSensitiveData) => {
     email: showSensitiveData ? email : undefined,
     promotion,
     sex,
-    serviceHours: showSensitiveData ? serviceHours : undefined,
+    serviceHours: showSensitiveData || showHours ? serviceHours : undefined,
     blocked: showSensitiveData ? blocked : undefined,
   };
 };
