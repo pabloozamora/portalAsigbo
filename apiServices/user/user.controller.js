@@ -38,14 +38,14 @@ const getUserController = async (req, res) => {
 
 const createUserController = async (req, res) => {
   const {
-    code, name, lastname, email, promotion, password, sex,
+    code, name, lastname, email, promotion, career, password, sex,
   } = req.body;
 
   try {
     const passwordHash = sha256(password);
 
     const user = await createUser({
-      code, name, lastname, email, promotion, passwordHash, sex,
+      code, name, lastname, email, promotion, career, passwordHash, sex,
     });
     res.send(single(user, false));
   } catch (ex) {

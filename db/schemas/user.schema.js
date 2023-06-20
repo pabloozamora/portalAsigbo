@@ -7,6 +7,7 @@ const userSchema = Schema({
   lastname: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   promotion: { type: Number, required: true },
+  career: { type: String, required: true },
   role: {
     type: [{
       type: String,

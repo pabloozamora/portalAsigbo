@@ -6,7 +6,7 @@ import consts from '../utils/consts.js';
 const key = config.get('jwtKey');
 
 const signRefreshToken = async ({
-  id, code, name, lastname, promotion, sex, role,
+  id, code, name, lastname, promotion, career, sex, role,
 }) => jwt.sign(
   {
     id,
@@ -14,6 +14,7 @@ const signRefreshToken = async ({
     name,
     lastname,
     promotion,
+    career,
     sex,
     role,
     exp: moment().add(1, 'week').unix(),
@@ -23,7 +24,7 @@ const signRefreshToken = async ({
 );
 
 const signAccessToken = ({
-  id, code, name, lastname, promotion, sex, role,
+  id, code, name, lastname, promotion, career, sex, role,
 }) => jwt.sign(
   {
     id,
@@ -31,6 +32,7 @@ const signAccessToken = ({
     name,
     lastname,
     promotion,
+    career,
     sex,
     role,
     exp: moment().add(1, 'day').unix(),

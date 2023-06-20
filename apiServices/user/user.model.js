@@ -9,7 +9,7 @@ const getUser = async (idUser) => {
 };
 
 const createUser = async ({
-  code, name, lastname, email, promotion, role, passwordHash, sex,
+  code, name, lastname, email, promotion, career, role, passwordHash, sex,
 }) => {
   try {
     const user = new UserSchema();
@@ -19,6 +19,7 @@ const createUser = async ({
     user.lastname = lastname;
     user.email = email;
     user.promotion = promotion;
+    user.career = career;
     user.role = role;
     user.passwordHash = passwordHash;
     user.sex = sex;
