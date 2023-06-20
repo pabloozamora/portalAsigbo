@@ -53,18 +53,14 @@ const createActivity = async ({
   activity.registrationStartDate = registrationStartDate;
   activity.registrationEndDate = registrationEndDate;
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
-  activity.participantsNumber = participantsNumber;
+  activity.availableSpaces = participantsNumber;
 
   const result = await activity.save();
   return singleActivityDto(result);
 };
 
 const assignUserToActivity = async ({
-  idUser,
-  idActivity,
-  completed,
-  activity,
-  session,
+  idUser, idActivity, completed, activity, session,
 }) => {
   try {
     // obtener datos de usuario
@@ -82,6 +78,13 @@ const assignUserToActivity = async ({
         throw new CustomError('La actividad proporcionada no existe.', 400);
       }
     }
+
+    // verificar que hayan espacios disponibles
+    if (!(activityData.availableSpaces > 0)) { throw new CustomError('La actividad no cuenta con espacios disponibles.', 403); }
+
+    // disminuir el número de vacantes
+    activityData.availableSpaces -= 1;
+    await activityData.save({ session });
 
     const activityAssignment = new ActivityAssignmentSchema();
 
@@ -136,6 +139,20 @@ const updateActivity = async ({
     throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
   }
 
+  // realizar el cálculo de espacios disponibles
+  if (participantsNumber !== undefined) {
+    const registeredUsers = await ActivityAssignmentSchema.find({ 'activity._id': activity._id });
+
+    if (registeredUsers.length > participantsNumber) {
+      throw new CustomError(
+        'El nuevo número de participantes en menor al número de becados que se encuentran ya inscritos.',
+        400,
+      );
+    }
+
+    activity.availableSpaces = participantsNumber - registeredUsers.length;
+  }
+
   // actualizar actividad
 
   if (name !== undefined) activity.name = name;
@@ -146,8 +163,9 @@ const updateActivity = async ({
   if (idPayment !== undefined) activity.payment = idPayment;
   if (registrationStartDate !== undefined) activity.registrationStartDate = registrationStartDate;
   if (registrationEndDate !== undefined) activity.registrationEndDate = registrationEndDate;
-  if (participatingPromotions !== undefined) { activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null; }
-  if (participantsNumber !== undefined) activity.participantsNumber = participantsNumber;
+  if (participatingPromotions !== undefined) {
+    activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
+  }
 
   const result = await activity.save({ session });
   return {

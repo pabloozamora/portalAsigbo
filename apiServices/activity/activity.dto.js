@@ -12,6 +12,7 @@ const single = (resource, showSensitiveData) => {
     registrationStartDate,
     registrationEndDate,
     participatingPromotions,
+    availableSpaces,
   } = resource._doc;
   return {
     id: resource._id?.valueOf() ?? _id?.valueOf(),
@@ -24,6 +25,7 @@ const single = (resource, showSensitiveData) => {
     registrationStartDate,
     registrationEndDate,
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
+    availableSpaces,
   };
 };
 
