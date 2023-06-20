@@ -1,4 +1,3 @@
-import { connection } from '../../db/connection.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
@@ -18,6 +17,7 @@ const createActivity = async ({
   registrationStartDate,
   registrationEndDate,
   participatingPromotions,
+  participantsNumber,
 }) => {
   // obtener datos de area asigbo
   const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
@@ -52,15 +52,19 @@ const createActivity = async ({
   activity.payment = paymentData;
   activity.registrationStartDate = registrationStartDate;
   activity.registrationEndDate = registrationEndDate;
-  activity.participatingPromotions = participatingPromotions?.length > 0
-    ? participatingPromotions : null;
+  activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
+  activity.participantsNumber = participantsNumber;
 
   const result = await activity.save();
   return singleActivityDto(result);
 };
 
 const assignUserToActivity = async ({
-  idUser, idActivity, completed, activity,
+  idUser,
+  idActivity,
+  completed,
+  activity,
+  session,
 }) => {
   try {
     // obtener datos de usuario
@@ -74,7 +78,9 @@ const assignUserToActivity = async ({
       // Si la actividad no se pasa como parámetro, buscarla
       activityData = await ActivitySchema.findOne({ _id: idActivity });
 
-      if (activityData === null) throw new CustomError('La actividad proporcionada no existe.', 400);
+      if (activityData === null) {
+        throw new CustomError('La actividad proporcionada no existe.', 400);
+      }
     }
 
     const activityAssignment = new ActivityAssignmentSchema();
@@ -84,7 +90,8 @@ const assignUserToActivity = async ({
     activityAssignment.pendingPayment = activityData.payment !== null;
     activityAssignment.completed = completed ?? false;
 
-    const result = await activityAssignment.save();
+    const result = await activityAssignment.save({ session });
+
     return singleAssignmentActivityDto(result);
   } catch (ex) {
     if (ex?.code === 11000) {
@@ -95,32 +102,68 @@ const assignUserToActivity = async ({
   }
 };
 
-const assignManyUsersToActivity = async ({ idUsersList, idActivity, completed }) => {
-  // obtener datos de actividad
-  const activity = await ActivitySchema.findOne({ _id: idActivity });
+const updateActivity = async ({
+  session,
+  id,
+  name,
+  date,
+  serviceHours,
+  responsible,
+  idAsigboArea,
+  idPayment,
+  registrationStartDate,
+  registrationEndDate,
+  participatingPromotions,
+  participantsNumber,
+}) => {
+  // obtener actividad
+  const activity = await ActivitySchema.findById(id);
+  if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
+  const dataBeforeChange = singleActivityDto(activity);
 
-  if (activity === null) throw new CustomError('La actividad proporcionada no existe.', 400);
+  // obtener datos de area asigbo
+  const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
 
-  const session = await connection.startSession();
-  try {
-    session.startTransaction();
+  if (asigboAreaData === null) throw new CustomError('No existe el área de asigbo.', 400);
 
-    // Asignar a todos los usuarios.
-    const promises = [];
-    idUsersList.forEach((idUser) => {
-      const promise = assignUserToActivity({ idUser, completed, activity });
-      promises.push(promise);
-    });
+  // obtener datos de encargados
+  const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
 
-    const results = await Promise.all(promises);
-
-    await session.commitTransaction();
-    return results;
-  } catch (ex) {
-    await session.abortTransaction();
-    throw ex;
+  if (responsiblesData === null || responsiblesData.length === 0) {
+    throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
   }
+  if (responsiblesData.length !== responsible.length) {
+    throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
+  }
+
+  // actualizar actividad
+
+  if (name !== undefined) activity.name = name;
+  if (date !== undefined) activity.date = new Date(date);
+  if (serviceHours !== undefined) activity.serviceHours = serviceHours;
+  if (responsible !== undefined) activity.responsible = responsiblesData;
+  if (idAsigboArea !== undefined) activity.asigboArea = asigboAreaData;
+  if (idPayment !== undefined) activity.payment = idPayment;
+  if (registrationStartDate !== undefined) activity.registrationStartDate = registrationStartDate;
+  if (registrationEndDate !== undefined) activity.registrationEndDate = registrationEndDate;
+  if (participatingPromotions !== undefined) { activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null; }
+  if (participantsNumber !== undefined) activity.participantsNumber = participantsNumber;
+
+  const result = await activity.save({ session });
+  return {
+    updatedData: singleActivityDto(result),
+    dataBeforeChange,
+  };
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { createActivity, assignUserToActivity, assignManyUsersToActivity };
+const updateActivityInAllAssignments = async ({ activity, session }) => ActivityAssignmentSchema.updateMany({ 'activity._id': activity.id }, { activity }, { session });
+
+const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
+
+export {
+  createActivity,
+  assignUserToActivity,
+  updateActivity,
+  updateActivityInAllAssignments,
+  getCompletedActivityAssignmentsById,
+};

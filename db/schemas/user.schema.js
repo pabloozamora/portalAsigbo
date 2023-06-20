@@ -1,6 +1,5 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { asigboAreaSubSchema } from './asigboArea.schema.js';
 
 const userSchema = Schema({
   code: { type: Number, unique: true, required: [true, 'El atributo code es oblgatorio'] },

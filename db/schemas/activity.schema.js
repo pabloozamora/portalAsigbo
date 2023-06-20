@@ -23,6 +23,11 @@ const activitySchema = Schema({
   registrationStartDate: { type: Date, required: true },
   registrationEndDate: { type: Date, required: true },
   participatingPromotions: { type: [Number], default: null },
+  participantsNumber: {
+    type: Number,
+    required: true,
+    min: [0, 'El número mínimo de participantes es 0.'],
+  },
   blocked: { type: Boolean, default: false },
 });
 

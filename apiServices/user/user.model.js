@@ -35,7 +35,7 @@ const getActiveUsers = async (idUser) => {
 };
 
 const updateServiceHours = async ({
-  userId, asigboAreaId, hoursToRemove, hoursToAdd,
+  userId, asigboAreaId, hoursToRemove = 0, hoursToAdd = 0, session,
 }) => {
   const userData = await UserSchema.findById(userId);
 
@@ -59,7 +59,7 @@ const updateServiceHours = async ({
     total: newTotalHours,
   };
 
-  return userData.save();
+  return userData.save({ session });
 };
 
 export { createUser, getActiveUsers, updateServiceHours };

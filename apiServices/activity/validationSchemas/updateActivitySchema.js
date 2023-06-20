@@ -7,8 +7,7 @@ export default yup.object().shape({
     .nullable()
     .typeError("El campo 'participantsNumber' debe ser un número.")
     .integer("El campo 'participantsNumber' debe ser un número entero.")
-    .min(0, "El campo 'participantsNumber' debe contener valores mayores o iguales a 0.")
-    .required("El campo 'participantsNumber' es obligatorio."),
+    .min(0, "El campo 'participantsNumber' debe contener valores mayores o iguales a 0."),
   participatingPromotions: yup
     .array()
     .of(
@@ -23,13 +22,11 @@ export default yup.object().shape({
   registrationEndDate: yup
     .date()
     .typeError("El campo 'registrationEndDate' debe ser una fecha.")
-    .nullable()
-    .required("El campo 'registrationEndDate' es obligatorio."),
+    .nullable(),
   registrationStartDate: yup
     .date()
     .typeError("El campo 'registrationStartDate' debe ser una fecha.")
-    .nullable()
-    .required("El campo 'registrationStartDate' es obligatorio."),
+    .nullable(),
   paymentAmount: yup
     .number()
     .nullable()
@@ -38,7 +35,6 @@ export default yup.object().shape({
   idAsigboArea: yup
     .string()
     .nullable()
-    .required("El campo 'idAsigboArea' es obligatorio.")
     .test(
       'validate-id',
       "El campo 'idAsigboArea' no es un id válido.",
@@ -53,20 +49,18 @@ export default yup.object().shape({
     )
     .min(1, "El campo 'responsible' debe tener al menos un elemento.")
     .nullable()
-    .typeError("El campo 'responsible' debe ser una lista.")
-    .required("El campo 'responsible' es obligatorio."),
+    .typeError("El campo 'responsible' debe ser una lista."),
   serviceHours: yup
     .number()
     .nullable()
     .typeError("El campo 'serviceHours' debe ser un número.")
     .integer("El campo 'serviceHours' debe ser un número entero.")
     .min(0, "El campo 'serviceHours' debe ser mayor o igual a 0.")
-    .max(200, "El campo 'serviceHours' debe ser menor o igual a 200.")
-    .required("El campo 'serviceHours' es obligatorio."),
+    .max(200, "El campo 'serviceHours' debe ser menor o igual a 200."),
   date: yup
     .date()
     .typeError("El campo 'date' debe ser una fecha.")
-    .nullable()
-    .required("El campo 'date' es obligatorio."),
-  name: yup.string().nullable().required("El campo 'name' es obligatorio."),
+    .nullable(),
+  name: yup.string().nullable(),
+  id: yup.string().nullable().required("El campo 'id' es obligatorio."),
 });
