@@ -72,7 +72,7 @@ const assignUserToActivity = async ({
     let activityData = activity;
     if (!activity) {
       // Si la actividad no se pasa como parámetro, buscarla
-      activityData = await ActivitySchema.findOne({ _id: idActivity });
+      activityData = await ActivitySchema.findOne({ _id: idActivity, blocked: false });
 
       if (activityData === null) {
         throw new CustomError('La actividad proporcionada no existe.', 400);
@@ -120,8 +120,9 @@ const updateActivity = async ({
   participantsNumber,
 }) => {
   // obtener actividad
-  const activity = await ActivitySchema.findById(id);
+  const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
   if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
+
   const dataBeforeChange = singleActivityDto(activity);
 
   // obtener datos de area asigbo
