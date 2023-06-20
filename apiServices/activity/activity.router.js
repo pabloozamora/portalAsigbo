@@ -4,6 +4,7 @@ import {
   assignManyUsersToActivityController,
   assignUserToActivityController,
   createActivityController,
+  deleteActivityController,
   updateActivityController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
@@ -37,6 +38,12 @@ activityRouter.patch(
   ensureAdminAuth,
   validateBody(updateActivitySchema),
   updateActivityController,
+);
+
+activityRouter.delete(
+  '/:activityId',
+  ensureAdminAuth,
+  deleteActivityController,
 );
 
 export default activityRouter;

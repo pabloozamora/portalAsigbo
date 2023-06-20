@@ -1,7 +1,7 @@
 import CustomError from '../../utils/customError.js';
 import { assignManyUsersToActivityMediator, assignUserToActivityMediator, updateActivityMediator } from './activity.mediator.js';
 import {
-  createActivity,
+  createActivity, deleteActivity,
 } from './activity.model.js';
 
 const createActivityController = async (req, res) => {
@@ -133,9 +133,27 @@ const updateActivityController = async (req, res) => {
   }
 };
 
+const deleteActivityController = async (req, res) => {
+  const { activityId } = req.params;
+  try {
+    await deleteActivity({ activityId });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar actividad.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createActivityController,
   assignUserToActivityController,
   assignManyUsersToActivityController,
   updateActivityController,
+  deleteActivityController,
 };

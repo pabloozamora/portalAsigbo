@@ -1,3 +1,4 @@
+import { connection } from '../../db/connection.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
@@ -6,6 +7,7 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 import { single as singleActivityDto } from './activity.dto.js';
 import { single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
+import assignActivitySchema from './validationSchemas/assignActivitySchema.js';
 
 const createActivity = async ({
   name,
@@ -179,10 +181,22 @@ const updateActivityInAllAssignments = async ({ activity, session }) => Activity
 
 const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
 
+const deleteActivity = async ({ activityId }) => {
+  // verificar que no existan asignaciones a dicha actividad
+  const assignments = await ActivityAssignmentSchema.find({ 'activity._id': activityId });
+
+  if (assignments?.length > 0) throw new CustomError('No es posible eliminar, pues existen becados inscritos en la actividad.');
+
+  const { deletedCount } = await ActivitySchema.deleteOne({ _id: activityId });
+
+  if (deletedCount === 0) throw new CustomError('No se encontró la actividad a eliminar.', 404);
+};
+
 export {
   createActivity,
   assignUserToActivity,
   updateActivity,
   updateActivityInAllAssignments,
   getCompletedActivityAssignmentsById,
+  deleteActivity,
 };
