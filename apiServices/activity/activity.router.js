@@ -1,10 +1,14 @@
 import express from 'express';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
+
 import {
   assignManyUsersToActivityController,
   assignUserToActivityController,
   createActivityController,
   updateActivityController,
+  getLoggedActivitiesController,
+  getUserActivitiesController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
@@ -39,4 +43,14 @@ activityRouter.patch(
   updateActivityController,
 );
 
+activityRouter.get(
+  '/user',
+  ensureAdminAuth,
+  getUserActivitiesController,
+);
+activityRouter.get(
+  '/logged',
+  ensureRefreshTokenAuth,
+  getLoggedActivitiesController,
+);
 export default activityRouter;
