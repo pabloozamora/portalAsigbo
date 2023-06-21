@@ -197,14 +197,31 @@ const updateActivityInAllAssignments = async ({ activity, session }) => Activity
 const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
 
 const deleteActivity = async ({ activityId }) => {
+  try {
   // verificar que no existan asignaciones a dicha actividad
-  const assignments = await ActivityAssignmentSchema.find({ 'activity._id': activityId });
+    const assignments = await ActivityAssignmentSchema.find({ 'activity._id': activityId });
 
-  if (assignments?.length > 0) throw new CustomError('No es posible eliminar, pues existen becados inscritos en la actividad.');
+    if (assignments?.length > 0) throw new CustomError('No es posible eliminar, pues existen becados inscritos en la actividad.');
 
-  const { deletedCount } = await ActivitySchema.deleteOne({ _id: activityId });
+    const { deletedCount } = await ActivitySchema.deleteOne({ _id: activityId });
 
-  if (deletedCount === 0) throw new CustomError('No se encontró la actividad a eliminar.', 404);
+    if (deletedCount === 0) throw new CustomError('No se encontró la actividad a eliminar.', 404);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.');
+    throw ex;
+  }
+};
+
+const unassignUserFromActivity = async ({ idUser, idActivity }) => {
+  const assignmentData = await ActivityAssignmentSchema.findOne({ 'user._id': idUser, 'activity._id': idActivity });
+
+  if (assignmentData === null) throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403);
+
+  const { deletedCount } = await ActivityAssignmentSchema.deleteOne({ 'user._id': idUser, 'activity._id': idActivity });
+
+  if (deletedCount !== 1) throw new CustomError('No se encontró la asignación a eliminar.', 404);
+
+  return singleAssignmentActivityDto(assignmentData);
 };
 
 export {
@@ -215,4 +232,5 @@ export {
   getCompletedActivityAssignmentsById,
   deleteActivity,
   getUserActivities,
+  unassignUserFromActivity,
 };

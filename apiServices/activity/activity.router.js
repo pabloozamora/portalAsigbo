@@ -10,12 +10,14 @@ import {
   updateActivityController,
   getLoggedActivitiesController,
   getUserActivitiesController,
+  unassignUserFromActivityController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
 import assignActivitySchema from './validationSchemas/assignActivitySchema.js';
 import assignManyUsersToActivitySchema from './validationSchemas/assignManyUsersToActivitySchema.js';
 import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
+import unassignActivitySchema from './validationSchemas/unassignActivitySchema.js';
 
 const activityRouter = express.Router();
 
@@ -44,20 +46,13 @@ activityRouter.patch(
   updateActivityController,
 );
 
+activityRouter.get('/user', ensureAdminAuth, getUserActivitiesController);
+activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
 activityRouter.delete(
-  '/:activityId',
+  '/unassign',
   ensureAdminAuth,
-  deleteActivityController,
+  validateBody(unassignActivitySchema),
+  unassignUserFromActivityController,
 );
-
-activityRouter.get(
-  '/user',
-  ensureAdminAuth,
-  getUserActivitiesController,
-);
-activityRouter.get(
-  '/logged',
-  ensureRefreshTokenAuth,
-  getLoggedActivitiesController,
-);
+activityRouter.delete('/:activityId', ensureAdminAuth, deleteActivityController);
 export default activityRouter;

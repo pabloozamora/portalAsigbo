@@ -5,6 +5,7 @@ import { updateServiceHours } from '../user/user.model.js';
 import {
   assignUserToActivity,
   getCompletedActivityAssignmentsById,
+  unassignUserFromActivity,
   updateActivity,
   updateActivityInAllAssignments,
 } from './activity.model.js';
@@ -128,7 +129,10 @@ const updateActivityMediator = async ({
       || updatedData.serviceHours !== dataBeforeChange.serviceHours
       || updatedData.asigboArea.id !== dataBeforeChange.asigboArea.id
     ) {
-      await updateActivityInAllAssignments({ activity: { ...updatedData, _id: updatedData.id }, session });
+      await updateActivityInAllAssignments({
+        activity: { ...updatedData, _id: updatedData.id },
+        session,
+      });
     }
 
     // actualizar horas de servicio en usuario
@@ -166,4 +170,41 @@ const updateActivityMediator = async ({
   }
 };
 
-export { updateActivityMediator, assignUserToActivityMediator, assignManyUsersToActivityMediator };
+const unassignUserFromActivityMediator = async ({ idUser, idActivity }) => {
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    const result = await unassignUserFromActivity({ idUser, idActivity });
+    const {
+      activity: {
+        serviceHours,
+        asigboArea: { _id: asigboAreaId },
+      },
+      completed,
+    } = result;
+
+    // si es una actividad completada, modificar total de horas de servicio
+    if (completed === true && serviceHours > 0) {
+      await updateServiceHours({
+        userId: idUser,
+        asigboAreaId,
+        hoursToRemove: serviceHours,
+        session,
+      });
+    }
+
+    await session.commitTransaction();
+  } catch (ex) {
+    await session.abortTransaction();
+
+    throw ex;
+  }
+};
+
+export {
+  updateActivityMediator,
+  assignUserToActivityMediator,
+  assignManyUsersToActivityMediator,
+  unassignUserFromActivityMediator,
+};

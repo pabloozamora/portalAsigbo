@@ -1,5 +1,7 @@
 import CustomError from '../../utils/customError.js';
-import { assignManyUsersToActivityMediator, assignUserToActivityMediator, updateActivityMediator } from './activity.mediator.js';
+import {
+  assignManyUsersToActivityMediator, assignUserToActivityMediator, unassignUserFromActivityMediator, updateActivityMediator,
+} from './activity.mediator.js';
 import { multiple } from './activity.dto.js';
 import {
   createActivity,
@@ -188,6 +190,25 @@ const deleteActivityController = async (req, res) => {
   }
 };
 
+const unassignUserFromActivityController = async (req, res) => {
+  const { idUser, idActivity } = req.body;
+
+  try {
+    await unassignUserFromActivityMediator({ idUser, idActivity });
+
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al desasignar al usuario de la actividad.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createActivityController,
   assignUserToActivityController,
@@ -196,4 +217,5 @@ export {
   deleteActivityController,
   getUserActivitiesController,
   getLoggedActivitiesController,
+  unassignUserFromActivityController,
 };
