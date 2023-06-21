@@ -1,94 +1,10 @@
 import { connection } from '../../db/connection.js';
-import ActivitySchema from '../../db/schemas/activity.schema.js';
-import CustomError from '../../utils/customError.js';
+import { getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
 import { updateServiceHours } from '../user/user.model.js';
 import {
-  assignUserToActivity,
-  getCompletedActivityAssignmentsById,
-  unassignUserFromActivity,
   updateActivity,
   updateActivityInAllAssignments,
 } from './activity.model.js';
-
-const assignUserToActivityMediator = async ({
-  idUser,
-  idActivity,
-  completed,
-  activity,
-  sessionTransaction,
-  preventCommit = false,
-}) => {
-  const session = sessionTransaction ?? (await connection.startSession());
-  try {
-    session.startTransaction();
-
-    const result = await assignUserToActivity({
-      idUser,
-      idActivity,
-      completed,
-      activity,
-      session,
-    });
-
-    const {
-      activity: {
-        serviceHours,
-        asigboArea: { _id: asigboAreaId },
-      },
-      completed: completedValue,
-    } = result;
-
-    // si es una actividad completada, modificar total de horas de servicio
-    if (completedValue === true && serviceHours > 0) {
-      await updateServiceHours({
-        userId: idUser,
-        asigboAreaId,
-        hoursToAdd: serviceHours,
-        session,
-      });
-    }
-
-    if (!preventCommit) await session.commitTransaction();
-    return result;
-  } catch (ex) {
-    await session.abortTransaction();
-
-    throw ex;
-  }
-};
-
-const assignManyUsersToActivityMediator = async ({ idUsersList, idActivity, completed }) => {
-  // obtener datos de actividad
-  const activity = await ActivitySchema.findOne({ _id: idActivity });
-
-  if (activity === null) throw new CustomError('La actividad proporcionada no existe.', 400);
-
-  const session = await connection.startSession();
-  try {
-    session.startTransaction();
-
-    // Asignar a todos los usuarios.
-    const promises = [];
-    idUsersList.forEach((idUser) => {
-      const promise = assignUserToActivity({
-        idUser,
-        completed,
-        activity,
-        transactionSession: session,
-        preventCommit: true,
-      });
-      promises.push(promise);
-    });
-
-    const results = await Promise.all(promises);
-
-    await session.commitTransaction();
-    return results;
-  } catch (ex) {
-    await session.abortTransaction();
-    throw ex;
-  }
-};
 
 const updateActivityMediator = async ({
   id,
@@ -170,41 +86,7 @@ const updateActivityMediator = async ({
   }
 };
 
-const unassignUserFromActivityMediator = async ({ idUser, idActivity }) => {
-  const session = await connection.startSession();
-  try {
-    session.startTransaction();
-
-    const result = await unassignUserFromActivity({ idUser, idActivity });
-    const {
-      activity: {
-        serviceHours,
-        asigboArea: { _id: asigboAreaId },
-      },
-      completed,
-    } = result;
-
-    // si es una actividad completada, modificar total de horas de servicio
-    if (completed === true && serviceHours > 0) {
-      await updateServiceHours({
-        userId: idUser,
-        asigboAreaId,
-        hoursToRemove: serviceHours,
-        session,
-      });
-    }
-
-    await session.commitTransaction();
-  } catch (ex) {
-    await session.abortTransaction();
-
-    throw ex;
-  }
-};
-
 export {
+  // eslint-disable-next-line import/prefer-default-export
   updateActivityMediator,
-  assignUserToActivityMediator,
-  assignManyUsersToActivityMediator,
-  unassignUserFromActivityMediator,
 };

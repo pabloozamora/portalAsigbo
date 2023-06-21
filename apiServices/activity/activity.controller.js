@@ -1,48 +1,11 @@
 import CustomError from '../../utils/customError.js';
 import {
-  assignManyUsersToActivityMediator, assignUserToActivityMediator, unassignUserFromActivityMediator, updateActivityMediator,
+  updateActivityMediator,
 } from './activity.mediator.js';
-import { multiple } from './activity.dto.js';
 import {
   createActivity,
   deleteActivity,
-  getUserActivities,
 } from './activity.model.js';
-
-const getUserActivitiesController = async (req, res) => {
-  const { idUser } = req.query || null;
-  try {
-    const activities = await getUserActivities(idUser);
-    res.send(multiple(activities));
-  } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades del usuario.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const getLoggedActivitiesController = async (req, res) => {
-  try {
-    const activities = await getUserActivities(req.session.id);
-    res.send(multiple(activities));
-  } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades del usuario.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
 
 const createActivityController = async (req, res) => {
   const {
@@ -81,46 +44,6 @@ const createActivityController = async (req, res) => {
   } catch (ex) {
     let err = 'Ocurrio un error al crear nueva actividad.';
     let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const assignUserToActivityController = async (req, res) => {
-  try {
-    const { idUser, idActivity, completed } = req.body;
-
-    const result = await assignUserToActivityMediator({ idUser, idActivity, completed });
-
-    res.send(result);
-  } catch (ex) {
-    let err = 'Ocurrio un error al asignar usuarios a una actividad.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const assignManyUsersToActivityController = async (req, res) => {
-  try {
-    const { idUsersList, idActivity, completed } = req.body;
-
-    const result = await assignManyUsersToActivityMediator({ idUsersList, idActivity, completed });
-
-    res.send(result);
-  } catch (ex) {
-    let err = 'Ocurrio un error al asignar lista de usuarios a una actividad.';
-    let status = 500;
-
     if (ex instanceof CustomError) {
       err = ex.message;
       status = ex.status ?? 500;
@@ -190,32 +113,8 @@ const deleteActivityController = async (req, res) => {
   }
 };
 
-const unassignUserFromActivityController = async (req, res) => {
-  const { idUser, idActivity } = req.body;
-
-  try {
-    await unassignUserFromActivityMediator({ idUser, idActivity });
-
-    res.sendStatus(204);
-  } catch (ex) {
-    let err = 'Ocurrio un error al desasignar al usuario de la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
 export {
   createActivityController,
-  assignUserToActivityController,
-  assignManyUsersToActivityController,
   updateActivityController,
   deleteActivityController,
-  getUserActivitiesController,
-  getLoggedActivitiesController,
-  unassignUserFromActivityController,
 };
