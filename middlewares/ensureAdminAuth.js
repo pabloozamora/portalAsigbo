@@ -25,7 +25,6 @@ const ensureAdminAuth = async (req, res, next) => {
     req.session = userData;
     next();
   } catch (ex) {
-    console.log(ex);
     res.statusMessage = 'El token de autorización no es válido o ha expirado.';
     res.sendStatus(401);
   }

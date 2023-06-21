@@ -5,6 +5,7 @@ import {
   createActivityController,
   deleteActivityController,
   getActivitiesController,
+  getActivityController,
   updateActivityController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
@@ -14,6 +15,7 @@ import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
 const activityRouter = express.Router();
 
 activityRouter.get('/', ensureAdminAuth, getActivitiesController);
+activityRouter.get('/:idActivity', ensureAdminAuth, getActivityController);
 activityRouter.post(
   '/',
   ensureAdminAuth,

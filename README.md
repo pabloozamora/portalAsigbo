@@ -41,6 +41,13 @@
   - limitDate: fecha máxima. Se mostrarán las actividades menores o iguales a este valor.
   - query: Búsqueda de strings en el nombre de la actividad.
 
+* **/acitivy/:idActivity**
+
+  Método: Get
+
+  Permite obtener la información de una actividad a través de su id.
+  
+
 * **/activity/**
 
   Método: Post

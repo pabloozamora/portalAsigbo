@@ -4,7 +4,7 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
-import { multiple, single as singleActivityDto } from './activity.dto.js';
+import { multiple, single, single as singleActivityDto } from './activity.dto.js';
 
 const createActivity = async ({
   name,
@@ -132,10 +132,14 @@ const updateActivityInAllAssignments = async ({ activity, session }) => Activity
 
 const deleteActivity = async ({ activityId }) => {
   try {
-  // verificar que no existan asignaciones a dicha actividad
+    // verificar que no existan asignaciones a dicha actividad
     const assignments = await ActivityAssignmentSchema.find({ 'activity._id': activityId });
 
-    if (assignments?.length > 0) throw new CustomError('No es posible eliminar, pues existen becados inscritos en la actividad.');
+    if (assignments?.length > 0) {
+      throw new CustomError(
+        'No es posible eliminar, pues existen becados inscritos en la actividad.',
+      );
+    }
 
     const { deletedCount } = await ActivitySchema.deleteOne({ _id: activityId });
 
@@ -166,10 +170,24 @@ const getActivities = async ({ idAsigboArea, limitDate, query }) => {
   }
 };
 
+const getActivity = async ({ idActivity }) => {
+  try {
+    const result = await ActivitySchema.findById(idActivity);
+
+    if (result === null) throw new CustomError('No se encontró la actividad.', 404);
+
+    return single(result);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
+    throw ex;
+  }
+};
+
 export {
   createActivity,
   updateActivity,
   updateActivityInAllAssignments,
   deleteActivity,
   getActivities,
+  getActivity,
 };
