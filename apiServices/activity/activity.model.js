@@ -1,4 +1,3 @@
-import { connection } from '../../db/connection.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
@@ -7,7 +6,23 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 import { single as singleActivityDto } from './activity.dto.js';
 import { single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
-import assignActivitySchema from './validationSchemas/assignActivitySchema.js';
+
+const getUserActivities = async (idUser) => {
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+
+  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
+  if (assignments.length === 0) throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
+
+  const activities = [];
+
+  await Promise.all(assignments.map(async (assignment) => {
+    const activity = await ActivitySchema.findById(assignment.activity._id);
+    activities.push(activity);
+  }));
+
+  return activities;
+};
 
 const createActivity = async ({
   name,
@@ -199,4 +214,5 @@ export {
   updateActivityInAllAssignments,
   getCompletedActivityAssignmentsById,
   deleteActivity,
+  getUserActivities,
 };

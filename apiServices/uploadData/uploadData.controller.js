@@ -18,6 +18,7 @@ const uploadDataController = async (req, res) => {
               lastname: row.lastname,
               email: row.email,
               promotion: row.promotion,
+              career: row.career,
               sex: row.sex,
             };
             data.push(newUser);
