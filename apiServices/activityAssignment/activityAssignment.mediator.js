@@ -88,17 +88,18 @@ const assignManyUsersToActivityMediator = async ({ idUsersList, idActivity, comp
   }
 };
 
-const unassignUserFromActivityMediator = async ({ idUser, idActivity }) => {
+const unassignUserFromActivityMediator = async ({ idActivityAssignment }) => {
   const session = await connection.startSession();
   try {
     session.startTransaction();
 
-    const result = await unassignUserFromActivity({ idUser, idActivity, session });
+    const result = await unassignUserFromActivity({ idActivityAssignment, session });
     const {
       activity: {
         serviceHours,
         asigboArea: { _id: asigboAreaId },
       },
+      user: { id: idUser },
       completed,
     } = result;
 
@@ -121,8 +122,7 @@ const unassignUserFromActivityMediator = async ({ idUser, idActivity }) => {
 };
 
 const changeActivityAssignmentCompletionStatusMediator = async ({
-  idUser,
-  idActivity,
+  idActivityAssignment,
   completed,
 }) => {
   const session = await connection.startSession();
@@ -130,8 +130,7 @@ const changeActivityAssignmentCompletionStatusMediator = async ({
     session.startTransaction();
 
     const result = await changeActivityAssignmentCompletionStatus({
-      idUser,
-      idActivity,
+      idActivityAssignment,
       completed,
       session,
     });
@@ -140,6 +139,7 @@ const changeActivityAssignmentCompletionStatusMediator = async ({
         serviceHours,
         asigboArea: { _id: asigboAreaId },
       },
+      user: { id: idUser },
       completed: completedResult,
     } = result;
 

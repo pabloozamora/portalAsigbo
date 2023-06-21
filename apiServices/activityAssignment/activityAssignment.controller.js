@@ -82,10 +82,10 @@ const assignManyUsersToActivityController = async (req, res) => {
 };
 
 const unassignUserFromActivityController = async (req, res) => {
-  const { idUser, idActivity } = req.body;
+  const { idActivityAssignment } = req.params;
 
   try {
-    await unassignUserFromActivityMediator({ idUser, idActivity });
+    await unassignUserFromActivityMediator({ idActivityAssignment });
 
     res.sendStatus(204);
   } catch (ex) {
@@ -102,8 +102,8 @@ const unassignUserFromActivityController = async (req, res) => {
 
 const completeActivityAssignmentController = async (req, res) => {
   try {
-    const { idUser, idActivity } = req.body;
-    await changeActivityAssignmentCompletionStatusMediator({ idUser, idActivity, completed: true });
+    const { idActivityAssignment } = req.params;
+    await changeActivityAssignmentCompletionStatusMediator({ idActivityAssignment, completed: true });
     res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al marcar como completada la actividad.';
@@ -119,8 +119,8 @@ const completeActivityAssignmentController = async (req, res) => {
 
 const uncompleteActivityAssignmentController = async (req, res) => {
   try {
-    const { idUser, idActivity } = req.body;
-    await changeActivityAssignmentCompletionStatusMediator({ idUser, idActivity, completed: false });
+    const { idActivityAssignment } = req.params;
+    await changeActivityAssignmentCompletionStatusMediator({ idActivityAssignment, completed: false });
     res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al marcar como completada la actividad.';

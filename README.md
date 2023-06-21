@@ -98,7 +98,7 @@
 
 ### Asignaciones en actividades
 
-* **/activity/assignment/**
+* **/activity/assign/**
 
   Método: Post
 
@@ -111,7 +111,7 @@
   Parámetros opcionales:
   - completed: indíca si el becado ya completo la actividad en la que se va a inscribir. (Valor por defecto false)
 
-* **/activity/assignment/assignMany**
+* **/activity/assignMany**
 
   Método: Post
 
@@ -136,35 +136,32 @@
 
   Permite obtener las actividades en las que está inscrito el usuario en sesión.
 
-* **/activity/assignment/complete**
+* **/activity/assignment/:idAssignment/complete**
 
   Método: Patch
 
   Permite actualizar el status de la asignación de un usuario a una actividad, como completado.
 
-  Parámetros obligatorios:
-  - idActivity: id de la actividad en cuestión.
-  - idUser: id del usuario en cuestión.
+  Parámetros obligatorios en la ruta:
+  - idAssignment: id de la asignación del usuario a la actividad.
 
-* **/activity/assignment/uncomplete**
+* **/activity/assignment/:idAssignment/uncomplete**
 
   Método: Patch
 
   Permite actualizar el status de la asignación de un usuario a una actividad, como NO completado.
 
-  Parámetros obligatorios:
-  - idActivity: id de la actividad en cuestión.
-  - idUser: id del usuario en cuestión.
+  Parámetros obligatorios en la ruta:
+  - idAssignment: id de la asignación del usuario a la actividad.
 
-* **/activity/assignment/**
+* **/activity/assignment/:idAssignment**
 
   Método: Delete
 
   Permite eliminar la inscripción de un usuario a una actividad.
 
-  Parámetros obligatorios:
-  - idActivity: id de la actividad en cuestión.
-  - idUser: id del usuario en cuestión.
+  Parámetros obligatorios en la ruta:
+  - idAssignment: id de la asignación del usuario a la actividad.
 
 ## Notas
 

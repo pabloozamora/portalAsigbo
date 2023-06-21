@@ -13,7 +13,7 @@ const apiPath = '/api';
 router.use(`${apiPath}/user`, userRouter);
 router.use(`${apiPath}/session`, sessionRouter);
 router.use(`${apiPath}/activity`, activityRouter);
-router.use(`${apiPath}/activity/assignment`, activityAssignmentRouter);
+router.use(`${apiPath}/activity`, activityAssignmentRouter);
 router.use(`${apiPath}/area`, asigboAreaRouter);
 router.use(`${apiPath}/upload`, uploadDataRouter);
 

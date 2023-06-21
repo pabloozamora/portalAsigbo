@@ -72,11 +72,8 @@ const assignUserToActivity = async ({
 
 const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
 
-const unassignUserFromActivity = async ({ idUser, idActivity, session }) => {
-  const assignmentData = await ActivityAssignmentSchema.findOne({
-    'user._id': idUser,
-    'activity._id': idActivity,
-  });
+const unassignUserFromActivity = async ({ idActivityAssignment, session }) => {
+  const assignmentData = await ActivityAssignmentSchema.findById(idActivityAssignment);
 
   if (assignmentData === null) {
     throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403);
@@ -84,8 +81,7 @@ const unassignUserFromActivity = async ({ idUser, idActivity, session }) => {
 
   const { deletedCount } = await ActivityAssignmentSchema.deleteOne(
     {
-      'user._id': idUser,
-      'activity._id': idActivity,
+      _id: idActivityAssignment,
     },
     { session },
   );
@@ -101,15 +97,11 @@ const unassignUserFromActivity = async ({ idUser, idActivity, session }) => {
  * @returns ActivityAssignment object.
  */
 const changeActivityAssignmentCompletionStatus = async ({
-  idUser,
-  idActivity,
+  idActivityAssignment,
   completed,
   session,
 }) => {
-  const assignmentData = await ActivityAssignmentSchema.findOne({
-    'user._id': idUser,
-    'activity._id': idActivity,
-  });
+  const assignmentData = await ActivityAssignmentSchema.findById(idActivityAssignment);
 
   if (assignmentData === null) {
     throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 404);
