@@ -32,6 +32,17 @@
 
 * **/activity/**
 
+  Método: Get
+
+  Permite obtener el listado de actividades.
+
+  Query Params (?params):
+  - asigboArea: id del eje de asigbo al que pertenece la actividad.
+  - limitDate: fecha máxima. Se mostrarán las actividades menores o iguales a este valor.
+  - query: Búsqueda de strings en el nombre de la actividad.
+
+* **/activity/**
+
   Método: Post
 
   Permite crear una nueva actividad relacionada a algún eje de asigbo.

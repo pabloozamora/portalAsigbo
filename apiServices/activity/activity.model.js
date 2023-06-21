@@ -4,7 +4,7 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
-import { single as singleActivityDto } from './activity.dto.js';
+import { multiple, single as singleActivityDto } from './activity.dto.js';
 
 const createActivity = async ({
   name,
@@ -146,9 +146,30 @@ const deleteActivity = async ({ activityId }) => {
   }
 };
 
+const getActivities = async ({ idAsigboArea, limitDate, query }) => {
+  const filter = {};
+
+  if (idAsigboArea !== undefined) filter['asigboArea._id'] = idAsigboArea;
+  if (limitDate !== undefined) filter.date = { $lte: limitDate };
+  if (query !== undefined) filter.name = { $regex: query, $options: 'i' };
+
+  try {
+    const result = await ActivitySchema.find(filter);
+
+    if (result.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+    return multiple(result);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id del área de asigbo no es válido.');
+    if (ex?.kind === 'date') throw new CustomError('La fecha máxima no es una fecha válida.');
+    throw ex;
+  }
+};
+
 export {
   createActivity,
   updateActivity,
   updateActivityInAllAssignments,
   deleteActivity,
+  getActivities,
 };

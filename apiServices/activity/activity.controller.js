@@ -5,6 +5,7 @@ import {
 import {
   createActivity,
   deleteActivity,
+  getActivities,
 } from './activity.model.js';
 
 const createActivityController = async (req, res) => {
@@ -113,8 +114,27 @@ const deleteActivityController = async (req, res) => {
   }
 };
 
+const getActivitiesController = async (req, res) => {
+  const { asigboArea, limitDate, query } = req.query;
+
+  try {
+    const result = await getActivities({ idAsigboArea: asigboArea, limitDate, query });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener lista de actividades.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createActivityController,
   updateActivityController,
   deleteActivityController,
+  getActivitiesController,
 };

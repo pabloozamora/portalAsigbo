@@ -4,6 +4,7 @@ import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import {
   createActivityController,
   deleteActivityController,
+  getActivitiesController,
   updateActivityController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
@@ -12,6 +13,7 @@ import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
 
 const activityRouter = express.Router();
 
+activityRouter.get('/', ensureAdminAuth, getActivitiesController);
 activityRouter.post(
   '/',
   ensureAdminAuth,
