@@ -2,6 +2,7 @@ import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
+import parseBoolean from '../../utils/parseBoolean.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
 const getUserActivities = async (idUser) => {
@@ -10,7 +11,9 @@ const getUserActivities = async (idUser) => {
     if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
 
     const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
-    if (assignments.length === 0) { throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404); }
+    if (assignments.length === 0) {
+      throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
+    }
 
     return multiple(assignments);
   } catch (ex) {
@@ -69,22 +72,63 @@ const assignUserToActivity = async ({
 
 const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
 
-const unassignUserFromActivity = async ({ idUser, idActivity }) => {
+const unassignUserFromActivity = async ({ idUser, idActivity, session }) => {
   const assignmentData = await ActivityAssignmentSchema.findOne({
     'user._id': idUser,
     'activity._id': idActivity,
   });
 
-  if (assignmentData === null) { throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403); }
+  if (assignmentData === null) {
+    throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403);
+  }
 
-  const { deletedCount } = await ActivityAssignmentSchema.deleteOne({
-    'user._id': idUser,
-    'activity._id': idActivity,
-  });
+  const { deletedCount } = await ActivityAssignmentSchema.deleteOne(
+    {
+      'user._id': idUser,
+      'activity._id': idActivity,
+    },
+    { session },
+  );
 
   if (deletedCount !== 1) throw new CustomError('No se encontró la asignación a eliminar.', 404);
 
   return singleAssignmentActivityDto(assignmentData);
+};
+
+/**
+ * Permite modificar el estado de completado de la asignación a la actividad.
+ * @param {idUser, idActivity, completed, session}
+ * @returns ActivityAssignment object.
+ */
+const changeActivityAssignmentCompletionStatus = async ({
+  idUser,
+  idActivity,
+  completed,
+  session,
+}) => {
+  const assignmentData = await ActivityAssignmentSchema.findOne({
+    'user._id': idUser,
+    'activity._id': idActivity,
+  });
+
+  if (assignmentData === null) {
+    throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 404);
+  }
+
+  if (assignmentData.completed === parseBoolean(completed)) {
+    throw new CustomError(
+      assignmentData.completed
+        ? 'El status de la actividad ya ha sido completado.'
+        : 'El status de completado de la actividad ya ha sido retirado.',
+      400,
+    );
+  }
+
+  assignmentData.completed = parseBoolean(completed);
+
+  const result = await assignmentData.save({ session });
+
+  return singleAssignmentActivityDto(result);
 };
 
 export {
@@ -92,4 +136,5 @@ export {
   getCompletedActivityAssignmentsById,
   getUserActivities,
   unassignUserFromActivity,
+  changeActivityAssignmentCompletionStatus,
 };

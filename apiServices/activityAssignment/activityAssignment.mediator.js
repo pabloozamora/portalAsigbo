@@ -4,6 +4,7 @@ import CustomError from '../../utils/customError.js';
 import { updateServiceHours } from '../user/user.model.js';
 import {
   assignUserToActivity,
+  changeActivityAssignmentCompletionStatus,
   unassignUserFromActivity,
 } from './activityAssignment.model.js';
 
@@ -92,7 +93,7 @@ const unassignUserFromActivityMediator = async ({ idUser, idActivity }) => {
   try {
     session.startTransaction();
 
-    const result = await unassignUserFromActivity({ idUser, idActivity });
+    const result = await unassignUserFromActivity({ idUser, idActivity, session });
     const {
       activity: {
         serviceHours,
@@ -119,8 +120,60 @@ const unassignUserFromActivityMediator = async ({ idUser, idActivity }) => {
   }
 };
 
+const changeActivityAssignmentCompletionStatusMediator = async ({
+  idUser,
+  idActivity,
+  completed,
+}) => {
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    const result = await changeActivityAssignmentCompletionStatus({
+      idUser,
+      idActivity,
+      completed,
+      session,
+    });
+    const {
+      activity: {
+        serviceHours,
+        asigboArea: { _id: asigboAreaId },
+      },
+      completed: completedResult,
+    } = result;
+
+    // si es una actividad completada, modificar total de horas de servicio
+    // El valor completed corresponde al nuevo valor. Si es true, se deben de agregar las horas.
+    if (serviceHours > 0) {
+      if (completedResult === true) {
+        await updateServiceHours({
+          userId: idUser,
+          asigboAreaId,
+          hoursToAdd: serviceHours,
+          session,
+        });
+      } else {
+        await updateServiceHours({
+          userId: idUser,
+          asigboAreaId,
+          hoursToRemove: serviceHours,
+          session,
+        });
+      }
+    }
+
+    await session.commitTransaction();
+  } catch (ex) {
+    await session.abortTransaction();
+
+    throw ex;
+  }
+};
+
 export {
   assignUserToActivityMediator,
   assignManyUsersToActivityMediator,
   unassignUserFromActivityMediator,
+  changeActivityAssignmentCompletionStatusMediator,
 };

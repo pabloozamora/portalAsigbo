@@ -1,6 +1,6 @@
 import CustomError from '../../utils/customError.js';
 import {
-  assignManyUsersToActivityMediator, assignUserToActivityMediator, unassignUserFromActivityMediator,
+  assignManyUsersToActivityMediator, assignUserToActivityMediator, changeActivityAssignmentCompletionStatusMediator, unassignUserFromActivityMediator,
 } from './activityAssignment.mediator.js';
 import {
   getUserActivities,
@@ -100,10 +100,46 @@ const unassignUserFromActivityController = async (req, res) => {
   }
 };
 
+const completeActivityAssignmentController = async (req, res) => {
+  try {
+    const { idUser, idActivity } = req.body;
+    await changeActivityAssignmentCompletionStatusMediator({ idUser, idActivity, completed: true });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al marcar como completada la actividad.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const uncompleteActivityAssignmentController = async (req, res) => {
+  try {
+    const { idUser, idActivity } = req.body;
+    await changeActivityAssignmentCompletionStatusMediator({ idUser, idActivity, completed: false });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al marcar como completada la actividad.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   assignUserToActivityController,
   assignManyUsersToActivityController,
   getUserActivitiesController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
+  completeActivityAssignmentController,
+  uncompleteActivityAssignmentController,
 };
