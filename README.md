@@ -71,7 +71,16 @@
   - paymentAmount: monto del pago requerido para la actividad.
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. Un valor **null** implíca que todos los becados pueden inscribirse.
 
-* **/activity/assign**
+
+* **/activity/:activityId**
+
+  Método: delete
+
+  Permite eliminar una actividad, siempre y cuando no hayan personas inscritas en la misma.
+
+### Asignaciones en actividades
+
+* **/activity/assignment/**
 
   Método: Post
 
@@ -84,7 +93,7 @@
   Parámetros opcionales:
   - completed: indíca si el becado ya completo la actividad en la que se va a inscribir. (Valor por defecto false)
 
-  * **/activity/assignMany**
+* **/activity/assignment/assignMany**
 
   Método: Post
 
@@ -96,6 +105,48 @@
   
   Parámetros opcionales:
   - completed: indíca si los becados ya completaron la actividad en la que se va a inscribir. (Valor por defecto false)
+
+* **/activity/assignment/user/:idUser**
+
+  Método: Get
+
+  Permite obtener las actividades en las que está inscrito un usuario.
+
+* **/activity/assignment/logged**
+
+  Método: Get
+
+  Permite obtener las actividades en las que está inscrito el usuario en sesión.
+
+* **/activity/assignment/complete**
+
+  Método: Patch
+
+  Permite actualizar el status de la asignación de un usuario a una actividad, como completado.
+
+  Parámetros obligatorios:
+  - idActivity: id de la actividad en cuestión.
+  - idUser: id del usuario en cuestión.
+
+* **/activity/assignment/uncomplete**
+
+  Método: Patch
+
+  Permite actualizar el status de la asignación de un usuario a una actividad, como NO completado.
+
+  Parámetros obligatorios:
+  - idActivity: id de la actividad en cuestión.
+  - idUser: id del usuario en cuestión.
+
+* **/activity/assignment/**
+
+  Método: Delete
+
+  Permite eliminar la inscripción de un usuario a una actividad.
+
+  Parámetros obligatorios:
+  - idActivity: id de la actividad en cuestión.
+  - idUser: id del usuario en cuestión.
 
 ## Notas
 
