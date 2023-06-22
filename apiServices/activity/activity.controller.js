@@ -1,9 +1,9 @@
 import CustomError from '../../utils/customError.js';
 import {
+  createActivityMediator,
   updateActivityMediator,
 } from './activity.mediator.js';
 import {
-  createActivity,
   deleteActivity,
   getActivities,
   getActivity,
@@ -29,7 +29,7 @@ const createActivityController = async (req, res) => {
       // lógica para generar pago
     }
 
-    const result = await createActivity({
+    const result = await createActivityMediator({
       name,
       date,
       serviceHours,

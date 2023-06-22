@@ -35,9 +35,15 @@ const createUser = async ({
     await user.save();
     return user;
   } catch (ex) {
-    if (ex.code === 11000 && ex.keyValue?.code !== undefined) { throw new CustomError('El código proporcionado ya existe.', 400); }
-    if (ex.code === 11000 && ex.keyValue?.email !== undefined) { throw new CustomError('El email ya se encuentra registrado.', 400); }
-    if (ex.code === 'ERR_ASSERTION' && ex.path === 'code') { throw new CustomError('El código de usuario debe ser un número.'); }
+    if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
+      throw new CustomError('El código proporcionado ya existe.', 400);
+    }
+    if (ex.code === 11000 && ex.keyValue?.email !== undefined) {
+      throw new CustomError('El email ya se encuentra registrado.', 400);
+    }
+    if (ex.code === 'ERR_ASSERTION' && ex.path === 'code') {
+      throw new CustomError('El código de usuario debe ser un número.');
+    }
     throw ex;
   }
 };
@@ -82,9 +88,35 @@ const updateServiceHours = async ({
   return userData.save({ session });
 };
 
+const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
+  if (!Array.isArray(usersIdList)) throw Error('UsersIdList no es un arreglo.');
+
+  try {
+  // añadir roles en caso de que no exista un array en el campo role
+    const { matchedCount: matchedCount1 } = await UserSchema.updateMany(
+      {
+        $or: [{ role: { $exists: false } }, { role: { $not: { $type: 'array' } } }],
+        _id: { $in: usersIdList },
+      },
+      { $set: { role: [role] } },
+      { session },
+    );
+
+    const { matchedCount: matchedCount2 } = await UserSchema.updateMany(
+      {
+        role: { $exists: true, $type: 'array' },
+        _id: { $in: usersIdList },
+      },
+      { $addToSet: { role } },
+      { session },
+    );
+
+    if (matchedCount1 + matchedCount2 !== usersIdList.length) throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+  }
+};
+
 export {
-  createUser,
-  getActiveUsers,
-  updateServiceHours,
-  getUser,
+  createUser, getActiveUsers, updateServiceHours, getUser, addRoleToManyUsers,
 };

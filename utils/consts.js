@@ -4,6 +4,7 @@ export default {
     scolarshipHolder: 'scolarshipHolder',
     promotionResponsible: 'promotionResponsible',
     asigboAreaResponsible: 'asigboAreaResponsible',
+    activityResponsible: 'activityResponsible',
   },
   token: {
     refresh: 'REFRESH',

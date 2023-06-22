@@ -17,6 +17,7 @@ const createActivity = async ({
   registrationEndDate,
   participatingPromotions,
   participantsNumber,
+  session,
 }) => {
   // obtener datos de area asigbo
   const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
@@ -54,7 +55,7 @@ const createActivity = async ({
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
   activity.availableSpaces = participantsNumber;
 
-  const result = await activity.save();
+  const result = await activity.save({ session });
   return singleActivityDto(result);
 };
 
