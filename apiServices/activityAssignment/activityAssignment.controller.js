@@ -3,13 +3,13 @@ import {
   assignManyUsersToActivityMediator, assignUserToActivityMediator, changeActivityAssignmentCompletionStatusMediator, unassignUserFromActivityMediator,
 } from './activityAssignment.mediator.js';
 import {
-  getUserActivities,
+  getActivityAssignments,
 } from './activityAssignment.model.js';
 
-const getUserActivitiesController = async (req, res) => {
-  const { idUser } = req.params || null;
+const getActivitiesAssigmentsController = async (req, res) => {
+  const { idUser, idActivity } = req.query;
   try {
-    const activities = await getUserActivities(idUser);
+    const activities = await getActivityAssignments({ idUser, idActivity });
     res.send(activities);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las actividades del usuario.';
@@ -26,7 +26,7 @@ const getUserActivitiesController = async (req, res) => {
 
 const getLoggedActivitiesController = async (req, res) => {
   try {
-    const activities = await getUserActivities(req.session.id);
+    const activities = await getActivityAssignments({ idUser: req.session.id });
     res.send(activities);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las actividades del usuario.';
@@ -137,7 +137,7 @@ const uncompleteActivityAssignmentController = async (req, res) => {
 export {
   assignUserToActivityController,
   assignManyUsersToActivityController,
-  getUserActivitiesController,
+  getActivitiesAssigmentsController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
   completeActivityAssignmentController,

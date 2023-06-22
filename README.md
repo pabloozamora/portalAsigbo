@@ -124,11 +124,16 @@
   Parámetros opcionales:
   - completed: indíca si los becados ya completaron la actividad en la que se va a inscribir. (Valor por defecto false)
 
-* **/activity/assignment/user/:idUser**
+* **/activity/assignment/**
 
   Método: Get
 
-  Permite obtener las actividades en las que está inscrito un usuario.
+  Permite obtener la lista de asignaciones a actividades y filtrarla por usuario y actividad.
+
+  Parámetros de búsqueda opcionales (?params):
+  - idUser: id del usuario a buscar.
+  - idActivity: id de la actividad a buscar.
+
 
 * **/activity/assignment/logged**
 

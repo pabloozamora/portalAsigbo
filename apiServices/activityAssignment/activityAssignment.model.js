@@ -5,19 +5,21 @@ import CustomError from '../../utils/customError.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
-const getUserActivities = async (idUser) => {
+const getActivityAssignments = async ({ idUser, idActivity }) => {
   try {
-    const user = await UserSchema.findById(idUser);
-    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+    const filter = {};
 
-    const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
+    if (idUser !== undefined) filter['user._id'] = idUser;
+    if (idActivity !== undefined) filter['activity._id'] = idActivity;
+
+    const assignments = await ActivityAssignmentSchema.find(filter);
     if (assignments.length === 0) {
-      throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
+      throw new CustomError('No se encontraron resultados.', 404);
     }
 
     return multiple(assignments);
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') throw new CustomError('El id del usuario no es válido.');
+    if (ex?.kind === 'ObjectId') throw new CustomError('Los ids proporcionados no son válidos.', 400);
     throw ex;
   }
 };
@@ -126,7 +128,7 @@ const changeActivityAssignmentCompletionStatus = async ({
 export {
   assignUserToActivity,
   getCompletedActivityAssignmentsById,
-  getUserActivities,
+  getActivityAssignments,
   unassignUserFromActivity,
   changeActivityAssignmentCompletionStatus,
 };
