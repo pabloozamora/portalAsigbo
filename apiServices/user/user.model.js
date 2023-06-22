@@ -1,5 +1,6 @@
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
+import { single } from './user.dto.js';
 
 const getUser = async (idUser) => {
   const user = await UserSchema.findById(idUser);
@@ -114,9 +115,28 @@ const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
     if (matchedCount1 + matchedCount2 !== usersIdList.length) throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+    throw ex;
+  }
+};
+
+const removeRoleFromUser = async ({ idUser, role, session }) => {
+  try {
+    const userData = await UserSchema.findOne({ _id: idUser });
+
+    if (userData === null) throw new CustomError('No se encontró el usuario para eliminar rol.', 404);
+    if (!userData.role?.includes(role)) throw new CustomError('El usuario no posee el role proporcionado.', 400);
+
+    userData.role = userData.role.filter((val) => val !== role);
+
+    const result = await userData.save({ session });
+
+    return single(result);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+    throw ex;
   }
 };
 
 export {
-  createUser, getActiveUsers, updateServiceHours, getUser, addRoleToManyUsers,
+  createUser, getActiveUsers, updateServiceHours, getUser, addRoleToManyUsers, removeRoleFromUser,
 };

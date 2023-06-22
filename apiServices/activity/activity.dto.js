@@ -2,6 +2,7 @@ import { parseMultipleObjects, parseSingleObject } from '../../utils/parseMongoO
 
 const single = (resource, showSensitiveData) => {
   const {
+    id,
     _id,
     name,
     date,
@@ -13,9 +14,9 @@ const single = (resource, showSensitiveData) => {
     registrationEndDate,
     participatingPromotions,
     availableSpaces,
-  } = resource._doc;
+  } = resource._doc ?? resource;
   return {
-    id: resource._id?.valueOf() ?? _id?.valueOf(),
+    id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
     name,
     date,
     serviceHours,

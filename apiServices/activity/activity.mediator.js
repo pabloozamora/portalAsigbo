@@ -1,9 +1,11 @@
 import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import { getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
-import { addRoleToManyUsers, updateServiceHours } from '../user/user.model.js';
+import { addRoleToManyUsers, removeRoleFromUser, updateServiceHours } from '../user/user.model.js';
+import { single } from './activity.dto.js';
 import {
   createActivity,
+  getActivitiesWhereUserIsResponsible,
   updateActivity,
   updateActivityInAllAssignments,
 } from './activity.model.js';
@@ -41,7 +43,11 @@ const createActivityMediator = async ({
 
     // añadir roles de responsables de actividad
 
-    await addRoleToManyUsers({ usersIdList: responsible, role: consts.roles.activityResponsible, session });
+    await addRoleToManyUsers({
+      usersIdList: responsible,
+      role: consts.roles.activityResponsible,
+      session,
+    });
 
     await session.commitTransaction();
 
@@ -52,6 +58,13 @@ const createActivityMediator = async ({
   }
 };
 
+const removeActivityResponsibleRole = async ({ idUser, session }) => {
+  const result = await getActivitiesWhereUserIsResponsible({ idUser });
+  if (result.length === 1) {
+    // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
+    await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
+  }
+};
 const updateActivityMediator = async ({
   id,
   name,
@@ -122,9 +135,30 @@ const updateActivityMediator = async ({
 
     // modificar el monto del pago o eliminarlo (pendiente)
 
+    // retirar permisos a responsables retirados
+    const usersRemoved = dataBeforeChange.responsible.filter(
+      (beforeUser) => !updatedData.responsible.some((updatedUser) => beforeUser.id === updatedUser.id),
+    )
+      .map((user) => user.id);
+    await Promise.all(
+      usersRemoved.map((idUser) => removeActivityResponsibleRole({ idUser, session })),
+    );
+
+    // añadir permisos a nuevos responsables
+    const usersAdded = updatedData.responsible
+      .filter(
+        (updatedUser) => !dataBeforeChange.responsible.some((beforeUser) => beforeUser.id === updatedUser.id),
+      )
+      .map((user) => user.id);
+    await addRoleToManyUsers({
+      usersIdList: usersAdded,
+      role: consts.roles.activityResponsible,
+      session,
+    });
+
     await session.commitTransaction();
 
-    return updatedData;
+    return single(updatedData);
   } catch (ex) {
     await session.abortTransaction();
 
@@ -132,7 +166,4 @@ const updateActivityMediator = async ({
   }
 };
 
-export {
-  updateActivityMediator,
-  createActivityMediator,
-};
+export { updateActivityMediator, createActivityMediator };

@@ -59,6 +59,11 @@ const createActivity = async ({
   return singleActivityDto(result);
 };
 
+/**
+ * Actualiza la información de una actividad.
+ * @returns updatedData Objeto con la data actualizada.
+ * @returns dataBeforeChange Objeto con la data previa a la actualización.
+ */
 const updateActivity = async ({
   session,
   id,
@@ -77,7 +82,7 @@ const updateActivity = async ({
   const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
   if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
 
-  const dataBeforeChange = singleActivityDto(activity);
+  const dataBeforeChange = singleActivityDto(activity, true);
 
   // obtener datos de area asigbo
   const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
@@ -124,7 +129,7 @@ const updateActivity = async ({
 
   const result = await activity.save({ session });
   return {
-    updatedData: singleActivityDto(result),
+    updatedData: singleActivityDto(result, true),
     dataBeforeChange,
   };
 };
@@ -184,6 +189,14 @@ const getActivity = async ({ idActivity }) => {
   }
 };
 
+const getActivitiesWhereUserIsResponsible = async ({ idUser }) => {
+  const results = await ActivitySchema.find({ responsible: { $elemMatch: { _id: idUser } } });
+
+  if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return multiple(results);
+};
+
 export {
   createActivity,
   updateActivity,
@@ -191,4 +204,5 @@ export {
   deleteActivity,
   getActivities,
   getActivity,
+  getActivitiesWhereUserIsResponsible,
 };
