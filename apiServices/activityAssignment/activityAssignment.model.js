@@ -44,6 +44,10 @@ const assignUserToActivity = async ({
       }
     }
 
+    if (!activityData.participatingPromotions.includes(userData.promotion)) {
+      throw new CustomError('La actividad no está disponible para la promoción de este usuario.');
+    }
+
     // verificar que hayan espacios disponibles
     if (!(activityData.availableSpaces > 0)) {
       throw new CustomError('La actividad no cuenta con espacios disponibles.', 403);

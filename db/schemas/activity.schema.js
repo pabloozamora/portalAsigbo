@@ -22,7 +22,7 @@ const activitySchema = Schema({
   payment: { type: paymentSubSchema },
   registrationStartDate: { type: Date, required: true },
   registrationEndDate: { type: Date, required: true },
-  participatingPromotions: { type: [Number], default: null },
+  participatingPromotions: { type: Array, default: null },
   availableSpaces: {
     type: Number,
     required: true,
