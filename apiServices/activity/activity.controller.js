@@ -1,10 +1,10 @@
 import CustomError from '../../utils/customError.js';
 import {
   createActivityMediator,
+  deleteActivityMediator,
   updateActivityMediator,
 } from './activity.mediator.js';
 import {
-  deleteActivity,
   getActivities,
   getActivity,
 } from './activity.model.js';
@@ -99,9 +99,9 @@ const updateActivityController = async (req, res) => {
 };
 
 const deleteActivityController = async (req, res) => {
-  const { activityId } = req.params;
+  const { idActivity } = req.params;
   try {
-    await deleteActivity({ activityId });
+    await deleteActivityMediator({ idActivity });
     res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al eliminar actividad.';

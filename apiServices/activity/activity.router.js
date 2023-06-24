@@ -29,5 +29,5 @@ activityRouter.patch(
   updateActivityController,
 );
 
-activityRouter.delete('/:activityId', ensureAdminAuth, deleteActivityController);
+activityRouter.delete('/:idActivity', ensureAdminAuth, deleteActivityController);
 export default activityRouter;

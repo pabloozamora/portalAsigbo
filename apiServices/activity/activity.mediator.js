@@ -5,7 +5,9 @@ import { addRoleToManyUsers, removeRoleFromUser, updateServiceHours } from '../u
 import { single } from './activity.dto.js';
 import {
   createActivity,
+  deleteActivity,
   getActivitiesWhereUserIsResponsible,
+  getActivity,
   updateActivity,
   updateActivityInAllAssignments,
 } from './activity.model.js';
@@ -166,4 +168,26 @@ const updateActivityMediator = async ({
   }
 };
 
-export { updateActivityMediator, createActivityMediator };
+const deleteActivityMediator = async ({ idActivity }) => {
+  const { responsible } = await getActivity({ idActivity, getSensitiveData: true });
+
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    await deleteActivity({ idActivity, session });
+
+    // retirar permisos a responsables retirados
+    await Promise.all(
+      responsible?.map((user) => removeActivityResponsibleRole({ idUser: user.id, session })),
+    );
+
+    await session.commitTransaction();
+  } catch (ex) {
+    await session.abortTransaction();
+    throw ex;
+  }
+};
+
+export { updateActivityMediator, createActivityMediator, deleteActivityMediator };

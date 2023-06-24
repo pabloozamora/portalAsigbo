@@ -136,10 +136,10 @@ const updateActivity = async ({
 
 const updateActivityInAllAssignments = async ({ activity, session }) => ActivityAssignmentSchema.updateMany({ 'activity._id': activity.id }, { activity }, { session });
 
-const deleteActivity = async ({ activityId }) => {
+const deleteActivity = async ({ idActivity, session }) => {
   try {
     // verificar que no existan asignaciones a dicha actividad
-    const assignments = await ActivityAssignmentSchema.find({ 'activity._id': activityId });
+    const assignments = await ActivityAssignmentSchema.find({ 'activity._id': idActivity });
 
     if (assignments?.length > 0) {
       throw new CustomError(
@@ -147,7 +147,7 @@ const deleteActivity = async ({ activityId }) => {
       );
     }
 
-    const { deletedCount } = await ActivitySchema.deleteOne({ _id: activityId });
+    const { deletedCount } = await ActivitySchema.deleteOne({ _id: idActivity }, { session });
 
     if (deletedCount === 0) throw new CustomError('No se encontró la actividad a eliminar.', 404);
   } catch (ex) {
@@ -176,13 +176,13 @@ const getActivities = async ({ idAsigboArea, limitDate, query }) => {
   }
 };
 
-const getActivity = async ({ idActivity }) => {
+const getActivity = async ({ idActivity, getSensitiveData = false }) => {
   try {
     const result = await ActivitySchema.findById(idActivity);
 
     if (result === null) throw new CustomError('No se encontró la actividad.', 404);
 
-    return single(result);
+    return single(result, getSensitiveData);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
     throw ex;
