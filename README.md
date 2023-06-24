@@ -66,7 +66,7 @@
 
   Parámetros opcionales:
   - paymentAmount: monto del pago requerido para la actividad.
-  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. Un valor **null** implíca que todos los becados pueden inscribirse.
+  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
 
 * **/activity/**
 
@@ -87,7 +87,7 @@
   - registrationEndDate: fecha límite de inscripción.
   - participantsNumber: número máximo de participantes.
   - paymentAmount: monto del pago requerido para la actividad.
-  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. Un valor **null** implíca que todos los becados pueden inscribirse.
+  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
 
 
 * **/activity/:activityId**

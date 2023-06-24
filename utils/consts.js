@@ -11,8 +11,8 @@ export default {
     access: 'ACCESS',
   },
   promotionsGroups: {
-    chick: 'pollito',
-    student: 'estudiante',
-    graduate: 'graduado',
+    chick: 'chick',
+    student: 'student',
+    graduate: 'graduate',
   },
 };
