@@ -1,4 +1,5 @@
 import CustomError from '../../utils/customError.js';
+import { multiple } from './activity.dto.js';
 import {
   createActivityMediator,
   deleteActivityMediator,
@@ -7,6 +8,7 @@ import {
 import {
   getActivities,
   getActivity,
+  getUserActivities,
 } from './activity.model.js';
 
 const createActivityController = async (req, res) => {
@@ -115,6 +117,41 @@ const deleteActivityController = async (req, res) => {
   }
 };
 
+const getUserActivitiesController = async (req, res) => {
+  const { idUser } = req.params || null;
+  try {
+    const activities = await getUserActivities(idUser);
+    res.send(multiple(activities));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las actividades del usuario.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getLoggedActivitiesController = async (req, res) => {
+  try {
+    const activities = await getUserActivities(req.session.id);
+    res.send(multiple(activities));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las actividades del usuario.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const getActivitiesController = async (req, res) => {
   const { asigboArea, limitDate, query } = req.query;
 
@@ -157,4 +194,6 @@ export {
   deleteActivityController,
   getActivitiesController,
   getActivityController,
+  getLoggedActivitiesController,
+  getUserActivitiesController,
 };

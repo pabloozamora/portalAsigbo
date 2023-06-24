@@ -20,7 +20,7 @@ const getLoggedUserController = async (req, res) => {
 };
 
 const getUserController = async (req, res) => {
-  const { idUser } = req.query || null;
+  const { idUser } = req.params || null;
   try {
     const user = await getUser(idUser);
     res.send(single(user, false, true));

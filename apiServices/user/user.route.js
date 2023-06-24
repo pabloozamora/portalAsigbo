@@ -12,6 +12,6 @@ const userRouter = express.Router();
 userRouter.post('/', ensureAdminAuth, validateBody(createUserSchema), createUserController);
 userRouter.get('/', ensureAdminAuth, getActiveUsersController);
 userRouter.get('/logged', ensureRefreshTokenAuth, getLoggedUserController);
-userRouter.get('/user', ensureAdminAuth, getUserController);
+userRouter.get('/:idUser', ensureAdminAuth, getUserController);
 
 export default userRouter;

@@ -65,7 +65,7 @@
   - participantsNumber: número máximo de participantes.
 
   Parámetros opcionales:
-  - paymentAmount: monto del pago requerido para la actividad.
+  -   : monto del pago requerido para la actividad.
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. Un valor **null** implíca que todos los becados pueden inscribirse.
 
 * **/activity/**
@@ -95,6 +95,21 @@
   Método: delete
 
   Permite eliminar una actividad, siempre y cuando no hayan personas inscritas en la misma.
+
+* **/activity/logged**
+
+  Método: Get
+
+  Devuelve el listado de actividades en las que ha participado el usuario actualmente loggeado.
+
+* **/activity/:idUser**
+
+  Método: Get
+
+  Devuelve el listado de actividades en las que ha participado el usuario especificado.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario que se desea conocer sus actividades.
 
 ### Asignaciones en actividades
 
@@ -167,6 +182,104 @@
 
   Parámetros obligatorios en la ruta:
   - idAssignment: id de la asignación del usuario a la actividad.
+
+### Asigbo Area
+
+* **/area**
+
+  Método: Get
+
+  Obtiene el listado de áreas activas.
+
+* **/area**
+
+  Método: Post
+
+  Crea una nueva área de ASIGBO con la información especificada.
+
+  Parámetros requeridos:
+  - responsible: (array) lista de usuarios que serán responsables de área.
+  - name: nombre del área a crear.
+
+* **/area/update/:idArea**
+
+  Método: Put
+
+  Actualiza el nombre del área especificada.
+
+  Parámetro obligatorio en la ruta: 
+  - idArea: id del área de ASIGBO a modificar.
+
+  Parámetros requeridos:
+  - name: nuevo nombre del área.
+
+* **/area/responsible**
+
+  Método: Put
+
+  Asigna al usuario especificado como responsable del área.
+
+  Parámetros requeridos:
+  - idArea: id del área de ASIGBO a modificar.
+  - idUser: id del usuario que será agregado como responsable de área.
+
+* **/area/responsible/remove**
+
+  Método: Put
+
+  Retira al usuario especificado de la lista de responsables del área.
+
+  Parámetros requeridos:
+  - idArea: id del área de ASIGBO a modificar.
+  - idUser: id del usuario que será removido de los responsables de área.
+
+* **/area/delete/:idArea**
+
+  Método: Put
+
+  Modifica el área especificada como inactiva.
+
+  Parámetro obligatorio en la ruta: 
+  - idArea: id del área de ASIGBO a desactivar.
+
+### User
+
+* **/user**
+
+  Método: Get
+
+  Obtiene el listado de usuarios activos.
+
+* **/user**
+
+  Método: Post
+
+  Permite la creación de un nuevo usuario con la información especificada.
+
+  Parámetros requeridos:
+  - code: código de identificación del usuario.
+  - name: nombres del usuario.
+  - lastname: apellidos del usuario.
+  - email: correo electrónico.
+  - promotion: año en el que inició sus estudios universitarios.
+  - password: contraseña para iniciar sesión en el portal.
+  - sex: sexo del usuario (M o F).
+  - career: carrera que estudia.
+
+* **/user/logged**
+
+  Método: Get
+
+  Devuelve la información del usuario actualmente loggeado.
+
+* **/user/:idUser**
+
+  Método: Get
+
+  Devuelve la información del usuario requerido.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario.
 
 ## Notas
 

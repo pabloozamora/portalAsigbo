@@ -5,7 +5,7 @@ import {
 } from './asigboArea.model.js';
 
 const addResponsibleController = async (req, res) => {
-  const { idArea, idUser } = req.query || null;
+  const { idArea, idUser } = req.body || null;
 
   try {
     const area = await addResponsible({ idArea, idUser });
@@ -23,7 +23,7 @@ const addResponsibleController = async (req, res) => {
 };
 
 const removeResponsibleController = async (req, res) => {
-  const { idArea, idUser } = req.query || null;
+  const { idArea, idUser } = req.body || null;
 
   try {
     const area = await removeResponsible({ idArea, idUser });
@@ -42,7 +42,7 @@ const removeResponsibleController = async (req, res) => {
 
 const updateAsigboAreaController = async (req, res) => {
   const { name } = req.body;
-  const { idArea } = req.query || null;
+  const { idArea } = req.params || null;
 
   try {
     const area = await updateAsigboArea({ idArea, name });
@@ -82,11 +82,11 @@ const createAsigboAreaController = async (req, res) => {
 };
 
 const deleteAsigboAreaController = async (req, res) => {
-  const { idArea } = req.query || null;
+  const { idArea } = req.params || null;
 
   try {
-    const area = await deleteAsigboArea({ idArea });
-    res.send(single(area));
+    await deleteAsigboArea({ idArea });
+    res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al eliminar el area.';
     let status = 500;

@@ -35,7 +35,7 @@ activityAssignmentRouter.post(
 );
 
 activityAssignmentRouter.get('/assignment', ensureAdminAuth, validateQuery(searchActivitiesSchema), getActivitiesAssigmentsController);
-activityAssignmentRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
+activityAssignmentRouter.get('/assignment/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
 activityAssignmentRouter.patch(
   '/assignment/:idActivityAssignment/complete/',
   ensureAdminAuth,

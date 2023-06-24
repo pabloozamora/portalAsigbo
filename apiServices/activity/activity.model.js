@@ -87,15 +87,15 @@ const updateActivity = async ({
   // obtener datos de area asigbo
   const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
 
-  if (asigboAreaData === null) throw new CustomError('No existe el área de asigbo.', 400);
+  if (asigboAreaData === null && idAsigboArea !== undefined) throw new CustomError('No existe el área de asigbo.', 400);
 
   // obtener datos de encargados
   const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
 
-  if (responsiblesData === null || responsiblesData.length === 0) {
+  if (responsible !== undefined && (responsiblesData === null || responsiblesData.length === 0)) {
     throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
   }
-  if (responsiblesData.length !== responsible.length) {
+  if (responsible !== undefined && (responsiblesData.length !== responsible.length)) {
     throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
   }
 
@@ -156,6 +156,23 @@ const deleteActivity = async ({ idActivity, session }) => {
   }
 };
 
+const getUserActivities = async (idUser) => {
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+
+  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
+  if (assignments.length === 0) throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
+
+  const activities = [];
+
+  await Promise.all(assignments.map(async (assignment) => {
+    const activity = await ActivitySchema.findById(assignment.activity._id);
+    activities.push(activity);
+  }));
+
+  return activities;
+};
+
 const getActivities = async ({ idAsigboArea, limitDate, query }) => {
   const filter = {};
 
@@ -205,4 +222,5 @@ export {
   getActivities,
   getActivity,
   getActivitiesWhereUserIsResponsible,
+  getUserActivities,
 };
