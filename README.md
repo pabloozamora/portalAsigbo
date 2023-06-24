@@ -170,6 +170,12 @@
 
 ### Configuración de promociones
 
+* **/promotion/**
+
+  Método: Get
+
+  Obtiene el año de las promociones "estudiantes" y el nombre de los grupos de promociones "no estudiantes" (pollitos y graduados).
+
 * **/promotion/currentStudents**
 
   Método: Post

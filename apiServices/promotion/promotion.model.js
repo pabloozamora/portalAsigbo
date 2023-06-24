@@ -1,4 +1,6 @@
 import PromotionSchema from '../../db/schemas/promotion.schema.js';
+import consts from '../../utils/consts.js';
+import CustomError from '../../utils/customError.js';
 import { single } from './promotion.dto.js';
 
 const saveCurrentStudentPromotions = async ({ firstYearPromotion, lastYearPromotion }) => {
@@ -11,5 +13,24 @@ const saveCurrentStudentPromotions = async ({ firstYearPromotion, lastYearPromot
   return single(result);
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { saveCurrentStudentPromotions };
+const getPromotionsGroups = async () => {
+  const currentStudents = await PromotionSchema.findOne();
+
+  if (currentStudents === null) {
+    throw new CustomError('No se ha configurado las promociones de estudiantes.', 400);
+  }
+
+  const { firstYearPromotion, lastYearPromotion } = currentStudents;
+
+  const studentPromotions = [];
+  for (let i = firstYearPromotion; i >= lastYearPromotion; i -= 1) {
+    studentPromotions.push(i);
+  }
+
+  return {
+    notStudents: [consts.promotionsGroups.chick, consts.promotionsGroups.graduate],
+    students: { id: consts.promotionsGroups.student, years: studentPromotions },
+  };
+};
+
+export { saveCurrentStudentPromotions, getPromotionsGroups };
