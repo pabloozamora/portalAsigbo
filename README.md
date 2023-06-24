@@ -168,6 +168,18 @@
   Parámetros obligatorios en la ruta:
   - idAssignment: id de la asignación del usuario a la actividad.
 
+### Configuración de promociones
+
+* **/promotion/currentStudents**
+
+  Método: Post
+
+  Almacena la promoción de primer y último año para conocer a qué promociones pertenecen los becados estudiantes.
+
+  Parámetros obligatorios:
+  - firstYearPromotion: año de ingreso de la promoción que se encuentra en primer año.
+  - lastYearPromotion: año de ingreso de la promoción que se encuentra en último año.
+  
 ## Notas
 
 ### Consideraciones para la bd
