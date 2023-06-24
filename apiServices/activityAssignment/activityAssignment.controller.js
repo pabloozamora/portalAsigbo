@@ -49,7 +49,6 @@ const assignUserToActivityController = async (req, res) => {
 
     res.send(result);
   } catch (ex) {
-    console.log('error', ex);
     let err = 'Ocurrio un error al asignar usuarios a una actividad.';
     let status = 500;
 
