@@ -10,4 +10,9 @@ export default {
     refresh: 'REFRESH',
     access: 'ACCESS',
   },
+  promotionsGroups: {
+    chick: 'chick',
+    student: 'student',
+    graduate: 'graduate',
+  },
 };

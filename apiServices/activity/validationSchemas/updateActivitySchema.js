@@ -1,5 +1,6 @@
 import yup from 'yup';
 import validateId from '../../../utils/validateId.js';
+import consts from '../../../utils/consts.js';
 
 export default yup.object().shape({
   participantsNumber: yup
@@ -11,12 +12,19 @@ export default yup.object().shape({
   participatingPromotions: yup
     .array()
     .of(
-      yup.number()
-        .nullable()
-        .typeError("El campo 'participatingPromotions' debe contener solo números.")
-        .integer("El campo 'participatingPromotions' debe contener solo números enteros.")
-        .min(2000, "El campo 'participatingPromotions' debe contener valores mayores o iguales a 2000")
-        .max(2100, "El campo 'participatingPromotions' debe contener valores menores o iguales a 2100"),
+      yup.lazy((value) => {
+        if (!Number.isNaN(parseInt(value, 10))) {
+          return yup
+            .number()
+            .nullable()
+            .integer("El campo 'participatingPromotions' debe contener solo números enteros.")
+            .min(2000, "El campo 'participatingPromotions' debe contener valores mayores o iguales a 2000")
+            .max(2100, "El campo 'participatingPromotions' debe contener valores menores o iguales a 2100");
+        }
+        return yup
+          .string()
+          .oneOf(Object.values(consts.promotionsGroups), "El campo 'participatingPromotions' contiene valores no numéricos que no corresponden a un grupo de promociones.");
+      }),
     )
     .typeError("El campo 'participatingPromotions' debe ser una lista."),
   registrationEndDate: yup
