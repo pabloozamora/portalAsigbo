@@ -113,9 +113,13 @@ const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
       { session },
     );
 
-    if (matchedCount1 + matchedCount2 !== usersIdList.length) { throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500); }
+    if (matchedCount1 + matchedCount2 !== usersIdList.length) {
+      throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500);
+    }
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') { throw new CustomError('Los id de los usuarios no son validos.', 400); }
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('Los id de los usuarios no son validos.', 400);
+    }
     throw ex;
   }
 };
@@ -124,8 +128,12 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   try {
     const userData = await UserSchema.findOne({ _id: idUser });
 
-    if (userData === null) { throw new CustomError('No se encontró el usuario para eliminar rol.', 404); }
-    if (!userData.role?.includes(role)) { throw new CustomError('El usuario no posee el role proporcionado.', 400); }
+    if (userData === null) {
+      throw new CustomError('No se encontró el usuario para eliminar rol.', 404);
+    }
+    if (!userData.role?.includes(role)) {
+      throw new CustomError('El usuario no posee el role proporcionado.', 400);
+    }
 
     userData.role = userData.role.filter((val) => val !== role);
 
@@ -133,7 +141,9 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
 
     return single(result);
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') { throw new CustomError('Los id de los usuarios no son validos.', 400); }
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('Los id de los usuarios no son validos.', 400);
+    }
     throw ex;
   }
 };
@@ -173,6 +183,16 @@ const saveManyRegisterToken = async (data) => {
   }
 };
 
+const validateAlterUserToken = async ({ idUser, token }) => {
+  const result = await AlterUserTokenSchema.findOne({ idUser, token });
+
+  if (result === null) throw new CustomError('El token de registro no es válido.', 400);
+
+  return true;
+};
+
+const deleteAlterUserToken = async (token, { session }) => AlterUserTokenSchema.deleteOne({ token }, { session });
+
 export {
   createUser,
   getActiveUsers,
@@ -182,4 +202,6 @@ export {
   removeRoleFromUser,
   saveRegisterToken,
   saveManyRegisterToken,
+  validateAlterUserToken,
+  deleteAlterUserToken,
 };

@@ -2,7 +2,7 @@ import sha256 from 'js-sha256';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './user.dto.js';
 import {
-  createUser, getActiveUsers, getUser, saveRegisterToken,
+  createUser, getActiveUsers, getUser, saveRegisterToken, validateAlterUserToken,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
@@ -106,9 +106,29 @@ const getActiveUsersController = async (req, res) => {
   }
 };
 
+const validateRegisterTokenController = async (req, res) => {
+  const token = req.headers?.authorization;
+  const idUser = req.session?.id;
+
+  try {
+    await validateAlterUserToken({ idUser, token });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al validar token de registro.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createUserController,
   getActiveUsersController,
   getUserController,
   getLoggedUserController,
+  validateRegisterTokenController,
 };
