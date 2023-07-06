@@ -1,7 +1,12 @@
 import sha256 from 'js-sha256';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './user.dto.js';
-import { createUser, getActiveUsers, getUser } from './user.model.js';
+import {
+  createUser, getActiveUsers, getUser, saveRegisterToken,
+} from './user.model.js';
+import { connection } from '../../db/connection.js';
+import { signRegisterToken } from '../../services/jwt.js';
+import NewUserEmail from '../../services/email/NewUserEmail.js';
 
 const getLoggedUserController = async (req, res) => {
   try {
@@ -41,14 +46,39 @@ const createUserController = async (req, res) => {
     code, name, lastname, email, promotion, career, password, sex,
   } = req.body;
 
+  const session = await connection.startSession();
+
   try {
+    session.startTransaction();
+
     const passwordHash = sha256(password);
 
     const user = await createUser({
-      code, name, lastname, email, promotion, career, passwordHash, sex,
+      code,
+      name,
+      lastname,
+      email,
+      promotion,
+      career,
+      passwordHash,
+      sex,
+      session,
     });
-    res.send(single(user, false));
+
+    // guardar token para completar registro
+    const token = signRegisterToken({ id: user.id, name: user.name, lastname: user.lastname });
+    await saveRegisterToken({ idUser: user.id, token, session });
+
+    // enviar email de notificación
+    const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
+    emailSender.sendEmail();
+
+    await session.commitTransaction();
+
+    res.send(user);
   } catch (ex) {
+    await session.abortTransaction();
+
     let err = 'Ocurrio un error al crear nuevo usuario.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -77,5 +107,8 @@ const getActiveUsersController = async (req, res) => {
 };
 
 export {
-  createUserController, getActiveUsersController, getUserController, getLoggedUserController,
+  createUserController,
+  getActiveUsersController,
+  getUserController,
+  getLoggedUserController,
 };

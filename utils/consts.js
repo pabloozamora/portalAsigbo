@@ -9,6 +9,7 @@ export default {
   token: {
     refresh: 'REFRESH',
     access: 'ACCESS',
+    register: 'REGISTER',
   },
   promotionsGroups: {
     chick: 'chick',

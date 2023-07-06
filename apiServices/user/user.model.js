@@ -1,3 +1,4 @@
+import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 import { single } from './user.dto.js';
@@ -17,8 +18,8 @@ const createUser = async ({
   promotion,
   career,
   role,
-  passwordHash,
   sex,
+  session,
 }) => {
   try {
     const user = new UserSchema();
@@ -30,11 +31,11 @@ const createUser = async ({
     user.promotion = promotion;
     user.career = career;
     user.role = role;
-    user.passwordHash = passwordHash;
+    user.passwordHash = null;
     user.sex = sex;
 
-    await user.save();
-    return user;
+    await user.save({ session });
+    return single(user, false);
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -93,7 +94,7 @@ const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
   if (!Array.isArray(usersIdList)) throw Error('UsersIdList no es un arreglo.');
 
   try {
-  // añadir roles en caso de que no exista un array en el campo role
+    // añadir roles en caso de que no exista un array en el campo role
     const { matchedCount: matchedCount1 } = await UserSchema.updateMany(
       {
         $or: [{ role: { $exists: false } }, { role: { $not: { $type: 'array' } } }],
@@ -112,9 +113,9 @@ const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
       { session },
     );
 
-    if (matchedCount1 + matchedCount2 !== usersIdList.length) throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500);
+    if (matchedCount1 + matchedCount2 !== usersIdList.length) { throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500); }
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+    if (ex?.kind === 'ObjectId') { throw new CustomError('Los id de los usuarios no son validos.', 400); }
     throw ex;
   }
 };
@@ -123,8 +124,8 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   try {
     const userData = await UserSchema.findOne({ _id: idUser });
 
-    if (userData === null) throw new CustomError('No se encontró el usuario para eliminar rol.', 404);
-    if (!userData.role?.includes(role)) throw new CustomError('El usuario no posee el role proporcionado.', 400);
+    if (userData === null) { throw new CustomError('No se encontró el usuario para eliminar rol.', 404); }
+    if (!userData.role?.includes(role)) { throw new CustomError('El usuario no posee el role proporcionado.', 400); }
 
     userData.role = userData.role.filter((val) => val !== role);
 
@@ -132,11 +133,53 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
 
     return single(result);
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+    if (ex?.kind === 'ObjectId') { throw new CustomError('Los id de los usuarios no son validos.', 400); }
+    throw ex;
+  }
+};
+
+const saveRegisterToken = async ({ idUser, token, session }) => {
+  try {
+    // eliminar tokens previos del usuario
+    await AlterUserTokenSchema.deleteMany({ idUser });
+
+    const alterUserToken = new AlterUserTokenSchema();
+
+    alterUserToken.idUser = idUser;
+    alterUserToken.token = token;
+
+    await alterUserToken.save({ session });
+  } catch (ex) {
+    if (ex.code === 11000 && ex.keyValue?.idUser !== undefined) {
+      throw new CustomError('El usuario ya posee un token de modificación previo.', 400);
+    }
+    throw ex;
+  }
+};
+
+const saveManyRegisterToken = async (data) => {
+  try {
+    // eliminar tokens previos
+    const usersList = data.map((objectData) => objectData.idUser);
+    await AlterUserTokenSchema.deleteMany({ idUser: { $in: usersList } });
+
+    // guardar nuevos tokens
+    await AlterUserTokenSchema.insertMany(data);
+  } catch (ex) {
+    if (ex.code === 11000 && ex.keyValue?.idUser !== undefined) {
+      throw new CustomError('El usuario ya posee un token de modificación previo.', 400);
+    }
     throw ex;
   }
 };
 
 export {
-  createUser, getActiveUsers, updateServiceHours, getUser, addRoleToManyUsers, removeRoleFromUser,
+  createUser,
+  getActiveUsers,
+  updateServiceHours,
+  getUser,
+  addRoleToManyUsers,
+  removeRoleFromUser,
+  saveRegisterToken,
+  saveManyRegisterToken,
 };

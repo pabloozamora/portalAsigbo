@@ -41,6 +41,21 @@ const signAccessToken = ({
   key,
 );
 
+const signRegisterToken = ({
+  id, name, lastname,
+}) => jwt.sign(
+  {
+    id,
+    name,
+    lastname,
+    exp: moment().add(6, 'month').unix(),
+    type: consts.token.register,
+  },
+  key,
+);
+
 const validateToken = async (token) => jwt.verify(token, key);
 
-export { signAccessToken, signRefreshToken, validateToken };
+export {
+  signAccessToken, signRefreshToken, signRegisterToken, validateToken,
+};
