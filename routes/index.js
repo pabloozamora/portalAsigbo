@@ -6,6 +6,7 @@ import asigboAreaRouter from '../apiServices/asigboArea/asigboArea.route.js';
 import uploadDataRouter from '../apiServices/uploadData/uploadData.route.js';
 import activityAssignmentRouter from '../apiServices/activityAssignment/activityAssignment.router.js';
 import promotionRouter from '../apiServices/promotion/promotion.route.js';
+import imageRouter from '../apiServices/image/image.router.js';
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use(`${apiPath}/activity`, activityRouter);
 router.use(`${apiPath}/area`, asigboAreaRouter);
 router.use(`${apiPath}/upload`, uploadDataRouter);
 router.use(`${apiPath}/promotion`, promotionRouter);
+router.use(`${apiPath}/image`, imageRouter);
 
 export default router;
