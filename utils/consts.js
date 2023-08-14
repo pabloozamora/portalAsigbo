@@ -16,4 +16,7 @@ export default {
     student: 'student',
     graduate: 'graduate',
   },
+  bucketRoutes: {
+    user: 'user',
+  },
 };

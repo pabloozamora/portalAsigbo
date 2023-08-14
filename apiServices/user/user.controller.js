@@ -1,12 +1,15 @@
 import sha256 from 'js-sha256';
+import fs from 'node:fs';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './user.dto.js';
 import {
-  createUser, getActiveUsers, getUser, saveRegisterToken, validateAlterUserToken,
+  createUser, deleteAllUserAlterTokens, getActiveUsers, getUser, saveRegisterToken, updateUserPassword, validateAlterUserToken,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
 import NewUserEmail from '../../services/email/NewUserEmail.js';
+import consts from '../../utils/consts.js';
+import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 
 const getLoggedUserController = async (req, res) => {
   try {
@@ -43,15 +46,13 @@ const getUserController = async (req, res) => {
 
 const createUserController = async (req, res) => {
   const {
-    code, name, lastname, email, promotion, career, password, sex,
+    code, name, lastname, email, promotion, career, sex,
   } = req.body;
 
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
-
-    const passwordHash = sha256(password);
 
     const user = await createUser({
       code,
@@ -60,13 +61,14 @@ const createUserController = async (req, res) => {
       email,
       promotion,
       career,
-      passwordHash,
       sex,
       session,
     });
 
     // guardar token para completar registro
-    const token = signRegisterToken({ id: user.id, name: user.name, lastname: user.lastname });
+    const token = signRegisterToken({
+      id: user.id, name: user.name, lastname: user.lastname, email: user.email,
+    });
     await saveRegisterToken({ idUser: user.id, token, session });
 
     // enviar email de notificación
@@ -75,7 +77,7 @@ const createUserController = async (req, res) => {
 
     await session.commitTransaction();
 
-    res.send(user);
+    res.send(single(user, false));
   } catch (ex) {
     await session.abortTransaction();
 
@@ -125,10 +127,62 @@ const validateRegisterTokenController = async (req, res) => {
   }
 };
 
+const saveUserProfilePicture = async ({ file, idUser }) => {
+  const filePath = `${global.dirname}/files/${file.fileName}`;
+
+  // subir archivos
+
+  const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
+
+  try {
+    await uploadFileToBucket(fileKey, filePath, file.type);
+  } catch (ex) {
+    throw new CustomError('No se pudo cargar la foto de perfil del usuario.', 500);
+  }
+
+  // eliminar archivos temporales
+  fs.unlink(filePath, () => { });
+};
+
+const finishRegistrationController = async (req, res) => {
+  const { password } = req.body;
+  const idUser = req.session.id;
+
+  const passwordHash = sha256(password);
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    await updateUserPassword({ idUser, passwordHash, session });
+
+    // eliminar tokens para modificar usuario
+    await deleteAllUserAlterTokens({ idUser, session });
+
+    // Subir imagen al bucket
+    if (req.uploadedFiles?.[0]) saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al crear nuevo usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createUserController,
   getActiveUsersController,
   getUserController,
   getLoggedUserController,
   validateRegisterTokenController,
+  finishRegistrationController,
 };

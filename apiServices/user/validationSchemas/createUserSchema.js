@@ -1,7 +1,6 @@
 import yup from 'yup';
 
 export default yup.object().shape({
-  password: yup.string().required("El campo 'password' es obligatorio."),
   sex: yup
     .string()
     .matches(/^[MF]$/, "El campo 'sex' debe ser 'M' o 'F'.")

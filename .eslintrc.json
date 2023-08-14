@@ -13,6 +13,7 @@
         "import/extensions": "off",
         "no-underscore-dangle": "off",
         "linebreak-style": "off",
+        "no-restricted-syntax": ["error", "LabeledStatement", "WithStatement"],
         "max-len": [
             "warn",
             200

@@ -1,4 +1,4 @@
-import { deleteAlterUserToken } from '../apiServices/user/user.model.js';
+import { deleteAlterUserToken, validateAlterUserToken } from '../apiServices/user/user.model.js';
 import { validateToken } from '../services/jwt.js';
 import consts from '../utils/consts.js';
 
@@ -13,6 +13,8 @@ const ensureRegisterAuth = async (req, res, next) => {
   try {
     const userData = await validateToken(authToken);
 
+    await validateAlterUserToken({ idUser: userData.id, token: authToken });
+
     if (userData.type !== consts.token.register) {
       res.statusMessage = 'El token de autorización no es de tipo register.';
       return res.sendStatus(401);
@@ -21,9 +23,13 @@ const ensureRegisterAuth = async (req, res, next) => {
     req.session = userData;
     next();
   } catch (ex) {
-    deleteAlterUserToken(authToken);
-    res.statusMessage = 'El token de autorización no es válido o ha expirado.';
-    res.sendStatus(401);
+    try {
+      await deleteAlterUserToken({ token: authToken });
+    } catch (err) {
+      // pass
+    }
+    res.statusMessage = ex?.message ?? 'El token de autorización no es válido o ha expirado.';
+    res.sendStatus(ex?.status ?? 401);
   }
 
   return null;

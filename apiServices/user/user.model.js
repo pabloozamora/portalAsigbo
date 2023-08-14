@@ -35,7 +35,7 @@ const createUser = async ({
     user.sex = sex;
 
     await user.save({ session });
-    return single(user, false);
+    return single(user, true);
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -185,13 +185,24 @@ const saveManyRegisterToken = async (data) => {
 
 const validateAlterUserToken = async ({ idUser, token }) => {
   const result = await AlterUserTokenSchema.findOne({ idUser, token });
-
-  if (result === null) throw new CustomError('El token de registro no es válido.', 400);
+  if (result === null) throw new CustomError('El token de registro no es válido.', 401);
 
   return true;
 };
 
-const deleteAlterUserToken = async (token, { session }) => AlterUserTokenSchema.deleteOne({ token }, { session });
+const deleteAlterUserToken = async ({ token, session }) => AlterUserTokenSchema.deleteOne({ token }, { session });
+
+const deleteAllUserAlterTokens = async ({ idUser, session }) => AlterUserTokenSchema.deleteMany({ idUser }, { session });
+
+const updateUserPassword = async ({ idUser, passwordHash, session }) => {
+  const user = await UserSchema.findById(idUser);
+
+  if (user === null) throw new CustomError('El usuario no existe.', 400);
+
+  user.passwordHash = passwordHash;
+
+  await user.save({ session });
+};
 
 export {
   createUser,
@@ -204,4 +215,6 @@ export {
   saveManyRegisterToken,
   validateAlterUserToken,
   deleteAlterUserToken,
+  updateUserPassword,
+  deleteAllUserAlterTokens,
 };
