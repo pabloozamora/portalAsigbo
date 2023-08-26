@@ -1,7 +1,7 @@
 import sha256 from 'js-sha256';
 import fs from 'node:fs';
 import CustomError from '../../utils/customError.js';
-import { multiple, single } from './user.dto.js';
+import { single } from './user.dto.js';
 import {
   createUser,
   deleteAllUserAlterTokens,
@@ -16,7 +16,7 @@ import { signRegisterToken } from '../../services/jwt.js';
 import NewUserEmail from '../../services/email/NewUserEmail.js';
 import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
-import { getFirstAndLastYearPromotion } from '../promotion/promotion.model.js';
+import Promotion from '../promotion/promotion.model.js';
 
 const getLoggedUserController = async (req, res) => {
   try {
@@ -103,17 +103,22 @@ const createUserController = async (req, res) => {
 };
 
 const getActiveUsersController = async (req, res) => {
-  const { promotion, search } = req.query;
+  const { promotion, search, page } = req.query;
+
   try {
+    const promotionObj = new Promotion();
+
+    const { firstYearPromotion, lastYearPromotion } = await promotionObj.getFirstAndLastYearPromotion();
     let promotionMin = null;
     let promotionMax = null;
     if (promotion) {
       // si se da un grupo de usuarios, definir rango de promociones
       if (Number.isNaN(parseInt(promotion, 10))) {
         const promotionGroups = Object.values(consts.promotionsGroups);
-        if (!promotionGroups.includes(promotion)) { throw new CustomError('No se han encontrado usuarios.', 404); } // No es un grupo de usuarios
+        if (!promotionGroups.includes(promotion)) {
+          throw new CustomError('No se han encontrado usuarios.', 404);
+        } // No es un grupo de usuarios
 
-        const { firstYearPromotion, lastYearPromotion } = await getFirstAndLastYearPromotion();
         if (promotion === consts.promotionsGroups.chick) {
           // si son pollitos
           promotionMin = firstYearPromotion;
@@ -127,10 +132,20 @@ const getActiveUsersController = async (req, res) => {
         }
       }
     }
-    const users = await getActiveUsers({
-      idUser: req.session.id, promotion, search, promotionMin, promotionMax,
+    const { pages, result } = await getActiveUsers({
+      idUser: req.session.id,
+      promotion,
+      search,
+      promotionMin,
+      promotionMax,
+      page,
     });
-    res.send(multiple(users, false));
+
+    const resultWithPromotionGroup = await Promise.all(
+      result.map(async (user) => ({ ...user, promotionGroup: await promotionObj.getPromotionGroup(user.promotion) })),
+    );
+
+    res.send({ result: resultWithPromotionGroup, pages, resultsPerPage: consts.resultsNumberPerPage });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los usuarios activos.';
     let status = 500;

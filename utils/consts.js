@@ -19,4 +19,5 @@ export default {
   bucketRoutes: {
     user: 'user',
   },
+  resultsNumberPerPage: 7,
 };

@@ -13,32 +13,40 @@ const saveCurrentStudentPromotions = async ({ firstYearPromotion, lastYearPromot
   return single(result);
 };
 
-const getPromotionsGroups = async () => {
-  const currentStudents = await PromotionSchema.findOne();
-
-  if (currentStudents === null) {
-    throw new CustomError('No se ha configurado las promociones de estudiantes.', 400);
+class Promotion {
+  async getFirstAndLastYearPromotion() {
+    if (this.promotion) return this.promotion;
+    const currentStudents = await PromotionSchema.findOne();
+    if (currentStudents === null) {
+      throw new CustomError('No se ha configurado las promociones de estudiantes.', 400);
+    }
+    this.promotion = single(currentStudents);
+    return this.promotion;
   }
 
-  const { firstYearPromotion, lastYearPromotion } = currentStudents;
-
-  const studentPromotions = [];
-  for (let i = firstYearPromotion; i >= lastYearPromotion; i -= 1) {
-    studentPromotions.push(i);
+  async getPromotionGroup(promotion) {
+    const { firstYearPromotion, lastYearPromotion } = await this.getFirstAndLastYearPromotion();
+    if (promotion < lastYearPromotion) return consts.promotionsGroups.graduate;
+    if (promotion > firstYearPromotion) return consts.promotionsGroups.chick;
+    return consts.promotionsGroups.student;
   }
 
-  return {
-    notStudents: [consts.promotionsGroups.chick, consts.promotionsGroups.graduate],
-    students: { id: consts.promotionsGroups.student, years: studentPromotions },
-  };
+  async getPromotionsGroups() {
+    const { firstYearPromotion, lastYearPromotion } = this.getFirstAndLastYearPromotion();
+
+    const studentPromotions = [];
+    for (let i = firstYearPromotion; i >= lastYearPromotion; i -= 1) {
+      studentPromotions.push(i);
+    }
+
+    return {
+      notStudents: [consts.promotionsGroups.chick, consts.promotionsGroups.graduate],
+      students: { id: consts.promotionsGroups.student, years: studentPromotions },
+    };
+  }
+}
+
+export {
+  saveCurrentStudentPromotions,
 };
-
-const getFirstAndLastYearPromotion = async () => {
-  const currentStudents = await PromotionSchema.findOne();
-  if (currentStudents === null) {
-    throw new CustomError('No se ha configurado las promociones de estudiantes.', 400);
-  }
-  return single(currentStudents);
-};
-
-export { saveCurrentStudentPromotions, getPromotionsGroups, getFirstAndLastYearPromotion };
+export default Promotion;

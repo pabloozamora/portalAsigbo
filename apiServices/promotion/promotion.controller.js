@@ -1,5 +1,5 @@
 import CustomError from '../../utils/customError.js';
-import { getPromotionsGroups, saveCurrentStudentPromotions } from './promotion.model.js';
+import Promotion, { saveCurrentStudentPromotions } from './promotion.model.js';
 
 const saveCurrentStudentPromotionsController = async (req, res) => {
   const { firstYearPromotion, lastYearPromotion } = req.body;
@@ -21,7 +21,8 @@ const saveCurrentStudentPromotionsController = async (req, res) => {
 
 const getPromotionsGroupsController = async (req, res) => {
   try {
-    const result = await getPromotionsGroups();
+    const promotion = new Promotion();
+    const result = await promotion.getPromotionsGroups();
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los grupos de promociones.';

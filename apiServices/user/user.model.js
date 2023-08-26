@@ -1,8 +1,9 @@
 import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
-import { single } from './user.dto.js';
+import { multiple, single } from './user.dto.js';
 
 const getUser = async (idUser) => {
   const user = await UserSchema.findById(idUser);
@@ -57,10 +58,11 @@ const createUser = async ({
  * @param promotion filtro para buscar una promoción en específico.
  * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
  * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
+ * @param page número de pagina en los resultados
  * @returns
  */
 const getActiveUsers = async ({
-  idUser, promotion, search, promotionMin, promotionMax,
+  idUser, promotion, search, promotionMin, promotionMax, page = 0,
 }) => {
   const query = { blocked: false, _id: { $ne: idUser } };
 
@@ -74,11 +76,15 @@ const getActiveUsers = async ({
       { lastname: { $regex: search, $options: 'i' } },
     ];
   }
-  const users = await UserSchema.find(query);
+
+  // obtener número de páginas
+  const usersCount = await UserSchema.countDocuments(query);
+  const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
+  const users = await UserSchema.find(query).skip(page * consts.resultsNumberPerPage).limit(consts.resultsNumberPerPage);
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
-  return users;
+  return { pages, result: multiple(users, false) };
 };
 
 const updateServiceHours = async ({
