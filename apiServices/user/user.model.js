@@ -71,9 +71,10 @@ const getActiveUsers = async ({
   if (exists(promotionMin)) query.promotion.$gt = promotionMin;
   if (exists(promotionMax)) query.promotion.$lt = promotionMax;
   if (search) {
+    // buscar cadena en nombre completo
+    const searchRegex = new RegExp(search, 'i');
     query.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { lastname: { $regex: search, $options: 'i' } },
+      { $expr: { $regexMatch: { input: { $concat: ['$name', ' ', '$lastname'] }, regex: searchRegex } } },
     ];
   }
 
