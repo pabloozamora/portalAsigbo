@@ -1,6 +1,7 @@
 import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
+import exists, { someExists } from '../../utils/exists.js';
 import { single } from './user.dto.js';
 
 const getUser = async (idUser) => {
@@ -50,8 +51,30 @@ const createUser = async ({
   }
 };
 
-const getActiveUsers = async (idUser) => {
-  const users = await UserSchema.find({ blocked: false, _id: { $ne: idUser } });
+/**
+ *
+ * @param idUser
+ * @param promotion filtro para buscar una promoción en específico.
+ * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
+ * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
+ * @returns
+ */
+const getActiveUsers = async ({
+  idUser, promotion, search, promotionMin, promotionMax,
+}) => {
+  const query = { blocked: false, _id: { $ne: idUser } };
+
+  if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
+  if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
+  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { lastname: { $regex: search, $options: 'i' } },
+    ];
+  }
+  const users = await UserSchema.find(query);
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 

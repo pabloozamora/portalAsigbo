@@ -33,4 +33,12 @@ const getPromotionsGroups = async () => {
   };
 };
 
-export { saveCurrentStudentPromotions, getPromotionsGroups };
+const getFirstAndLastYearPromotion = async () => {
+  const currentStudents = await PromotionSchema.findOne();
+  if (currentStudents === null) {
+    throw new CustomError('No se ha configurado las promociones de estudiantes.', 400);
+  }
+  return single(currentStudents);
+};
+
+export { saveCurrentStudentPromotions, getPromotionsGroups, getFirstAndLastYearPromotion };

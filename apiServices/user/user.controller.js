@@ -3,13 +3,20 @@ import fs from 'node:fs';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './user.dto.js';
 import {
-  createUser, deleteAllUserAlterTokens, getActiveUsers, getUser, saveRegisterToken, updateUserPassword, validateAlterUserToken,
+  createUser,
+  deleteAllUserAlterTokens,
+  getActiveUsers,
+  getUser,
+  saveRegisterToken,
+  updateUserPassword,
+  validateAlterUserToken,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
 import NewUserEmail from '../../services/email/NewUserEmail.js';
 import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
+import { getFirstAndLastYearPromotion } from '../promotion/promotion.model.js';
 
 const getLoggedUserController = async (req, res) => {
   try {
@@ -67,7 +74,10 @@ const createUserController = async (req, res) => {
 
     // guardar token para completar registro
     const token = signRegisterToken({
-      id: user.id, name: user.name, lastname: user.lastname, email: user.email,
+      id: user.id,
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
     });
     await saveRegisterToken({ idUser: user.id, token, session });
 
@@ -93,8 +103,33 @@ const createUserController = async (req, res) => {
 };
 
 const getActiveUsersController = async (req, res) => {
+  const { promotion, search } = req.query;
   try {
-    const users = await getActiveUsers(req.session.id);
+    let promotionMin = null;
+    let promotionMax = null;
+    if (promotion) {
+      // si se da un grupo de usuarios, definir rango de promociones
+      if (Number.isNaN(parseInt(promotion, 10))) {
+        const promotionGroups = Object.values(consts.promotionsGroups);
+        if (!promotionGroups.includes(promotion)) { throw new CustomError('No se han encontrado usuarios.', 404); } // No es un grupo de usuarios
+
+        const { firstYearPromotion, lastYearPromotion } = await getFirstAndLastYearPromotion();
+        if (promotion === consts.promotionsGroups.chick) {
+          // si son pollitos
+          promotionMin = firstYearPromotion;
+        } else if (promotion === consts.promotionsGroups.student) {
+          // si son estudiantes
+          promotionMin = lastYearPromotion - 1;
+          promotionMax = firstYearPromotion + 1;
+        } else {
+          // si son graduados
+          promotionMax = lastYearPromotion;
+        }
+      }
+    }
+    const users = await getActiveUsers({
+      idUser: req.session.id, promotion, search, promotionMin, promotionMax,
+    });
     res.send(multiple(users, false));
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los usuarios activos.';
@@ -141,7 +176,7 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => { });
+  fs.unlink(filePath, () => {});
 };
 
 const finishRegistrationController = async (req, res) => {
