@@ -268,6 +268,11 @@
 
   Obtiene el listado de usuarios activos.
 
+  Parámetros de búsqueda opcionales (?params):
+  - promotion: año de promoción de estudiantes a mostrar. También permite el nombre del grupo de becados.
+  - search: cadena de texto a encontrar en el nombre y apellido de los becados.
+  - page: página de resultados a mostrar.
+
 * **/user**
 
   Método: Post
