@@ -22,4 +22,7 @@ router.use(`${apiPath}/upload`, uploadDataRouter);
 router.use(`${apiPath}/promotion`, promotionRouter);
 router.use(`${apiPath}/image`, imageRouter);
 
+router.get('*', (req, res) => {
+  res.sendFile(`${global.dirname}/public/index.html`);
+});
 export default router;
