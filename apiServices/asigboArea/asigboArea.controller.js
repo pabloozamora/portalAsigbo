@@ -1,3 +1,6 @@
+import { connection } from '../../db/connection.js';
+import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './asigboArea.dto.js';
 import {
@@ -63,13 +66,28 @@ const createAsigboAreaController = async (req, res) => {
   const {
     name, responsible,
   } = req.body;
-
+  const session = await connection.startSession();
   try {
+    session.startTransaction();
+
     const area = await createAsigboArea({
-      name, responsible,
+      name, responsible, session,
     });
-    res.send(single(area));
+
+    // subir archivo del ícono del área
+    const file = req.uploadedFiles?.[0];
+    if (!file) throw new CustomError("El ícono del área es obligatorio en el campo 'icon'.", 400);
+
+    const fileKey = `${consts.bucketRoutes.area}/${area.id}`;
+    const filePath = `${global.dirname}/files/${file.fileName}`;
+
+    await uploadFileToBucket(fileKey, filePath, file.type);
+
+    await session.commitTransaction();
+
+    res.send(area);
   } catch (ex) {
+    await session.abortTransaction();
     let err = 'Ocurrio un error al crear nueva area.';
     let status = 500;
     if (ex instanceof CustomError) {

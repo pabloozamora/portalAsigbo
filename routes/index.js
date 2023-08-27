@@ -7,10 +7,11 @@ import uploadDataRouter from '../apiServices/uploadData/uploadData.route.js';
 import activityAssignmentRouter from '../apiServices/activityAssignment/activityAssignment.router.js';
 import promotionRouter from '../apiServices/promotion/promotion.route.js';
 import imageRouter from '../apiServices/image/image.router.js';
+import consts from '../utils/consts.js';
 
 const router = express.Router();
 
-const apiPath = '/api';
+const { apiPath } = consts;
 
 router.use(`${apiPath}/user`, userRouter);
 router.use(`${apiPath}/session`, sessionRouter);
