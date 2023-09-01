@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { connection } from '../../db/connection.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
@@ -84,6 +85,9 @@ const createAsigboAreaController = async (req, res) => {
     await uploadFileToBucket(fileKey, filePath, file.type);
 
     await session.commitTransaction();
+
+    // Eliminar archivo provisional
+    fs.unlink(filePath, () => {});
 
     res.send(area);
   } catch (ex) {
