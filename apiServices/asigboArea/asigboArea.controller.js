@@ -4,6 +4,7 @@ import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.j
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './asigboArea.dto.js';
+import { multiple as multipleUser } from '../user/user.dto.js';
 import {
   createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
 } from './asigboArea.model.js';
@@ -124,7 +125,15 @@ const deleteAsigboAreaController = async (req, res) => {
 const getActiveAreasController = async (req, res) => {
   try {
     const areas = await getActiveAreas();
-    res.send(multiple(areas));
+    const parsedAreas = multiple(areas);
+
+    const areasResult = parsedAreas.map((area) => {
+      const areaCopy = { ...area };
+      areaCopy.responsible = multipleUser(area.responsible, false);
+      return areaCopy;
+    });
+
+    res.send(areasResult);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener areas activas.';
     let status = 500;
