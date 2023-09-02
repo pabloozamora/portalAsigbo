@@ -209,6 +209,15 @@
 
   Obtiene el listado de áreas activas.
 
+* **/area/:idArea**
+
+  Método: Get
+
+  Obtiene el listado de áreas activas.
+
+  Parámetros obligatorios en la ruta:
+  - idArea: id del área a consultar.
+
 * **/area**
 
   Método: Post

@@ -6,7 +6,13 @@ import CustomError from '../../utils/customError.js';
 import { multiple, single } from './asigboArea.dto.js';
 import { multiple as multipleUser } from '../user/user.dto.js';
 import {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
+  createAsigboArea,
+  updateAsigboArea,
+  addResponsible,
+  removeResponsible,
+  getActiveAreas,
+  deleteAsigboArea,
+  getArea,
 } from './asigboArea.model.js';
 
 const addResponsibleController = async (req, res) => {
@@ -65,15 +71,15 @@ const updateAsigboAreaController = async (req, res) => {
 };
 
 const createAsigboAreaController = async (req, res) => {
-  const {
-    name, responsible,
-  } = req.body;
+  const { name, responsible } = req.body;
   const session = await connection.startSession();
   try {
     session.startTransaction();
 
     const area = await createAsigboArea({
-      name, responsible, session,
+      name,
+      responsible,
+      session,
     });
 
     // subir archivo del ícono del área
@@ -94,6 +100,26 @@ const createAsigboAreaController = async (req, res) => {
   } catch (ex) {
     await session.abortTransaction();
     let err = 'Ocurrio un error al crear nueva area.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getAsigboAreaController = async (req, res) => {
+  const { idArea } = req.params;
+  try {
+    const areaData = await getArea({ idArea });
+    const parsedData = single(areaData);
+    parsedData.responsible = multipleUser(parsedData.responsible);
+
+    res.send(parsedData);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener area de asigbo.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -147,5 +173,11 @@ const getActiveAreasController = async (req, res) => {
 };
 
 export {
-  createAsigboAreaController, updateAsigboAreaController, addResponsibleController, removeResponsibleController, getActiveAreasController, deleteAsigboAreaController,
+  createAsigboAreaController,
+  updateAsigboAreaController,
+  addResponsibleController,
+  removeResponsibleController,
+  getActiveAreasController,
+  deleteAsigboAreaController,
+  getAsigboAreaController,
 };

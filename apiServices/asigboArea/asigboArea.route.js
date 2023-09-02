@@ -4,6 +4,7 @@ import {
   createAsigboAreaController,
   deleteAsigboAreaController,
   getActiveAreasController,
+  getAsigboAreaController,
   removeResponsibleController,
   updateAsigboAreaController,
 } from './asigboArea.controller.js';
@@ -43,6 +44,8 @@ asigboAreaRouter.put(
   validateBody(areaResponsibleSchema),
   removeResponsibleController,
 );
+
 asigboAreaRouter.get('/', ensureAdminAuth, getActiveAreasController);
+asigboAreaRouter.get('/:idArea', ensureAdminAuth, getAsigboAreaController);
 
 export default asigboAreaRouter;
