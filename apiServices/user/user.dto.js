@@ -1,9 +1,9 @@
 const single = (resource, showSensitiveData, showHours) => {
   const {
     code, name, lastname, email, promotion, career, sex, serviceHours, blocked,
-  } = resource._doc;
+  } = resource?._doc ?? resource;
   return {
-    id: resource._id.valueOf(),
+    id: resource?._id?.valueOf() ?? resource.id,
     code,
     name,
     lastname,

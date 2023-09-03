@@ -2,6 +2,7 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
+import { single } from './asigboArea.dto.js';
 
 const updateRoles = async (users) => {
   await Promise.all(users.map(async (idUser) => {
@@ -70,25 +71,27 @@ const addResponsible = async ({
 };
 
 const createAsigboArea = async ({
-  name, responsible,
+  name, responsible, session,
 }) => {
   try {
     const users = [];
+    // añadir permisos de encargado a los usuarios
     await Promise.all(responsible.map(async (userId) => {
       const user = await UserSchema.findById(userId);
       if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
       users.push(user);
       user.role.push('encargado');
-      user.save();
+      user.save({ session });
       return true;
     }));
+
     const area = new AsigboAreaSchema();
 
     area.name = name.trim();
     area.responsible = users;
 
-    await area.save();
-    return area;
+    await area.save({ session });
+    return single(area);
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.name !== undefined) throw new CustomError('El nombre proporcionado ya existe.', 400);
     throw ex;

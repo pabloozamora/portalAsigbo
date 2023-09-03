@@ -1,6 +1,9 @@
+import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import { single } from './user.dto.js';
+import exists, { someExists } from '../../utils/exists.js';
+import { multiple, single } from './user.dto.js';
 
 const getUser = async (idUser) => {
   const user = await UserSchema.findById(idUser);
@@ -17,8 +20,8 @@ const createUser = async ({
   promotion,
   career,
   role,
-  passwordHash,
   sex,
+  session,
 }) => {
   try {
     const user = new UserSchema();
@@ -30,11 +33,11 @@ const createUser = async ({
     user.promotion = promotion;
     user.career = career;
     user.role = role;
-    user.passwordHash = passwordHash;
+    user.passwordHash = null;
     user.sex = sex;
 
-    await user.save();
-    return user;
+    await user.save({ session });
+    return single(user, true);
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -49,12 +52,40 @@ const createUser = async ({
   }
 };
 
-const getActiveUsers = async (idUser) => {
-  const users = await UserSchema.find({ blocked: false, _id: { $ne: idUser } });
+/**
+ *
+ * @param idUser
+ * @param promotion filtro para buscar una promoción en específico.
+ * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
+ * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
+ * @param page número de pagina en los resultados
+ * @returns
+ */
+const getActiveUsers = async ({
+  idUser, promotion, search, promotionMin, promotionMax, page = 0,
+}) => {
+  const query = { blocked: false, _id: { $ne: idUser } };
+
+  if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
+  if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
+  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (search) {
+    // buscar cadena en nombre completo
+    const searchRegex = new RegExp(search, 'i');
+    query.$or = [
+      { $expr: { $regexMatch: { input: { $concat: ['$name', ' ', '$lastname'] }, regex: searchRegex } } },
+    ];
+  }
+
+  // obtener número de páginas
+  const usersCount = await UserSchema.countDocuments(query);
+  const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
+  const users = await UserSchema.find(query).skip(page * consts.resultsNumberPerPage).limit(consts.resultsNumberPerPage);
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
-  return users;
+  return { pages, result: multiple(users, false) };
 };
 
 const updateServiceHours = async ({
@@ -93,7 +124,7 @@ const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
   if (!Array.isArray(usersIdList)) throw Error('UsersIdList no es un arreglo.');
 
   try {
-  // añadir roles en caso de que no exista un array en el campo role
+    // añadir roles en caso de que no exista un array en el campo role
     const { matchedCount: matchedCount1 } = await UserSchema.updateMany(
       {
         $or: [{ role: { $exists: false } }, { role: { $not: { $type: 'array' } } }],
@@ -112,9 +143,13 @@ const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
       { session },
     );
 
-    if (matchedCount1 + matchedCount2 !== usersIdList.length) throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500);
+    if (matchedCount1 + matchedCount2 !== usersIdList.length) {
+      throw new CustomError('Ocurrió un error al asignar permisos a usuarios.', 500);
+    }
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('Los id de los usuarios no son validos.', 400);
+    }
     throw ex;
   }
 };
@@ -123,8 +158,12 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   try {
     const userData = await UserSchema.findOne({ _id: idUser });
 
-    if (userData === null) throw new CustomError('No se encontró el usuario para eliminar rol.', 404);
-    if (!userData.role?.includes(role)) throw new CustomError('El usuario no posee el role proporcionado.', 400);
+    if (userData === null) {
+      throw new CustomError('No se encontró el usuario para eliminar rol.', 404);
+    }
+    if (!userData.role?.includes(role)) {
+      throw new CustomError('El usuario no posee el role proporcionado.', 400);
+    }
 
     userData.role = userData.role.filter((val) => val !== role);
 
@@ -132,11 +171,80 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
 
     return single(result);
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') throw new CustomError('Los id de los usuarios no son validos.', 400);
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('Los id de los usuarios no son validos.', 400);
+    }
     throw ex;
   }
 };
 
+const saveRegisterToken = async ({ idUser, token, session }) => {
+  try {
+    // eliminar tokens previos del usuario
+    await AlterUserTokenSchema.deleteMany({ idUser });
+
+    const alterUserToken = new AlterUserTokenSchema();
+
+    alterUserToken.idUser = idUser;
+    alterUserToken.token = token;
+
+    await alterUserToken.save({ session });
+  } catch (ex) {
+    if (ex.code === 11000 && ex.keyValue?.idUser !== undefined) {
+      throw new CustomError('El usuario ya posee un token de modificación previo.', 400);
+    }
+    throw ex;
+  }
+};
+
+const saveManyRegisterToken = async (data) => {
+  try {
+    // eliminar tokens previos
+    const usersList = data.map((objectData) => objectData.idUser);
+    await AlterUserTokenSchema.deleteMany({ idUser: { $in: usersList } });
+
+    // guardar nuevos tokens
+    await AlterUserTokenSchema.insertMany(data);
+  } catch (ex) {
+    if (ex.code === 11000 && ex.keyValue?.idUser !== undefined) {
+      throw new CustomError('El usuario ya posee un token de modificación previo.', 400);
+    }
+    throw ex;
+  }
+};
+
+const validateAlterUserToken = async ({ idUser, token }) => {
+  const result = await AlterUserTokenSchema.findOne({ idUser, token });
+  if (result === null) throw new CustomError('El token de registro no es válido.', 401);
+
+  return true;
+};
+
+const deleteAlterUserToken = async ({ token, session }) => AlterUserTokenSchema.deleteOne({ token }, { session });
+
+const deleteAllUserAlterTokens = async ({ idUser, session }) => AlterUserTokenSchema.deleteMany({ idUser }, { session });
+
+const updateUserPassword = async ({ idUser, passwordHash, session }) => {
+  const user = await UserSchema.findById(idUser);
+
+  if (user === null) throw new CustomError('El usuario no existe.', 400);
+
+  user.passwordHash = passwordHash;
+
+  await user.save({ session });
+};
+
 export {
-  createUser, getActiveUsers, updateServiceHours, getUser, addRoleToManyUsers, removeRoleFromUser,
+  createUser,
+  getActiveUsers,
+  updateServiceHours,
+  getUser,
+  addRoleToManyUsers,
+  removeRoleFromUser,
+  saveRegisterToken,
+  saveManyRegisterToken,
+  validateAlterUserToken,
+  deleteAlterUserToken,
+  updateUserPassword,
+  deleteAllUserAlterTokens,
 };

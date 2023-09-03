@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { asigboAreaSubSchema } from './asigboArea.schema.js';
 import { paymentSubSchema } from './payment.schema.js';
 import { userSubSchema } from './user.schema.js';
+import consts from '../../utils/consts.js';
 
 const activitySchema = Schema({
   name: { type: String, required: true },
@@ -22,7 +23,25 @@ const activitySchema = Schema({
   payment: { type: paymentSubSchema },
   registrationStartDate: { type: Date, required: true },
   registrationEndDate: { type: Date, required: true },
-  participatingPromotions: { type: Array, default: null },
+  participatingPromotions: {
+    type: [String],
+    default: null,
+    validate: {
+      validator(list) {
+        // buscar valores que no cumplen
+        const result = list?.find((value) => {
+          if (!Number.isNaN(parseInt(value, 10))) {
+            const number = parseInt(value, 10);
+            return !(number >= 2000 && number <= 2100);
+          }
+          return !Object.values(consts.promotionsGroups).includes(value);
+        });
+
+        return result === undefined;
+      },
+      message: 'Debe contener el año de la promoción o el grupo al que pertenece.',
+    },
+  },
   availableSpaces: {
     type: Number,
     required: true,

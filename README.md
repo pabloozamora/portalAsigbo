@@ -65,8 +65,8 @@
   - participantsNumber: número máximo de participantes.
 
   Parámetros opcionales:
-  -   : monto del pago requerido para la actividad.
-  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. Un valor **null** implíca que todos los becados pueden inscribirse.
+  - paymentAmount: monto del pago requerido para la actividad.
+  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
 
 * **/activity/**
 
@@ -87,7 +87,7 @@
   - registrationEndDate: fecha límite de inscripción.
   - participantsNumber: número máximo de participantes.
   - paymentAmount: monto del pago requerido para la actividad.
-  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. Un valor **null** implíca que todos los becados pueden inscribirse.
+  - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
 
 
 * **/activity/:activityId**
@@ -183,6 +183,24 @@
   Parámetros obligatorios en la ruta:
   - idAssignment: id de la asignación del usuario a la actividad.
 
+### Configuración de promociones
+
+* **/promotion/**
+
+  Método: Get
+
+  Obtiene el año de las promociones "estudiantes" y el nombre de los grupos de promociones "no estudiantes" (pollitos y graduados).
+
+* **/promotion/currentStudents**
+
+  Método: Post
+
+  Almacena la promoción de primer y último año para conocer a qué promociones pertenecen los becados estudiantes.
+
+  Parámetros obligatorios:
+  - firstYearPromotion: año de ingreso de la promoción que se encuentra en primer año.
+  - lastYearPromotion: año de ingreso de la promoción que se encuentra en último año.
+  
 ### Asigbo Area
 
 * **/area**
