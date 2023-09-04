@@ -12,6 +12,7 @@ import createAsigboAreaSchema from './validationSchemas/createAsigboAreaSchema.j
 import updateAsigboAreaSchema from './validationSchemas/updateAsigboAreaSchema.js';
 import areaResponsibleSchema from './validationSchemas/areaResponsibleSchema.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureAdminAreaResponsibleAuth from '../../middlewares/ensureAdminAreaResponsibleAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 
@@ -26,20 +27,20 @@ asigboAreaRouter.post(
 );
 asigboAreaRouter.put(
   '/update/:idArea',
-  ensureAdminAuth,
+  ensureAdminAreaResponsibleAuth,
   validateBody(updateAsigboAreaSchema),
   updateAsigboAreaController,
 );
 asigboAreaRouter.put(
   '/responsible',
-  ensureAdminAuth,
+  ensureAdminAreaResponsibleAuth,
   validateBody(areaResponsibleSchema),
   addResponsibleController,
 );
 asigboAreaRouter.put('/delete/:idArea', ensureAdminAuth, deleteAsigboAreaController);
 asigboAreaRouter.put(
   '/responsible/remove',
-  ensureAdminAuth,
+  ensureAdminAreaResponsibleAuth,
   validateBody(areaResponsibleSchema),
   removeResponsibleController,
 );

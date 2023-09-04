@@ -3,6 +3,11 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { single } from './promotion.dto.js';
 
+const validateResponsible = async ({ idUser, promotion }) => {
+  const { responsible } = await PromotionSchema.findOne({ lastYearPromotion: promotion });
+  return responsible.some((user) => user._id.toString() === idUser);
+};
+
 const saveCurrentStudentPromotions = async ({ firstYearPromotion, lastYearPromotion }) => {
   const promotionsData = (await PromotionSchema.findOne()) || new PromotionSchema();
 
@@ -48,5 +53,6 @@ class Promotion {
 
 export {
   saveCurrentStudentPromotions,
+  validateResponsible,
 };
 export default Promotion;

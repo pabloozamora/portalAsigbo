@@ -3,15 +3,21 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
 import { single } from './asigboArea.dto.js';
+import consts from '../../utils/consts.js';
 
 const updateRoles = async (users) => {
   await Promise.all(users.map(async (idUser) => {
     const user = await UserSchema.findById(idUser);
     const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
 
-    if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
+    if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== consts.roles.asigboAreaResponsible);
     user.save();
   }));
+};
+
+const validateResponsible = async ({ idUser, idArea }) => {
+  const { responsible } = await AsigboAreaSchema.findById(idArea);
+  return responsible.some((user) => user._id.toString() === idUser);
 };
 
 const updateAsigboArea = async ({
@@ -38,7 +44,7 @@ const removeResponsible = async ({
   if (area === null) throw new CustomError('El área de asigbo especificada no existe.', 404);
   const user = await UserSchema.findById(idUser);
   if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
-  if (!user.role.includes('encargado')) throw new CustomError('El usuario indicado no es encargado de área.');
+  if (!user.role.includes(consts.roles.asigboAreaResponsible)) throw new CustomError('El usuario indicado no es encargado de área.');
 
   // Areas bajo la responsabilidad del usuario indicado.
   const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
@@ -46,7 +52,7 @@ const removeResponsible = async ({
   if (!areasInCharge.some((aic) => aic._id.toString() === idArea)) throw new CustomError('El usuario indicado no es encargado de esta área.');
 
   area.responsible = area.responsible.filter((resp) => resp._id.toString() !== idUser);
-  if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
+  if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== consts.roles.asigboAreaResponsible);
 
   area.save();
   user.save();
@@ -61,10 +67,16 @@ const addResponsible = async ({
   const user = await UserSchema.findById(idUser);
   if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
 
-  if (area.responsible.some((resp) => resp._id.toString() === idUser)) throw new CustomError('El usuario ya es encargado de esta área', 400);
+  if (area.responsible.some((resp) => resp._id.toString() === idUser)) {
+    if (!user.role.includes(consts.roles.asigboAreaResponsible)) {
+      user.role.push(consts.roles.asigboAreaResponsible);
+      user.save();
+    }
+    throw new CustomError('El usuario ya es encargado de esta área', 400);
+  }
 
   area.responsible.push(user);
-  if (!user.role.includes('encargado')) user.role.push('encargado');
+  if (!user.role.includes(consts.roles.asigboAreaResponsible)) user.role.push(consts.roles.asigboAreaResponsible);
   area.save();
   user.save();
   return area;
@@ -80,7 +92,7 @@ const createAsigboArea = async ({
       const user = await UserSchema.findById(userId);
       if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
       users.push(user);
-      user.role.push('encargado');
+      user.role.push(consts.roles.asigboAreaResponsible);
       user.save({ session });
       return true;
     }));
@@ -127,5 +139,11 @@ const getActiveAreas = async () => {
 };
 
 export {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
+  createAsigboArea,
+  updateAsigboArea,
+  addResponsible,
+  removeResponsible,
+  getActiveAreas,
+  deleteAsigboArea,
+  validateResponsible,
 };

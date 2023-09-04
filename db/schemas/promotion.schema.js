@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { userSubSchema } from './user.schema.js';
 
 const promotionSchema = Schema({
   firstYearPromotion: {
@@ -17,6 +18,16 @@ const promotionSchema = Schema({
         return value < this.firstYearPromotion;
       },
       message: 'La promocion de último año debe ser menor a la de primero.',
+    },
+  },
+  responsible: {
+    type: [userSubSchema],
+    required: true,
+    validate: {
+      validator(responsibles) {
+        return responsibles.length > 0;
+      },
+      message: 'Debe proporcionar al menos un encargado de promoción.',
     },
   },
 });

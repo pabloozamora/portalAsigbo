@@ -4,13 +4,21 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './asigboArea.dto.js';
 import {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
+  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea, validateResponsible,
 } from './asigboArea.model.js';
 
+const validateResponsibleController = async ({ idUser, idArea }) => {
+  const result = await validateResponsible({ idUser, idArea });
+  if (!result) throw new CustomError('No cuenta con permisos de encargado sobre esta área.');
+  return true;
+};
+
 const addResponsibleController = async (req, res) => {
+  const { id, role } = req.session;
   const { idArea, idUser } = req.body || null;
 
   try {
+    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idArea });
     const area = await addResponsible({ idArea, idUser });
     res.send(single(area));
   } catch (ex) {
@@ -26,9 +34,11 @@ const addResponsibleController = async (req, res) => {
 };
 
 const removeResponsibleController = async (req, res) => {
+  const { id, role } = req.session;
   const { idArea, idUser } = req.body || null;
 
   try {
+    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idArea });
     const area = await removeResponsible({ idArea, idUser });
     res.send(single(area));
   } catch (ex) {
@@ -44,10 +54,12 @@ const removeResponsibleController = async (req, res) => {
 };
 
 const updateAsigboAreaController = async (req, res) => {
+  const { id, role } = req.session;
   const { name } = req.body;
   const { idArea } = req.params || null;
 
   try {
+    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idArea });
     const area = await updateAsigboArea({ idArea, name });
     res.send(single(area));
   } catch (ex) {

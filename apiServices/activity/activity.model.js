@@ -6,6 +6,11 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 import { multiple, single, single as singleActivityDto } from './activity.dto.js';
 
+const validateResponsible = async ({ idUser, idActivity }) => {
+  const { responsible } = await ActivitySchema.findById(idActivity);
+  return responsible.some((user) => user._id.toString() === idUser);
+};
+
 const createActivity = async ({
   name,
   date,
@@ -223,4 +228,5 @@ export {
   getActivity,
   getActivitiesWhereUserIsResponsible,
   getUserActivities,
+  validateResponsible,
 };

@@ -1,6 +1,7 @@
 import express from 'express';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
+import ensureAdminActivityResponsibleAuth from '../../middlewares/ensureAdminActivityResponsibleAuth.js';
 
 import {
   createActivityController,
@@ -24,13 +25,14 @@ activityRouter.get(
   getLoggedActivitiesController,
 );
 
+activityRouter.get('/:idActivity', ensureAdminActivityResponsibleAuth, getActivityController);
+
 activityRouter.get(
   '/:idUser',
   ensureAdminAuth,
   getUserActivitiesController,
 );
 
-activityRouter.get('/:idActivity', ensureAdminAuth, getActivityController);
 activityRouter.post(
   '/',
   ensureAdminAuth,
@@ -39,10 +41,10 @@ activityRouter.post(
 );
 activityRouter.patch(
   '/',
-  ensureAdminAuth,
+  ensureAdminActivityResponsibleAuth,
   validateBody(updateActivitySchema),
   updateActivityController,
 );
 
-activityRouter.delete('/:idActivity', ensureAdminAuth, deleteActivityController);
+activityRouter.delete('/:idActivity', ensureAdminActivityResponsibleAuth, deleteActivityController);
 export default activityRouter;

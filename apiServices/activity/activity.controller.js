@@ -1,3 +1,4 @@
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { multiple } from './activity.dto.js';
 import {
@@ -9,7 +10,14 @@ import {
   getActivities,
   getActivity,
   getUserActivities,
+  validateResponsible,
 } from './activity.model.js';
+
+const validateResponsibleController = async ({ idUser, idActivity }) => {
+  const result = await validateResponsible({ idUser, idActivity });
+  if (!result) throw new CustomError('No cuenta con permisos de encargado sobre esta actividad.');
+  return true;
+};
 
 const createActivityController = async (req, res) => {
   const {
@@ -58,6 +66,7 @@ const createActivityController = async (req, res) => {
 };
 
 const updateActivityController = async (req, res) => {
+  const { idUser, role } = req.session;
   const {
     id,
     name,
@@ -73,6 +82,7 @@ const updateActivityController = async (req, res) => {
   } = req.body;
 
   try {
+    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser, idActivity: id });
     const result = await updateActivityMediator({
       id,
       name,
@@ -101,8 +111,10 @@ const updateActivityController = async (req, res) => {
 };
 
 const deleteActivityController = async (req, res) => {
+  const { id, role } = req.session;
   const { idActivity } = req.params;
   try {
+    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idActivity });
     await deleteActivityMediator({ idActivity });
     res.sendStatus(204);
   } catch (ex) {
@@ -171,9 +183,11 @@ const getActivitiesController = async (req, res) => {
 };
 
 const getActivityController = async (req, res) => {
+  const { id, role } = req.session;
   const { idActivity } = req.params;
 
   try {
+    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idActivity });
     const result = await getActivity({ idActivity });
     res.send(result);
   } catch (ex) {
