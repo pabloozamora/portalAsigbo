@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
@@ -62,7 +63,7 @@ const createUser = async ({
  * @returns
  */
 const getActiveUsers = async ({
-  idUser, promotion, search, promotionMin, promotionMax, page = 0,
+  idUser, promotion, search, promotionMin, promotionMax, priority, page = 0,
 }) => {
   const query = { blocked: false, _id: { $ne: idUser } };
 
@@ -78,10 +79,43 @@ const getActiveUsers = async ({
     ];
   }
 
+  // parsear id de usuarios prioritarios
+  const parsedPriority = priority?.map((id) => {
+    if (!exists(id)) return null;
+    try {
+      return new ObjectId(id);
+    } catch (ex) {
+      return null;
+    }
+  }) ?? [];
+
   // obtener número de páginas
   const usersCount = await UserSchema.countDocuments(query);
   const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
-  const users = await UserSchema.find(query).skip(page * consts.resultsNumberPerPage).limit(consts.resultsNumberPerPage);
+
+  const users = await UserSchema.aggregate([
+    {
+      $match: query,
+    },
+    {
+      $addFields: {
+        order: {
+          $in: ['$_id', parsedPriority], // obtener valor si el id aparece en priority
+        },
+      },
+    },
+    {
+      $sort: {
+        order: -1, // priorizar id's que si aparecen
+      },
+    },
+    {
+      $skip: page * consts.resultsNumberPerPage,
+    },
+    {
+      $limit: consts.resultsNumberPerPage,
+    },
+  ]);
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
