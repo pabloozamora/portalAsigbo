@@ -14,6 +14,7 @@ import {
   deleteAsigboArea,
   getArea,
 } from './asigboArea.model.js';
+import Promotion from '../promotion/promotion.model.js';
 
 const addResponsibleController = async (req, res) => {
   const { idArea, idUser } = req.body || null;
@@ -115,7 +116,17 @@ const getAsigboAreaController = async (req, res) => {
   try {
     const areaData = await getArea({ idArea });
     const parsedData = single(areaData);
-    parsedData.responsible = multipleUser(parsedData.responsible);
+    const parsedUsers = multipleUser(parsedData.responsible);
+
+    // get user promotion group
+    const promotionObj = new Promotion();
+
+    parsedData.responsible = await Promise.all(
+      parsedUsers.map(async (user) => ({
+        ...user,
+        promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
+      })),
+    );
 
     res.send(parsedData);
   } catch (ex) {
