@@ -242,9 +242,9 @@
   - responsible: lista de id's de los usuarios encargados. Se deben agregar todos los responsables. Si la lista no incluye alguno de los encargados anteriores, sus privilegios serán retirados.
 
 
-* **/area/delete/:idArea**
+* **/area/:idArea**
 
-  Método: Put
+  Método: Delete
 
   Modifica el área especificada como inactiva.
 

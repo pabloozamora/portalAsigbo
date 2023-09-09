@@ -5,18 +5,6 @@ import CustomError from '../../utils/customError.js';
 import { single } from './asigboArea.dto.js';
 import consts from '../../utils/consts.js';
 
-const updateRoles = async (users) => {
-  await Promise.all(
-    users.map(async (idUser) => {
-      const user = await UserSchema.findById(idUser);
-      const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
-
-      if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
-      user.save();
-    }),
-  );
-};
-
 const assignResponsible = async ({ responsible, session }) => Promise.all(
   responsible.map(async (userId) => {
     const user = await UserSchema.findById(userId);
@@ -98,29 +86,42 @@ const createAsigboArea = async ({ name, responsible, session }) => {
   }
 };
 
-const deleteAsigboArea = async ({ idArea }) => {
-  const area = await AsigboAreaSchema.findById(idArea);
+/**
+ *
+ * Permite remover los permisos de todos los responsables de un area asigbo.
+ * @param idArea id del area
+ * @param session objeto session de la transacción de bd
+ */
+const removeAsigboAreaResponsible = async ({ idArea, session }) => {
+  try {
+    const area = await AsigboAreaSchema.findById(idArea);
 
-  if (area === null) throw new CustomError('El área especificada no existe.', 404);
-  if (area.blocked === true) {
-    throw new CustomError('El área especificada no se encuentra activa.', 400);
+    if (area === null) throw new CustomError('No se encontró el eje a eliminar.', 404);
+
+    const responsible = area.responsible.map((user) => user._id);
+    await removeResponsible({ responsible, session });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('No se encontró la información del eje proporcionado.', 404);
+    }
+    throw ex;
   }
+};
 
+/**
+ * Permite eliminar un área de asigbo. Fallará cuando esta cuente alguna actividad existente.
+ * @param idArea id del area
+ * @param session objeto session de la transacción de bd
+ */
+const deleteAsigboArea = async ({ idArea, session }) => {
   const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
-  const responsibles = area.responsible.map((resp) => resp._id);
-  await updateRoles(responsibles);
 
-  if (activities.length > 0) {
-    activities.forEach((act) => {
-      // eslint-disable-next-line no-param-reassign
-      act.blocked = true;
-      act.save();
-    });
-  }
+  // Evitar que se elimine si posee actividades
+  if (activities.length > 0) throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400);
 
-  area.blocked = true;
-  area.save();
-  return area;
+  const { deletedCount } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
+
+  if (deletedCount === 0) throw new CustomError('No se encontró el eje a eliminar.', 404);
 };
 
 const getActiveAreas = async () => {
@@ -145,5 +146,5 @@ const getArea = async ({ idArea }) => {
 };
 
 export {
-  createAsigboArea, updateAsigboArea, getActiveAreas, deleteAsigboArea, getArea,
+  createAsigboArea, updateAsigboArea, getActiveAreas, deleteAsigboArea, getArea, removeAsigboAreaResponsible,
 };

@@ -28,7 +28,7 @@ asigboAreaRouter.patch(
   validateBody(createAsigboAreaSchema),
   updateAsigboAreaController,
 );
-asigboAreaRouter.put('/delete/:idArea', ensureAdminAuth, deleteAsigboAreaController);
+asigboAreaRouter.delete('/:idArea', ensureAdminAuth, deleteAsigboAreaController);
 
 asigboAreaRouter.get('/', ensureAdminAuth, getActiveAreasController);
 asigboAreaRouter.get('/:idArea', ensureAdminAuth, getAsigboAreaController);

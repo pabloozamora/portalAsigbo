@@ -11,6 +11,7 @@ import {
   getActiveAreas,
   deleteAsigboArea,
   getArea,
+  removeAsigboAreaResponsible,
 } from './asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -140,11 +141,28 @@ const getAsigboAreaController = async (req, res) => {
 
 const deleteAsigboAreaController = async (req, res) => {
   const { idArea } = req.params;
+  const session = await connection.startSession();
 
   try {
-    await deleteAsigboArea({ idArea });
+    session.startTransaction();
+
+    await removeAsigboAreaResponsible({ idArea, session });
+    await deleteAsigboArea({ idArea, session });
+
+    await session.commitTransaction();
+
+    // eliminar icono
+    try {
+      const fileKey = `${consts.bucketRoutes.area}/${idArea}`;
+      await deleteFileInBucket(fileKey);
+    } catch (err) {
+      // error al eliminar archivo (no critico)
+    }
+
     res.sendStatus(204);
   } catch (ex) {
+    await session.abortTransaction();
+
     let err = 'Ocurrio un error al eliminar el area.';
     let status = 500;
     if (ex instanceof CustomError) {
