@@ -8,58 +8,51 @@ import { multiple as multipleUser } from '../user/user.dto.js';
 import {
   createAsigboArea,
   updateAsigboArea,
-  addResponsible,
-  removeResponsible,
   getActiveAreas,
   deleteAsigboArea,
   getArea,
 } from './asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
-
-const addResponsibleController = async (req, res) => {
-  const { idArea, idUser } = req.body || null;
-
-  try {
-    const area = await addResponsible({ idArea, idUser });
-    res.send(single(area));
-  } catch (ex) {
-    let err = 'Ocurrio un error al asignar encargado.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const removeResponsibleController = async (req, res) => {
-  const { idArea, idUser } = req.body || null;
-
-  try {
-    const area = await removeResponsible({ idArea, idUser });
-    res.send(single(area));
-  } catch (ex) {
-    let err = 'Ocurrio un error al remover encargado.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
+import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
 const updateAsigboAreaController = async (req, res) => {
-  const { name } = req.body;
-  const { idArea } = req.params || null;
+  const { name, responsible } = req.body;
+  const { idArea } = req.params;
+
+  const session = await connection.startSession();
+
+  const file = req.uploadedFiles?.[0];
+  const filePath = file ? `${global.dirname}/files/${file.fileName}` : null;
 
   try {
-    const area = await updateAsigboArea({ idArea, name });
-    res.send(single(area));
+    session.startTransaction();
+
+    const area = await updateAsigboArea({ idArea, name, responsible });
+
+    // actualizar icono si se subió nueva imagen
+    if (file) {
+      const fileKey = `${consts.bucketRoutes.area}/${area.id}`;
+
+      // eliminar imagen antigua
+      try {
+        await deleteFileInBucket(fileKey);
+      } catch (err) {
+        // No se encontró el archivo o no se pudo eliminar
+      } finally {
+        // intentar subir nueva imágen
+        await uploadFileToBucket(fileKey, filePath, file.type);
+      }
+    }
+
+    await session.commitTransaction();
+
+    const parsedArea = single(area);
+    parsedArea.responsible = multipleUser(parsedArea.responsible, false);
+
+    res.send(parsedArea);
   } catch (ex) {
+    await session.abortTransaction();
+
     let err = 'Ocurrio un error al actualizar el area.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -68,12 +61,19 @@ const updateAsigboAreaController = async (req, res) => {
     }
     res.statusMessage = err;
     res.status(status).send({ err, status });
+  } finally {
+    // Eliminar archivo provisional
+    if (filePath) fs.unlink(filePath, () => {});
   }
 };
 
 const createAsigboAreaController = async (req, res) => {
   const { name, responsible } = req.body;
   const session = await connection.startSession();
+
+  const file = req.uploadedFiles?.[0];
+  const filePath = file ? `${global.dirname}/files/${file.fileName}` : null;
+
   try {
     session.startTransaction();
 
@@ -84,18 +84,13 @@ const createAsigboAreaController = async (req, res) => {
     });
 
     // subir archivo del ícono del área
-    const file = req.uploadedFiles?.[0];
     if (!file) throw new CustomError("El ícono del área es obligatorio en el campo 'icon'.", 400);
 
     const fileKey = `${consts.bucketRoutes.area}/${area.id}`;
-    const filePath = `${global.dirname}/files/${file.fileName}`;
 
     await uploadFileToBucket(fileKey, filePath, file.type);
 
     await session.commitTransaction();
-
-    // Eliminar archivo provisional
-    fs.unlink(filePath, () => {});
 
     res.send(area);
   } catch (ex) {
@@ -108,6 +103,9 @@ const createAsigboAreaController = async (req, res) => {
     }
     res.statusMessage = err;
     res.status(status).send({ err, status });
+  } finally {
+    // Eliminar archivo provisional
+    if (file) fs.unlink(filePath, () => {});
   }
 };
 
@@ -186,8 +184,6 @@ const getActiveAreasController = async (req, res) => {
 export {
   createAsigboAreaController,
   updateAsigboAreaController,
-  addResponsibleController,
-  removeResponsibleController,
   getActiveAreasController,
   deleteAsigboAreaController,
   getAsigboAreaController,
