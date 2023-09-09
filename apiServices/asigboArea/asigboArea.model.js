@@ -22,7 +22,7 @@ const assignResponsible = async ({ responsible, session }) => Promise.all(
     const user = await UserSchema.findById(userId);
     if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
 
-    user.role.push(consts.roles.asigboAreaResponsible);
+    if (!user.role.includes(consts.roles.asigboAreaResponsible))user.role.push(consts.roles.asigboAreaResponsible);
     user.save({ session });
     return user;
   }),
@@ -33,8 +33,12 @@ const removeResponsible = async ({ responsible, session }) => Promise.all(
     const user = await UserSchema.findById(userId);
     if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
 
-    user.role = user.role.filter((role) => role !== consts.roles.asigboAreaResponsible);
-    user.save({ session });
+    // Retirar permiso si el usuario solo es encargado del area a retirar
+    const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': userId });
+    if (areasInCharge.length === 1) {
+      user.role = user.role.filter((role) => role !== consts.roles.asigboAreaResponsible);
+      user.save({ session });
+    }
     return user;
   }),
 );
@@ -96,6 +100,7 @@ const createAsigboArea = async ({ name, responsible, session }) => {
 
 const deleteAsigboArea = async ({ idArea }) => {
   const area = await AsigboAreaSchema.findById(idArea);
+
   if (area === null) throw new CustomError('El área especificada no existe.', 404);
   if (area.blocked === true) {
     throw new CustomError('El área especificada no se encuentra activa.', 400);

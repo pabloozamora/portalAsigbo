@@ -52,7 +52,6 @@ const updateAsigboAreaController = async (req, res) => {
     res.send(parsedArea);
   } catch (ex) {
     await session.abortTransaction();
-
     let err = 'Ocurrio un error al actualizar el area.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -140,7 +139,7 @@ const getAsigboAreaController = async (req, res) => {
 };
 
 const deleteAsigboAreaController = async (req, res) => {
-  const { idArea } = req.params || null;
+  const { idArea } = req.params;
 
   try {
     await deleteAsigboArea({ idArea });
