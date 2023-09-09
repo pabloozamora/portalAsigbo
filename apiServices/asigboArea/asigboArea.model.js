@@ -4,13 +4,14 @@ import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
 import { single } from './asigboArea.dto.js';
 import consts from '../../utils/consts.js';
+import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 
 const assignResponsible = async ({ responsible, session }) => Promise.all(
   responsible.map(async (userId) => {
     const user = await UserSchema.findById(userId);
     if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
 
-    if (!user.role.includes(consts.roles.asigboAreaResponsible))user.role.push(consts.roles.asigboAreaResponsible);
+    if (!user.role.includes(consts.roles.asigboAreaResponsible)) { user.role.push(consts.roles.asigboAreaResponsible); }
     user.save({ session });
     return user;
   }),
@@ -30,6 +31,24 @@ const removeResponsible = async ({ responsible, session }) => Promise.all(
     return user;
   }),
 );
+
+/**
+ * Permite actualizar la redundancia de datos en documentos dependientes.
+ * @param area Documento de mongo correspondiente al area actualizada.
+ * @param session sesión de la transacción.
+ */
+const updateAsigboAreaDependencies = async ({ area, session }) => {
+  await ActivitySchema.updateMany(
+    { 'asigboArea._id': area._id },
+    { asigboArea: area },
+    { session },
+  );
+  await ActivityAssignmentSchema.updateMany(
+    { 'activity.asigboArea._id': area._id },
+    { 'activity.asigboArea': area },
+    { session },
+  );
+};
 
 const updateAsigboArea = async ({
   idArea, name, responsible, session,
@@ -58,6 +77,10 @@ const updateAsigboArea = async ({
     ];
 
     await area.save({ session });
+
+    // actualizar actividades y asignaciones
+    await updateAsigboAreaDependencies({ area, session });
+
     return area;
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.name !== undefined) {
@@ -117,7 +140,7 @@ const deleteAsigboArea = async ({ idArea, session }) => {
   const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
 
   // Evitar que se elimine si posee actividades
-  if (activities.length > 0) throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400);
+  if (activities.length > 0) { throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400); }
 
   const { deletedCount } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
 
@@ -146,5 +169,10 @@ const getArea = async ({ idArea }) => {
 };
 
 export {
-  createAsigboArea, updateAsigboArea, getActiveAreas, deleteAsigboArea, getArea, removeAsigboAreaResponsible,
+  createAsigboArea,
+  updateAsigboArea,
+  getActiveAreas,
+  deleteAsigboArea,
+  getArea,
+  removeAsigboAreaResponsible,
 };
