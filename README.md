@@ -209,6 +209,15 @@
 
   Obtiene el listado de áreas activas.
 
+* **/area/:idArea**
+
+  Método: Get
+
+  Obtiene el listado de áreas activas.
+
+  Parámetros obligatorios en la ruta:
+  - idArea: id del área a consultar.
+
 * **/area**
 
   Método: Post
@@ -219,9 +228,9 @@
   - responsible: (array) lista de usuarios que serán responsables de área.
   - name: nombre del área a crear.
 
-* **/area/update/:idArea**
+* **/area/:idArea**
 
-  Método: Put
+  Método: Patch
 
   Actualiza el nombre del área especificada.
 
@@ -230,30 +239,12 @@
 
   Parámetros requeridos:
   - name: nuevo nombre del área.
+  - responsible: lista de id's de los usuarios encargados. Se deben agregar todos los responsables. Si la lista no incluye alguno de los encargados anteriores, sus privilegios serán retirados.
 
-* **/area/responsible**
 
-  Método: Put
+* **/area/:idArea**
 
-  Asigna al usuario especificado como responsable del área.
-
-  Parámetros requeridos:
-  - idArea: id del área de ASIGBO a modificar.
-  - idUser: id del usuario que será agregado como responsable de área.
-
-* **/area/responsible/remove**
-
-  Método: Put
-
-  Retira al usuario especificado de la lista de responsables del área.
-
-  Parámetros requeridos:
-  - idArea: id del área de ASIGBO a modificar.
-  - idUser: id del usuario que será removido de los responsables de área.
-
-* **/area/delete/:idArea**
-
-  Método: Put
+  Método: Delete
 
   Modifica el área especificada como inactiva.
 
@@ -267,6 +258,12 @@
   Método: Get
 
   Obtiene el listado de usuarios activos.
+
+  Parámetros de búsqueda opcionales (?params):
+  - promotion: año de promoción de estudiantes a mostrar. También permite el nombre del grupo de becados.
+  - search: cadena de texto a encontrar en el nombre y apellido de los becados.
+  - priority (puede ser un arreglo): id de los usuarios a priorizar y mostrar primero.
+  - page: página de resultados a mostrar.
 
 * **/user**
 

@@ -23,7 +23,7 @@ const ensureRefreshTokenAuth = async (req, res, next) => {
   } catch (ex) {
     // Token invalido, retirarlo de la bd si existe
     res.clearCookie('refreshToken');
-    deleteRefreshToken(authToken);
+    if (authToken) deleteRefreshToken(authToken).catch(() => {});
     res.statusMessage = 'El token de autorización no es válido o ha expirado.';
     res.sendStatus(401);
   }

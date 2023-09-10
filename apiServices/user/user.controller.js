@@ -103,8 +103,9 @@ const createUserController = async (req, res) => {
 };
 
 const getActiveUsersController = async (req, res) => {
-  const { promotion, search, page } = req.query;
-
+  const {
+    promotion, search, page, priority,
+  } = req.query;
   try {
     const promotionObj = new Promotion();
 
@@ -132,13 +133,15 @@ const getActiveUsersController = async (req, res) => {
         }
       }
     }
+
     const { pages, result } = await getActiveUsers({
       idUser: req.session.id,
-      promotion,
+      promotion: parseInt(promotion, 10) || null,
       search,
       promotionMin,
       promotionMax,
       page,
+      priority: Array.isArray(priority) ? priority : [priority],
     });
 
     const resultWithPromotionGroup = await Promise.all(

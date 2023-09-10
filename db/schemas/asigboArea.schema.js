@@ -1,20 +1,25 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
+import { userSubSchema } from './user.schema.js';
 
 const asigboAreaSchema = Schema({
   name: { type: String, required: true, unique: true },
-  responsible: [{
-    _id: { type: ObjectId, ref: 'user' },
-    name: { type: String, requried: true },
-    lastname: { type: String, required: true },
-    email: { type: String, required: true },
-    promotion: { type: Number, requred: true },
-  }],
+  responsible: {
+    type: [userSubSchema],
+    required: true,
+    validate: {
+      validator(responsibles) {
+        return responsibles.length > 0;
+      },
+      message: 'Debe proporcionar al menos un encargado de área.',
+    },
+  },
   blocked: { type: Boolean, default: false },
 });
 const asigboAreaSubSchema = Schema({
   _id: { type: ObjectId, ref: 'asigboArea', required: true },
   name: { type: String, required: true },
+  blocked: { type: Boolean, default: false },
 });
 
 const AsigboAreaSchema = model('asigboArea', asigboAreaSchema);

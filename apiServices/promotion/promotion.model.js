@@ -37,7 +37,7 @@ class Promotion {
   }
 
   async getPromotionsGroups() {
-    const { firstYearPromotion, lastYearPromotion } = this.getFirstAndLastYearPromotion();
+    const { firstYearPromotion, lastYearPromotion } = await this.getFirstAndLastYearPromotion();
 
     const studentPromotions = [];
     for (let i = firstYearPromotion; i >= lastYearPromotion; i -= 1) {
