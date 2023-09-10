@@ -163,12 +163,23 @@ const updateServiceHours = async ({
   return userData.save({ session });
 };
 
+/**
+ * Permite agregar un rol a un usuario.
+ * @param idUser id del usuario a modificar.
+ * @param role role a añadir.
+ * @session objeto session de la transacción de bd.
+ * @returns Boolean. Retorna true si el rol fue añadido y false si el usuario ya poseía el rol, por
+ * lo que no le fue asignado.
+ */
 const addRoleToUser = async ({ idUser, role, session }) => {
   try {
-    const { acknowledged, matchedCount } = await UserSchema.updateOne({ _id: idUser }, { $addToSet: { role } }, { session });
+    const result = await UserSchema.updateOne({ _id: idUser }, { $addToSet: { role } }, { session });
+    const { acknowledged, matchedCount, modifiedCount } = result;
 
     if (matchedCount === 0) throw new CustomError('No se encontró el usuario.', 404);
     if (!acknowledged) throw new CustomError('No fue posible asignar el role.', 500);
+
+    return modifiedCount === 1;
   } catch (ex) {
     if (ex?.kind === 'ObjectId') {
       throw new CustomError('El id del usuario no es válidos.', 400);
