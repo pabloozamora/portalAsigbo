@@ -8,21 +8,42 @@ import { multiple as multipleUser } from '../user/user.dto.js';
 import {
   createAsigboArea,
   updateAsigboArea,
-  getActiveAreas,
+  getAreas,
   deleteAsigboArea,
   getArea,
-  removeAsigboAreaResponsible,
   updateAsigboAreaBlockedStatus,
+  getAreasWhereUserIsResponsible,
   // validateResponsible,
 } from './asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+import { addRoleToUser, removeRoleFromUser } from '../user/user.model.js';
+import { forceUserLogout } from '../session/session.model.js';
 
 /* const validateResponsibleController = async ({ idUser, idArea }) => {
   const result = await validateResponsible({ idUser, idArea });
   if (!result) throw new CustomError('No cuenta con permisos de encargado sobre esta área.');
   return true;
 }; */
+
+const removeAsigboAreaResponsibleRole = async ({ idUser, session }) => {
+  try {
+    await getAreasWhereUserIsResponsible({ idUser, session });
+  } catch (ex) {
+    if (ex instanceof CustomError) { // 404
+      // El unico eje en el que es responsable es en el que se le eliminó, retirar permiso
+      await removeRoleFromUser({ idUser, role: consts.roles.asigboAreaResponsible, session });
+
+      // Forzar cerrar sesión del usuario
+      await forceUserLogout(idUser, session);
+    } else throw ex;
+  }
+};
+
+const addAsigboAreaResponsibleRole = async ({ idUser, session }) => {
+  const roleAdded = await addRoleToUser({ idUser, role: consts.roles.asigboAreaResponsible, session });
+  if (roleAdded) forceUserLogout(idUser);
+};
 
 const updateAsigboAreaController = async (req, res) => {
   const { name, responsible } = req.body;
@@ -36,11 +57,30 @@ const updateAsigboAreaController = async (req, res) => {
   try {
     session.startTransaction();
 
-    const area = await updateAsigboArea({ idArea, name, responsible });
+    const { dataBeforeChange, dataAfterChange } = await updateAsigboArea({
+      idArea, name, responsible, session,
+    });
+
+    const responsibleToAdd = responsible.filter(
+      (userId) => !dataBeforeChange.responsible.some((user) => user.id === userId),
+    );
+    const responsibleToRemove = dataBeforeChange.responsible
+      .filter((user) => !responsible.some((userId) => user.id === userId))
+      .map((user) => user.id);
+
+    // añadir privilegios para los encargados nuevos
+    await Promise.all(
+      responsibleToAdd.map(async (idUser) => addAsigboAreaResponsibleRole({ idUser, session })),
+    );
+
+    // retirar privilegios
+    await Promise.all(
+      responsibleToRemove.map(async (idUser) => removeAsigboAreaResponsibleRole({ idUser, session })),
+    );
 
     // actualizar icono si se subió nueva imagen
     if (file) {
-      const fileKey = `${consts.bucketRoutes.area}/${area.id}`;
+      const fileKey = `${consts.bucketRoutes.area}/${idArea}`;
 
       // eliminar imagen antigua
       try {
@@ -55,10 +95,7 @@ const updateAsigboAreaController = async (req, res) => {
 
     await session.commitTransaction();
 
-    const parsedArea = single(area);
-    parsedArea.responsible = multipleUser(parsedArea.responsible);
-
-    res.send(parsedArea);
+    res.send(dataAfterChange);
   } catch (ex) {
     await session.abortTransaction();
     let err = 'Ocurrio un error al actualizar el area.';
@@ -90,6 +127,11 @@ const createAsigboAreaController = async (req, res) => {
       responsible,
       session,
     });
+
+    // añadir privilegios para los encargados
+    await Promise.all(
+      responsible.map(async (idUser) => addAsigboAreaResponsibleRole({ idUser, session })),
+    );
 
     // subir archivo del ícono del área
     if (!file) throw new CustomError("El ícono del área es obligatorio en el campo 'icon'.", 400);
@@ -154,8 +196,12 @@ const deleteAsigboAreaController = async (req, res) => {
   try {
     session.startTransaction();
 
-    await removeAsigboAreaResponsible({ idArea, session });
-    await deleteAsigboArea({ idArea, session });
+    const area = await deleteAsigboArea({ idArea, session });
+
+    // remover permisos
+    await Promise.all(
+      area.responsible.map((user) => removeAsigboAreaResponsibleRole({ idUser: user.id, session })),
+    );
 
     await session.commitTransaction();
 
@@ -182,9 +228,9 @@ const deleteAsigboAreaController = async (req, res) => {
   }
 };
 
-const getActiveAreasController = async (req, res) => {
+const getAreasController = async (req, res) => {
   try {
-    const areas = await getActiveAreas();
+    const areas = await getAreas();
     const parsedAreas = multiple(areas);
 
     const areasResult = parsedAreas.map((area) => {
@@ -259,7 +305,7 @@ const enableAsigboAreaController = async (req, res) => {
 export {
   createAsigboAreaController,
   updateAsigboAreaController,
-  getActiveAreasController,
+  getAreasController,
   deleteAsigboAreaController,
   getAsigboAreaController,
   disableAsigboAreaController,

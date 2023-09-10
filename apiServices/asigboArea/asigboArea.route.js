@@ -4,7 +4,7 @@ import {
   deleteAsigboAreaController,
   disableAsigboAreaController,
   enableAsigboAreaController,
-  getActiveAreasController,
+  getAreasController,
   getAsigboAreaController,
   updateAsigboAreaController,
 } from './asigboArea.controller.js';
@@ -43,7 +43,7 @@ asigboAreaRouter.patch(
 
 asigboAreaRouter.delete('/:idArea', ensureAdminAuth, deleteAsigboAreaController);
 
-asigboAreaRouter.get('/', ensureAdminAuth, getActiveAreasController);
+asigboAreaRouter.get('/', ensureAdminAuth, getAreasController);
 asigboAreaRouter.get('/:idArea', ensureAdminAuth, getAsigboAreaController);
 
 export default asigboAreaRouter;
