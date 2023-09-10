@@ -19,6 +19,7 @@ import NewUserEmail from '../../services/email/NewUserEmail.js';
 import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import Promotion from '../promotion/promotion.model.js';
+import { forceUserLogout } from '../session/session.model.js';
 
 const getLoggedUserController = async (req, res) => {
   try {
@@ -261,6 +262,10 @@ const assignAdminRoleController = async (req, res) => {
 
   try {
     await addRoleToUser({ idUser, role: consts.roles.admin });
+
+    // cerrar sesión del usuario
+    await forceUserLogout(idUser);
+
     res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al asignar privilegios de administrador al usuario.';
@@ -279,6 +284,10 @@ const removeAdminRoleController = async (req, res) => {
 
   try {
     await removeRoleFromUser({ idUser, role: consts.roles.admin });
+
+    // cerrar sesión del usuario
+    await forceUserLogout(idUser);
+
     res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al remover privilegios de administrador al usuario.';
