@@ -26,13 +26,15 @@ const validateResponsibleController = async ({ idUser, idActivity }) => {
 };
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
-  const result = await getActivitiesWhereUserIsResponsible({ idUser });
-  if (result.length === 1) {
-    // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
-    await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
-
-    // Forzar cerrar sesión del usuario
-    await forceUserLogout(idUser, session);
+  try {
+    await getActivitiesWhereUserIsResponsible({ idUser, session });
+  } catch (ex) {
+    if (ex instanceof CustomError) {
+      // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
+      await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
+      // Forzar cerrar sesión del usuario
+      await forceUserLogout(idUser, session);
+    } else throw ex;
   }
 };
 

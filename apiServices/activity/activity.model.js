@@ -211,8 +211,8 @@ const getActivity = async ({ idActivity, getSensitiveData = false }) => {
   }
 };
 
-const getActivitiesWhereUserIsResponsible = async ({ idUser }) => {
-  const results = await ActivitySchema.find({ responsible: { $elemMatch: { _id: idUser } } });
+const getActivitiesWhereUserIsResponsible = async ({ idUser, session }) => {
+  const results = await ActivitySchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
 
   if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
