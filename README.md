@@ -241,6 +241,23 @@
   - name: nuevo nombre del área.
   - responsible: lista de id's de los usuarios encargados. Se deben agregar todos los responsables. Si la lista no incluye alguno de los encargados anteriores, sus privilegios serán retirados.
 
+* **/area/:idArea/enable**
+
+  Método: Patch
+
+  Actualiza el status blocked del área a falso.
+
+  Parámetro obligatorio en la ruta: 
+  - idArea: id del área de ASIGBO a modificar.
+
+* **/area/:idArea/disable**
+
+  Método: Patch
+
+  Actualiza el status blocked del área a verdadero.
+
+  Parámetro obligatorio en la ruta: 
+  - idArea: id del área de ASIGBO a modificar.
 
 * **/area/:idArea**
 
