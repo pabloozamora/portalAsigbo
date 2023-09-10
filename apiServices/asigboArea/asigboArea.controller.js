@@ -56,7 +56,7 @@ const updateAsigboAreaController = async (req, res) => {
     await session.commitTransaction();
 
     const parsedArea = single(area);
-    parsedArea.responsible = multipleUser(parsedArea.responsible, false);
+    parsedArea.responsible = multipleUser(parsedArea.responsible);
 
     res.send(parsedArea);
   } catch (ex) {
@@ -189,7 +189,7 @@ const getActiveAreasController = async (req, res) => {
 
     const areasResult = parsedAreas.map((area) => {
       const areaCopy = { ...area };
-      areaCopy.responsible = multipleUser(area.responsible, false);
+      areaCopy.responsible = multipleUser(area.responsible);
       return areaCopy;
     });
 

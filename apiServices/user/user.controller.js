@@ -21,7 +21,7 @@ import Promotion from '../promotion/promotion.model.js';
 const getLoggedUserController = async (req, res) => {
   try {
     const user = await getUser(req.session.id);
-    res.send(single(user, false, true));
+    res.send(single(user, { showHours: true }));
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
     let status = 500;
@@ -38,7 +38,7 @@ const getUserController = async (req, res) => {
   const { idUser } = req.params || null;
   try {
     const user = await getUser(idUser);
-    res.send(single(user, false, true));
+    res.send(single(user, { showHours: true }));
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
     let status = 500;
@@ -87,7 +87,7 @@ const createUserController = async (req, res) => {
 
     await session.commitTransaction();
 
-    res.send(single(user, false));
+    res.send(single(user));
   } catch (ex) {
     await session.abortTransaction();
 
@@ -104,7 +104,7 @@ const createUserController = async (req, res) => {
 
 const getActiveUsersController = async (req, res) => {
   const {
-    promotion, search, page, priority,
+    promotion, search, page, priority, role,
   } = req.query;
   try {
     const promotionObj = new Promotion();
@@ -138,10 +138,12 @@ const getActiveUsersController = async (req, res) => {
       idUser: req.session.id,
       promotion: parseInt(promotion, 10) || null,
       search,
+      role,
       promotionMin,
       promotionMax,
       page,
       priority: Array.isArray(priority) ? priority : [priority],
+      showRole: req.session.role.includes(consts.roles.admin), // mostrar role si es admin
     });
 
     const resultWithPromotionGroup = await Promise.all(

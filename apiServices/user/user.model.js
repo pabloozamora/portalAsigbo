@@ -38,7 +38,7 @@ const createUser = async ({
     user.sex = sex;
 
     await user.save({ session });
-    return single(user, true);
+    return single(user, { showSensitiveData: true });
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -54,16 +54,19 @@ const createUser = async ({
 };
 
 /**
- *
+ * Retorna la lista de usuarios.
  * @param idUser
  * @param promotion filtro para buscar una promoción en específico.
+ * @param search subcadena a buscar en el nombre del usuario.
+ * @param role role del usuario.
  * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
  * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
  * @param page número de pagina en los resultados
+ * @param showRole mostrar el role de los usuarios
  * @returns
  */
 const getActiveUsers = async ({
-  idUser, promotion, search, promotionMin, promotionMax, priority, page = 0,
+  idUser, promotion, search, role, promotionMin, promotionMax, priority, page = 0, showRole,
 }) => {
   const query = { blocked: false, _id: { $ne: idUser } };
 
@@ -71,6 +74,7 @@ const getActiveUsers = async ({
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
   if (exists(promotionMin)) query.promotion.$gt = promotionMin;
   if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (exists(role)) query.role = { $in: [role] };
   if (search) {
     // buscar cadena en nombre completo
     const searchRegex = new RegExp(search, 'i');
@@ -119,7 +123,7 @@ const getActiveUsers = async ({
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
-  return { pages, result: multiple(users, false) };
+  return { pages, result: multiple(users, { showRole }) };
 };
 
 const updateServiceHours = async ({
