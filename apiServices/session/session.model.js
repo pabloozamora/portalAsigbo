@@ -3,24 +3,29 @@ import SessionSchema from '../../db/schemas/session.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import single from './session.dto.js';
 
-const storeRefreshToken = async (idUser, token) => {
-  const session = new SessionSchema();
+const storeSessionToken = async ({
+  idUser, token, linkedToken, session,
+}) => {
+  const sessionObj = new SessionSchema();
 
-  session.idUser = idUser;
-  session.token = token;
+  sessionObj.idUser = idUser;
+  sessionObj.token = token;
+  sessionObj.linkedToken = linkedToken;
 
-  return session.save();
+  return sessionObj.save({ session });
 };
 
-const deleteRefreshToken = async (token) => {
+const deleteSessionToken = async (token) => {
   const result = await SessionSchema.deleteOne({ token });
   if (result?.deletedCount !== 1) throw new CustomError('No fue posible eliminar el refresh token.', 500);
 };
 
-const validateRefreshToken = async (idUser, token) => {
+const deleteLinkedTokens = async (linkedToken) => SessionSchema.deleteMany({ linkedToken });
+
+const validateSessionToken = async (idUser, token) => {
   const result = await SessionSchema.findOne({ idUser, token });
 
-  if (result === null) throw new CustomError('Refresh token inválido.', 401);
+  if (result === null) throw new CustomError('Session token inválido.', 401);
   return true;
 };
 
@@ -44,5 +49,5 @@ const authenticate = async (user, passwordHash) => {
 };
 
 export {
-  storeRefreshToken, deleteRefreshToken, authenticate, validateRefreshToken,
+  storeSessionToken, deleteSessionToken, authenticate, validateSessionToken, deleteLinkedTokens,
 };

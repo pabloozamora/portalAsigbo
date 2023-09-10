@@ -3,9 +3,10 @@ import moment from 'moment';
 import config from 'config';
 import CustomError from '../../utils/customError.js';
 import {
-  authenticate, deleteRefreshToken, storeRefreshToken, validateRefreshToken,
+  authenticate, deleteLinkedTokens, deleteSessionToken, storeSessionToken, validateSessionToken,
 } from './session.model.js';
 import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
+import { connection } from '../../db/connection.js';
 
 const allowInsecureConnections = config.get('allowInsecureConnections');
 
@@ -19,6 +20,8 @@ const saveRefreshTokenInCookies = (res, token) => {
 
 const loginController = async (req, res) => {
   const { user, password } = req.body;
+
+  const session = await connection.startSession();
 
   try {
     const passwordHash = sha256(password);
@@ -37,8 +40,10 @@ const loginController = async (req, res) => {
       id, code, name, lastname, promotion, career, sex, role,
     });
 
+    session.startTransaction();
+
     // guardar refresh token en bd
-    await storeRefreshToken(id, refreshToken);
+    await storeSessionToken({ idUser: id, token: refreshToken, session });
 
     // almacenar token en cookies
     saveRefreshTokenInCookies(res, refreshToken);
@@ -48,8 +53,17 @@ const loginController = async (req, res) => {
       id, code, name, lastname, promotion, career, sex, role,
     });
 
+    // almacenar access token en bd
+    await storeSessionToken({
+      idUser: id, token: accessToken, linkedToken: refreshToken, session,
+    });
+
+    await session.commitTransaction();
+
     res.send({ accessToken });
   } catch (ex) {
+    await session.abortTransaction();
+
     let err = 'Ocurrio un error al intentar loggearse.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -70,11 +84,16 @@ const refreshAccessTokenController = async (req, res) => {
 
   try {
     // validar refresh token en bd
-    await validateRefreshToken(id, refreshToken);
+    await validateSessionToken(id, refreshToken);
 
     // create access token
     const accessToken = await signAccessToken({
       id, code, name, lastname, promotion, career, sex, role,
+    });
+
+    // almacenar access token en bd
+    await storeSessionToken({
+      idUser: id, token: accessToken, linkedToken: refreshToken,
     });
 
     res.send({ accessToken });
@@ -96,7 +115,10 @@ const logoutController = async (req, res) => {
   try {
     // Eliminar token de bd y cookie
     res.clearCookie('refreshToken');
-    await deleteRefreshToken(refreshToken);
+    await deleteSessionToken(refreshToken);
+
+    // eliminar access tokens vinculados
+    await deleteLinkedTokens(refreshToken);
 
     res.sendStatus(200);
   } catch (ex) {
