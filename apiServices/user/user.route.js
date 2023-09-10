@@ -1,11 +1,13 @@
 import express from 'express';
 import {
+  assignAdminRoleController,
   createUserController,
   finishRegistrationController,
   getActiveUsersController,
   getAdminUsersController,
   getLoggedUserController,
   getUserController,
+  removeAdminRoleController,
   validateRegisterTokenController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
@@ -32,5 +34,7 @@ userRouter.get('/admin', ensureAdminAuth, getAdminUsersController);
 userRouter.get('/logged', ensureRefreshTokenAuth, getLoggedUserController);
 userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTokenController);
 userRouter.get('/:idUser', ensureAdminAuth, getUserController);
+userRouter.patch('/:idUser/role/admin', ensureAdminAuth, assignAdminRoleController);
+userRouter.delete('/:idUser/role/admin', ensureAdminAuth, removeAdminRoleController);
 
 export default userRouter;

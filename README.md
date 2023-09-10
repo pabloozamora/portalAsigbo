@@ -313,6 +313,30 @@
   Parámetro obligatorio en la ruta: 
   - idUser: id del usuario.
 
+* **/user/admin**
+
+  Método: Get
+
+  Devuelve el listado de todos los usuarios administradores.
+
+* **/user/:idUser/role/admin**
+
+  Método: Patch
+
+  Asigna privilegios de administrador al usuario.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario.
+
+* **/user/:idUser/role/admin**
+
+  Método: Delete
+
+  Remueve privilegios de administrador al usuario.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario.
+
 ## Notas
 
 ### Consideraciones para la bd

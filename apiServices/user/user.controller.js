@@ -3,10 +3,12 @@ import fs from 'node:fs';
 import CustomError from '../../utils/customError.js';
 import { single } from './user.dto.js';
 import {
+  addRoleToUser,
   createUser,
   deleteAllUserAlterTokens,
   getActiveUsers,
   getUser,
+  removeRoleFromUser,
   saveRegisterToken,
   updateUserPassword,
   validateAlterUserToken,
@@ -254,6 +256,42 @@ const finishRegistrationController = async (req, res) => {
   }
 };
 
+const assignAdminRoleController = async (req, res) => {
+  const { idUser } = req.params;
+
+  try {
+    await addRoleToUser({ idUser, role: consts.roles.admin });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al asignar privilegios de administrador al usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const removeAdminRoleController = async (req, res) => {
+  const { idUser } = req.params;
+
+  try {
+    await removeRoleFromUser({ idUser, role: consts.roles.admin });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al remover privilegios de administrador al usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createUserController,
   getActiveUsersController,
@@ -262,4 +300,6 @@ export {
   validateRegisterTokenController,
   finishRegistrationController,
   getAdminUsersController,
+  assignAdminRoleController,
+  removeAdminRoleController,
 };

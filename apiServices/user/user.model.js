@@ -163,6 +163,20 @@ const updateServiceHours = async ({
   return userData.save({ session });
 };
 
+const addRoleToUser = async ({ idUser, role, session }) => {
+  try {
+    const { acknowledged, matchedCount } = await UserSchema.updateOne({ _id: idUser }, { $addToSet: { role } }, { session });
+
+    if (matchedCount === 0) throw new CustomError('No se encontró el usuario.', 404);
+    if (!acknowledged) throw new CustomError('No fue posible asignar el role.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válidos.', 400);
+    }
+    throw ex;
+  }
+};
+
 const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
   if (!Array.isArray(usersIdList)) throw Error('UsersIdList no es un arreglo.');
 
@@ -290,4 +304,5 @@ export {
   deleteAlterUserToken,
   updateUserPassword,
   deleteAllUserAlterTokens,
+  addRoleToUser,
 };
