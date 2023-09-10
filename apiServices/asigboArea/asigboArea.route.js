@@ -2,6 +2,8 @@ import express from 'express';
 import {
   createAsigboAreaController,
   deleteAsigboAreaController,
+  disableAsigboAreaController,
+  enableAsigboAreaController,
   getActiveAreasController,
   getAsigboAreaController,
   updateAsigboAreaController,
@@ -28,6 +30,17 @@ asigboAreaRouter.patch(
   validateBody(createAsigboAreaSchema),
   updateAsigboAreaController,
 );
+asigboAreaRouter.patch(
+  '/:idArea/disable',
+  ensureAdminAuth,
+  disableAsigboAreaController,
+);
+asigboAreaRouter.patch(
+  '/:idArea/enable',
+  ensureAdminAuth,
+  enableAsigboAreaController,
+);
+
 asigboAreaRouter.delete('/:idArea', ensureAdminAuth, deleteAsigboAreaController);
 
 asigboAreaRouter.get('/', ensureAdminAuth, getActiveAreasController);

@@ -4,6 +4,7 @@ import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
 import { single } from './asigboArea.dto.js';
 import consts from '../../utils/consts.js';
+import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 
 const validateResponsible = async ({ idUser, idArea }) => {
   const { responsible } = await AsigboAreaSchema.findById(idArea);
@@ -36,6 +37,24 @@ const removeResponsible = async ({ responsible, session }) => Promise.all(
   }),
 );
 
+/**
+ * Permite actualizar la redundancia de datos en documentos dependientes.
+ * @param area Documento de mongo correspondiente al area actualizada.
+ * @param session sesión de la transacción.
+ */
+const updateAsigboAreaDependencies = async ({ area, session }) => {
+  await ActivitySchema.updateMany(
+    { 'asigboArea._id': area._id },
+    { asigboArea: area },
+    { session },
+  );
+  await ActivityAssignmentSchema.updateMany(
+    { 'activity.asigboArea._id': area._id },
+    { 'activity.asigboArea': area },
+    { session },
+  );
+};
+
 const updateAsigboArea = async ({
   idArea, name, responsible, session,
 }) => {
@@ -63,6 +82,10 @@ const updateAsigboArea = async ({
     ];
 
     await area.save({ session });
+
+    // actualizar actividades y asignaciones
+    await updateAsigboAreaDependencies({ area, session });
+
     return area;
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.name !== undefined) {
@@ -122,11 +145,30 @@ const deleteAsigboArea = async ({ idArea, session }) => {
   const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
 
   // Evitar que se elimine si posee actividades
-  if (activities.length > 0) throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400);
+  if (activities.length > 0) { throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400); }
 
   const { deletedCount } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
 
   if (deletedCount === 0) throw new CustomError('No se encontró el eje a eliminar.', 404);
+};
+
+const updateAsigboAreaBlockedStatus = async ({ idArea, blocked, session }) => {
+  try {
+    const area = await AsigboAreaSchema.findById({ _id: idArea });
+
+    if (area === null) throw new CustomError('No se encontró el eje a modificar.', 404);
+
+    area.blocked = blocked;
+
+    await area.save({ session });
+
+    await updateAsigboAreaDependencies({ area, session });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('No se encontró la información del eje proporcionado.', 404);
+    }
+    throw ex;
+  }
 };
 
 const getActiveAreas = async () => {
@@ -152,10 +194,16 @@ const getArea = async ({ idArea }) => {
 
 export {
   createAsigboArea,
+
   updateAsigboArea,
+
   getActiveAreas,
+
   deleteAsigboArea,
+
   getArea,
+
   removeAsigboAreaResponsible,
+  updateAsigboAreaBlockedStatus,
   validateResponsible,
 };

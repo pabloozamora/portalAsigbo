@@ -12,6 +12,7 @@ import {
   deleteAsigboArea,
   getArea,
   removeAsigboAreaResponsible,
+  updateAsigboAreaBlockedStatus,
   // validateResponsible,
 } from './asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
@@ -205,10 +206,62 @@ const getActiveAreasController = async (req, res) => {
   }
 };
 
+const disableAsigboAreaController = async (req, res) => {
+  const { idArea } = req.params;
+
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    await updateAsigboAreaBlockedStatus({ idArea, blocked: true, session });
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al deshabilitar el eje de asigbo.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const enableAsigboAreaController = async (req, res) => {
+  const { idArea } = req.params;
+
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    await updateAsigboAreaBlockedStatus({ idArea, blocked: false, session });
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al habilitar el eje de asigbo.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createAsigboAreaController,
   updateAsigboAreaController,
   getActiveAreasController,
   deleteAsigboAreaController,
   getAsigboAreaController,
+  disableAsigboAreaController,
+  enableAsigboAreaController,
 };
