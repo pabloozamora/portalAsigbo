@@ -163,6 +163,27 @@ const getActiveUsersController = async (req, res) => {
   }
 };
 
+const getAdminUsersController = async (req, res) => {
+  try {
+    const { result } = await getActiveUsers({
+      idUser: req.session.id,
+      role: consts.roles.admin,
+      page: null,
+      showRole: true, // mostrar role si es admin
+    });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los usuarios administradores.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const validateRegisterTokenController = async (req, res) => {
   const token = req.headers?.authorization;
   const idUser = req.session?.id;
@@ -240,4 +261,5 @@ export {
   getLoggedUserController,
   validateRegisterTokenController,
   finishRegistrationController,
+  getAdminUsersController,
 };

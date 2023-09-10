@@ -97,7 +97,7 @@ const getActiveUsers = async ({
   const usersCount = await UserSchema.countDocuments(query);
   const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
 
-  const users = await UserSchema.aggregate([
+  const queryPipeline = [
     {
       $match: query,
     },
@@ -113,13 +113,18 @@ const getActiveUsers = async ({
         order: -1, // priorizar id's que si aparecen
       },
     },
-    {
+  ];
+
+  if (page) {
+    queryPipeline.push({
       $skip: page * consts.resultsNumberPerPage,
-    },
-    {
+    });
+    queryPipeline.push({
       $limit: consts.resultsNumberPerPage,
-    },
-  ]);
+    });
+  }
+
+  const users = await UserSchema.aggregate(queryPipeline);
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
