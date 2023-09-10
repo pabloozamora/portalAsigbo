@@ -147,6 +147,25 @@ const deleteAsigboArea = async ({ idArea, session }) => {
   if (deletedCount === 0) throw new CustomError('No se encontró el eje a eliminar.', 404);
 };
 
+const updateAsigboAreaBlockedStatus = async ({ idArea, blocked, session }) => {
+  try {
+    const area = await AsigboAreaSchema.findById({ _id: idArea });
+
+    if (area === null) throw new CustomError('No se encontró el eje a modificar.', 404);
+
+    area.blocked = blocked;
+
+    await area.save({ session });
+
+    await updateAsigboAreaDependencies({ area, session });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('No se encontró la información del eje proporcionado.', 404);
+    }
+    throw ex;
+  }
+};
+
 const getActiveAreas = async () => {
   const asigboAreas = await AsigboAreaSchema.find({ blocked: false });
   if (asigboAreas.length === 0) throw new CustomError('No se han encontrado áreas activas.', 404);
@@ -175,4 +194,5 @@ export {
   deleteAsigboArea,
   getArea,
   removeAsigboAreaResponsible,
+  updateAsigboAreaBlockedStatus,
 };

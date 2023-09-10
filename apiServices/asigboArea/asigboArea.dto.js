@@ -1,4 +1,4 @@
-const single = (resource, showSensitiveData = false) => {
+const single = (resource) => {
   const {
     name, responsible, blocked,
   } = resource._doc;
@@ -6,10 +6,10 @@ const single = (resource, showSensitiveData = false) => {
     id: resource._id.valueOf(),
     name,
     responsible,
-    blocked: showSensitiveData ? blocked : undefined,
+    blocked,
   };
 };
 
-const multiple = (resources, showSensitiveData) => resources.map((resource) => single(resource, showSensitiveData));
+const multiple = (resources) => resources.map((resource) => single(resource));
 
 export { single, multiple };
