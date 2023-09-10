@@ -5,6 +5,11 @@ import CustomError from '../../utils/customError.js';
 import { single } from './asigboArea.dto.js';
 import consts from '../../utils/consts.js';
 
+const validateResponsible = async ({ idUser, idArea }) => {
+  const { responsible } = await AsigboAreaSchema.findById(idArea);
+  return responsible.some((user) => user._id.toString() === idUser);
+};
+
 const assignResponsible = async ({ responsible, session }) => Promise.all(
   responsible.map(async (userId) => {
     const user = await UserSchema.findById(userId);
@@ -146,5 +151,11 @@ const getArea = async ({ idArea }) => {
 };
 
 export {
-  createAsigboArea, updateAsigboArea, getActiveAreas, deleteAsigboArea, getArea, removeAsigboAreaResponsible,
+  createAsigboArea,
+  updateAsigboArea,
+  getActiveAreas,
+  deleteAsigboArea,
+  getArea,
+  removeAsigboAreaResponsible,
+  validateResponsible,
 };

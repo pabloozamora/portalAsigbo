@@ -12,9 +12,16 @@ import {
   deleteAsigboArea,
   getArea,
   removeAsigboAreaResponsible,
+  // validateResponsible,
 } from './asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+
+/* const validateResponsibleController = async ({ idUser, idArea }) => {
+  const result = await validateResponsible({ idUser, idArea });
+  if (!result) throw new CustomError('No cuenta con permisos de encargado sobre esta área.');
+  return true;
+}; */
 
 const updateAsigboAreaController = async (req, res) => {
   const { name, responsible } = req.body;
@@ -63,7 +70,7 @@ const updateAsigboAreaController = async (req, res) => {
     res.status(status).send({ err, status });
   } finally {
     // Eliminar archivo provisional
-    if (filePath) fs.unlink(filePath, () => {});
+    if (filePath) fs.unlink(filePath, () => { });
   }
 };
 
@@ -105,7 +112,7 @@ const createAsigboAreaController = async (req, res) => {
     res.status(status).send({ err, status });
   } finally {
     // Eliminar archivo provisional
-    if (file) fs.unlink(filePath, () => {});
+    if (file) fs.unlink(filePath, () => { });
   }
 };
 
