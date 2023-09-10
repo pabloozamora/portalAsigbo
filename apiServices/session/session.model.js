@@ -48,7 +48,7 @@ const authenticate = async (user, passwordHash) => {
   return single(result);
 };
 
-const forceUserLogout = async (idUser) => SessionSchema.deleteMany({ idUser });
+const forceUserLogout = async (idUser, session) => SessionSchema.deleteMany({ idUser }, { session });
 
 export {
   storeSessionToken, deleteSessionToken, authenticate, validateSessionToken, deleteLinkedTokens, forceUserLogout,

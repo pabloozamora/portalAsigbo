@@ -2,7 +2,10 @@ import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
-import { addRoleToManyUsers, removeRoleFromUser, updateServiceHours } from '../user/user.model.js';
+import { forceUserLogout } from '../session/session.model.js';
+import {
+  addRoleToUser, removeRoleFromUser, updateServiceHours,
+} from '../user/user.model.js';
 import { multiple, single } from './activity.dto.js';
 import {
   createActivity,
@@ -27,8 +30,18 @@ const removeActivityResponsibleRole = async ({ idUser, session }) => {
   if (result.length === 1) {
     // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
     await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
+
+    // Forzar cerrar sesión del usuario
+    await forceUserLogout(idUser, session);
   }
 };
+
+const addActivityResponsibleRole = async ({ responsible, session }) => Promise.all(
+  responsible?.map(async (idUser) => {
+    const roleAdded = await addRoleToUser({ idUser, role: consts.roles.activityResponsible, session });
+    if (roleAdded) forceUserLogout(idUser);
+  }),
+);
 
 const createActivityController = async (req, res) => {
   const {
@@ -69,12 +82,7 @@ const createActivityController = async (req, res) => {
     });
 
     // añadir roles de responsables de actividad
-
-    await addRoleToManyUsers({
-      usersIdList: responsible,
-      role: consts.roles.activityResponsible,
-      session,
-    });
+    await addActivityResponsibleRole({ responsible, session });
 
     await session.commitTransaction();
 
@@ -189,11 +197,8 @@ const updateActivityController = async (req, res) => {
         (updatedUser) => !dataBeforeChange.responsible.some((beforeUser) => beforeUser.id === updatedUser.id),
       )
       .map((user) => user.id);
-    await addRoleToManyUsers({
-      usersIdList: usersAdded,
-      role: consts.roles.activityResponsible,
-      session,
-    });
+
+    await addActivityResponsibleRole({ responsible: usersAdded, session });
 
     await session.commitTransaction();
 
