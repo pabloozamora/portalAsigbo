@@ -150,10 +150,17 @@ const getActiveUsersController = async (req, res) => {
     });
 
     const resultWithPromotionGroup = await Promise.all(
-      result.map(async (user) => ({ ...user, promotionGroup: await promotionObj.getPromotionGroup(user.promotion) })),
+      result.map(async (user) => ({
+        ...user,
+        promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
+      })),
     );
 
-    res.send({ result: resultWithPromotionGroup, pages, resultsPerPage: consts.resultsNumberPerPage });
+    res.send({
+      result: resultWithPromotionGroup,
+      pages,
+      resultsPerPage: consts.resultsNumberPerPage,
+    });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los usuarios activos.';
     let status = 500;
@@ -260,14 +267,19 @@ const finishRegistrationController = async (req, res) => {
 const assignAdminRoleController = async (req, res) => {
   const { idUser } = req.params;
 
+  const session = await connection.startSession();
   try {
-    await addRoleToUser({ idUser, role: consts.roles.admin });
+    session.startTransaction();
+    await addRoleToUser({ idUser, role: consts.roles.admin, session });
 
     // cerrar sesión del usuario
-    await forceUserLogout(idUser);
+    await forceUserLogout(idUser, session);
+
+    await session.commitTransaction();
 
     res.sendStatus(204);
   } catch (ex) {
+    await session.abortTransaction();
     let err = 'Ocurrio un error al asignar privilegios de administrador al usuario.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -281,15 +293,35 @@ const assignAdminRoleController = async (req, res) => {
 
 const removeAdminRoleController = async (req, res) => {
   const { idUser } = req.params;
+  const session = await connection.startSession();
 
   try {
-    await removeRoleFromUser({ idUser, role: consts.roles.admin });
+    session.startTransaction();
+
+    // verificar que haya más de dos admins
+    const { result } = await getActiveUsers({
+      idUser: req.session.id,
+      role: consts.roles.admin,
+      page: null,
+    });
+
+    if (result.length <= 1) {
+      throw new CustomError(
+        'No es posible eliminar a todos los administradores. En todo momento debe existir por lo menos uno.',
+        400,
+      );
+    }
+
+    await removeRoleFromUser({ idUser, role: consts.roles.admin, session });
 
     // cerrar sesión del usuario
-    await forceUserLogout(idUser);
+    await forceUserLogout(idUser, session);
+
+    await session.commitTransaction();
 
     res.sendStatus(204);
   } catch (ex) {
+    await session.abortTransaction();
     let err = 'Ocurrio un error al remover privilegios de administrador al usuario.';
     let status = 500;
     if (ex instanceof CustomError) {
