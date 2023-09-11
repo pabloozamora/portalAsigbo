@@ -19,7 +19,7 @@ const getActivityAssignments = async ({ idUser, idActivity }) => {
 
     return multiple(assignments);
   } catch (ex) {
-    if (ex?.kind === 'ObjectId') throw new CustomError('Los ids proporcionados no son válidos.', 400);
+    if (ex?.kind === 'ObjectId') { throw new CustomError('Los ids proporcionados no son válidos.', 400); }
     throw ex;
   }
 };
@@ -43,8 +43,10 @@ const assignUserToActivity = async ({
         throw new CustomError('La actividad proporcionada no existe.', 400);
       }
     }
-
-    if (!activityData.participatingPromotions.includes(userData.promotion)) {
+    if (
+      activityData.participatingPromotions !== null
+      && !activityData.participatingPromotions.includes(userData.promotion)
+    ) {
       throw new CustomError('La actividad no está disponible para la promoción de este usuario.');
     }
 
