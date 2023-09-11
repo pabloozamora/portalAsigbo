@@ -66,9 +66,9 @@ const createUser = async ({
  * @returns
  */
 const getActiveUsers = async ({
-  idUser, promotion, search, role, promotionMin, promotionMax, priority, page = 0, showRole,
+  promotion, search, role, promotionMin, promotionMax, priority, page = 0, showRole,
 }) => {
-  const query = { blocked: false, _id: { $ne: idUser } };
+  const query = { blocked: false };
 
   if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
