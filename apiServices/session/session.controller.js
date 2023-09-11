@@ -24,6 +24,8 @@ const loginController = async (req, res) => {
   const session = await connection.startSession();
 
   try {
+    session.startTransaction();
+
     const passwordHash = sha256(password);
     const {
       id,
@@ -39,8 +41,6 @@ const loginController = async (req, res) => {
     const refreshToken = await signRefreshToken({
       id, code, name, lastname, promotion, career, sex, role,
     });
-
-    session.startTransaction();
 
     // guardar refresh token en bd
     await storeSessionToken({ idUser: id, token: refreshToken, session });
