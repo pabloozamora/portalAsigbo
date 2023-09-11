@@ -1,34 +1,21 @@
-import helper from 'csvtojson';
 import CustomError from '../../utils/customError.js';
 import { generateUsers } from './uploadData.model.js';
 
 const uploadDataController = async (req, res) => {
-  const { schema, path } = req.body;
+  const { data } = req.body;
 
   try {
-    const data = [];
-
-    switch (schema) {
-      case 'user':
-        await helper().fromFile(path, { encoding: 'binary' }).then((rows) => {
-          rows.forEach((row) => {
-            const newUser = {
-              code: row.code,
-              name: row.name,
-              lastname: row.lastname,
-              email: row.email,
-              promotion: row.promotion,
-              career: row.career,
-              sex: row.sex,
-            };
-            data.push(newUser);
-          });
-        });
-        res.send(await generateUsers(data));
-        break;
-      default:
-        throw new CustomError('El esquema especificado no existe.');
-    }
+    const users = data.map((user) => ({
+      code: user['Código'],
+      name: user.Nombres,
+      lastname: user.Apellidos,
+      email: user.Correo,
+      promotion: user['Promoción'],
+      career: user.Carrera,
+      sex: user.Sexo,
+    }));
+    const result = await generateUsers({ users });
+    res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al insertar la información.';
     let status = 500;
