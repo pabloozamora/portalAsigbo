@@ -318,6 +318,20 @@ const updateUserPassword = async ({ idUser, passwordHash, session }) => {
   await user.save({ session });
 };
 
+const updateUserBlockedStatus = async ({ idUser, blocked, session }) => {
+  try {
+    const { acknowledged, matchedCount } = await UserSchema.updateOne({ _id: idUser }, { blocked }, { session });
+
+    if (!matchedCount) throw new CustomError('No se encontró al usuario a modificar.', 404);
+    if (!acknowledged) throw new CustomError('No fue posible realizar la modificación del status blocked.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 404);
+    }
+    throw ex;
+  }
+};
+
 export {
   createUser,
   getUsersList,
@@ -332,4 +346,5 @@ export {
   updateUserPassword,
   deleteAllUserAlterTokens,
   addRoleToUser,
+  updateUserBlockedStatus,
 };

@@ -12,6 +12,7 @@ import {
   saveRegisterToken,
   updateUserPassword,
   validateAlterUserToken,
+  updateUserBlockedStatus,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
@@ -335,6 +336,50 @@ const removeAdminRoleController = async (req, res) => {
   }
 };
 
+const disableUserController = async (req, res) => {
+  const { idUser } = req.params;
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+    await updateUserBlockedStatus({ idUser, blocked: true });
+
+    // Forzar logout
+    await forceUserLogout(idUser, session);
+
+    session.commitTransaction();
+    res.sendStatus(204);
+  } catch (ex) {
+    session.abortTransaction();
+    let err = 'Ocurrio un error deshabilitar usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const enableUserController = async (req, res) => {
+  const { idUser } = req.params;
+
+  try {
+    await updateUserBlockedStatus({ idUser, blocked: false });
+
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error deshabilitar usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createUserController,
   getUsersListController,
@@ -345,4 +390,6 @@ export {
   getAdminUsersController,
   assignAdminRoleController,
   removeAdminRoleController,
+  disableUserController,
+  enableUserController,
 };

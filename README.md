@@ -340,6 +340,24 @@
   Parámetro obligatorio en la ruta: 
   - idUser: id del usuario.
 
+* **/user/:idUser/disable**
+
+  Método: Patch
+
+  Deshabilita un usuario existente. Un usuario deshabilitado no puede iniciar acción ni realizar acción alguna.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario.
+
+* **/user/:idUser/enable**
+
+  Método: Patch
+
+  Habilita un usuario existente.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario.
+
 ## Notas
 
 ### Consideraciones para la bd

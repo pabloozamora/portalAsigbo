@@ -9,6 +9,8 @@ import {
   getUserController,
   removeAdminRoleController,
   validateRegisterTokenController,
+  disableUserController,
+  enableUserController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
@@ -36,5 +38,7 @@ userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTok
 userRouter.get('/:idUser', ensureAdminAuth, getUserController);
 userRouter.patch('/:idUser/role/admin', ensureAdminAuth, assignAdminRoleController);
 userRouter.delete('/:idUser/role/admin', ensureAdminAuth, removeAdminRoleController);
+userRouter.patch('/:idUser/disable', ensureAdminAuth, disableUserController);
+userRouter.patch('/:idUser/enable', ensureAdminAuth, enableUserController);
 
 export default userRouter;
