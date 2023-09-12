@@ -275,13 +275,15 @@
 
   Método: Get
 
-  Obtiene el listado de usuarios activos.
+  Obtiene el listado de usuarios. Por defecto devuelve únicamente a los usuarios activos.
 
   Parámetros de búsqueda opcionales (?params):
   - promotion: año de promoción de estudiantes a mostrar. También permite el nombre del grupo de becados.
   - search: cadena de texto a encontrar en el nombre y apellido de los becados.
   - priority (puede ser un arreglo): id de los usuarios a priorizar y mostrar primero.
   - page: página de resultados a mostrar.
+  - role: devuelve los usuarios con un rol específico.
+  - includeBlocked: incluye en el resultado a los usuarios deshabilitados.
 
 * **/user**
 

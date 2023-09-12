@@ -64,14 +64,15 @@ const createUser = async ({
  * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
  * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
  * @param page número de pagina en los resultados
- * @param showRole mostrar el role de los usuarios
+ * @param includeBlocked Boolean. Indica si se incluyen los usuarios bloqueados. Default false.
  * @returns
  */
-const getActiveUsers = async ({
-  promotion, search, role, promotionMin, promotionMax, priority, page = 0,
+const getUsersList = async ({
+  promotion, search, role, promotionMin, promotionMax, priority, page = 0, includeBlocked = false,
 }) => {
-  const query = { blocked: false };
+  const query = {};
 
+  if (!includeBlocked) query.blocked = false;
   if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
   if (exists(promotionMin)) query.promotion.$gt = promotionMin;
@@ -319,7 +320,7 @@ const updateUserPassword = async ({ idUser, passwordHash, session }) => {
 
 export {
   createUser,
-  getActiveUsers,
+  getUsersList,
   updateServiceHours,
   getUser,
   addRoleToManyUsers,

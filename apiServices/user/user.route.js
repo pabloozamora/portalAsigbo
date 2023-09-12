@@ -3,7 +3,7 @@ import {
   assignAdminRoleController,
   createUserController,
   finishRegistrationController,
-  getActiveUsersController,
+  getUsersListController,
   getAdminUsersController,
   getLoggedUserController,
   getUserController,
@@ -29,7 +29,7 @@ userRouter.post(
   validateBody(finishRegistrationSchema),
   finishRegistrationController,
 );
-userRouter.get('/', ensureAdminAuth, getActiveUsersController);
+userRouter.get('/', ensureAdminAuth, getUsersListController);
 userRouter.get('/admin', ensureAdminAuth, getAdminUsersController);
 userRouter.get('/logged', ensureRefreshTokenAuth, getLoggedUserController);
 userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTokenController);

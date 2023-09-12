@@ -6,7 +6,7 @@ import {
   addRoleToUser,
   createUser,
   deleteAllUserAlterTokens,
-  getActiveUsers,
+  getUsersList,
   getUser,
   removeRoleFromUser,
   saveRegisterToken,
@@ -105,9 +105,9 @@ const createUserController = async (req, res) => {
   }
 };
 
-const getActiveUsersController = async (req, res) => {
+const getUsersListController = async (req, res) => {
   const {
-    promotion, search, page, priority, role,
+    promotion, search, page, priority, role, includeBlocked,
   } = req.query;
   try {
     const promotionObj = new Promotion();
@@ -137,7 +137,7 @@ const getActiveUsersController = async (req, res) => {
       }
     }
 
-    const { pages, result } = await getActiveUsers({
+    const { pages, result } = await getUsersList({
       idUser: req.session.id,
       promotion: parseInt(promotion, 10) || null,
       search,
@@ -146,6 +146,7 @@ const getActiveUsersController = async (req, res) => {
       promotionMax,
       page,
       priority: Array.isArray(priority) ? priority : [priority],
+      includeBlocked,
     });
 
     const parsedUsers = multiple(result, { showSensitiveData: req.session.role.includes(consts.roles.admin) });
@@ -176,7 +177,7 @@ const getActiveUsersController = async (req, res) => {
 
 const getAdminUsersController = async (req, res) => {
   try {
-    const { result } = await getActiveUsers({
+    const { result } = await getUsersList({
       idUser: req.session.id,
       role: consts.roles.admin,
       page: null,
@@ -300,7 +301,7 @@ const removeAdminRoleController = async (req, res) => {
     session.startTransaction();
 
     // verificar que haya más de dos admins
-    const { result } = await getActiveUsers({
+    const { result } = await getUsersList({
       idUser: req.session.id,
       role: consts.roles.admin,
       page: null,
@@ -336,7 +337,7 @@ const removeAdminRoleController = async (req, res) => {
 
 export {
   createUserController,
-  getActiveUsersController,
+  getUsersListController,
   getUserController,
   getLoggedUserController,
   validateRegisterTokenController,
