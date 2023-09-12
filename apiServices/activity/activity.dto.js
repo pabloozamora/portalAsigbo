@@ -1,4 +1,5 @@
 import { parseMultipleObjects, parseSingleObject } from '../../utils/parseMongoObject.js';
+import { single as asigboAreaSingle } from '../asigboArea/asigboArea.dto.js';
 
 const single = (resource, showSensitiveData) => {
   const {
@@ -21,7 +22,7 @@ const single = (resource, showSensitiveData) => {
     date,
     serviceHours,
     responsible: showSensitiveData ? parseMultipleObjects(responsible) : undefined,
-    asigboArea: parseSingleObject(asigboArea),
+    asigboArea: asigboAreaSingle(asigboArea),
     payment: parseSingleObject(payment),
     registrationStartDate,
     registrationEndDate,

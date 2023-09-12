@@ -28,6 +28,6 @@ const single = (resource, { showSensitiveData = false, showHours = false, showRo
   };
 };
 
-const multiple = (resources, { showSensitiveData, showHours, showRole } = {}) => resources.map((resource) => single(resource, { showSensitiveData, showHours, showRole }));
+const multiple = (resources, { showSensitiveData, showHours, showRole } = {}) => resources?.map((resource) => single(resource, { showSensitiveData, showHours, showRole }));
 
 export { single, multiple };

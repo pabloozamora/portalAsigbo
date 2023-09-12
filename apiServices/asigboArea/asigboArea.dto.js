@@ -5,7 +5,7 @@ const single = (resource) => {
     name, responsible, blocked,
   } = resource._doc;
   return {
-    id: resource._id.valueOf(),
+    id: resource._id?.valueOf(),
     name,
     responsible: multipleUser(responsible),
     blocked,
