@@ -24,7 +24,7 @@ const single = (resource, { showSensitiveData = false, showHours = false, showRo
     serviceHours: showSensitiveData || showHours ? parseServiceHours(serviceHours) : undefined,
     blocked: showSensitiveData ? blocked : undefined,
     role: showSensitiveData || showRole ? role : undefined,
-    completeRegistration: exists(passwordHash),
+    completeRegistration: showSensitiveData ? exists(passwordHash) : undefined,
   };
 };
 
