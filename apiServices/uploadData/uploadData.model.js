@@ -1,7 +1,7 @@
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 
-const generateUsers = async (users) => {
+const generateUsers = async ({ users }) => {
   try {
     await UserSchema.insertMany(users);
     return users;
