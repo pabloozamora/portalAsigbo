@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { userSubSchema } from './user.schema.js';
+import userSubSchema from './subUser.schema.js';
 
 const asigboAreaSchema = Schema({
   name: { type: String, required: true, unique: true },

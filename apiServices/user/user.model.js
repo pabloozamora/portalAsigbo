@@ -5,6 +5,8 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
 import { multiple, single } from './user.dto.js';
+import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
+import compareObjectId from '../../utils/compareObjectId.js';
 
 const getUser = async (idUser) => {
   const user = await UserSchema.findById(idUser);
@@ -138,25 +140,39 @@ const updateServiceHours = async ({
   hoursToAdd = 0,
   session,
 }) => {
-  const userData = await UserSchema.findById(userId);
+  const userData = await UserSchema.findById(userId).session(session);
 
   if (!userData) throw new CustomError('El usuario no existe.', 400);
-
-  const serviceHoursAreas = userData.serviceHours?.areas ?? {};
+  console.log(userData.serviceHours.areas);
+  const serviceHoursAreas = Array.isArray(userData.serviceHours?.areas) ? userData.serviceHours?.areas : [];
 
   // Se retira el valor anterior y se ingresa el valor actualidado (previous - new)
   // Si no hay un valor previo en la bd, se ignora y se toma como si fuera 0
 
-  const newAreaHours = serviceHoursAreas[asigboAreaId] !== undefined
-    ? serviceHoursAreas[asigboAreaId] - hoursToRemove + hoursToAdd
+  const area = serviceHoursAreas.find((data) => data?.asigboArea && compareObjectId(data.asigboArea._id, asigboAreaId));
+  const remainingAreas = serviceHoursAreas.filter((data) => data?.asigboArea && !compareObjectId(data.asigboArea._id, asigboAreaId));
+
+  const newAreaHours = area !== undefined
+    ? area.total - hoursToRemove + hoursToAdd
     : hoursToAdd - hoursToRemove;
 
   const newTotalHours = userData.serviceHours?.total !== undefined
     ? userData.serviceHours.total - hoursToRemove + hoursToAdd
     : hoursToAdd - hoursToRemove;
 
+  const newAreaModel = {};
+  if (!area) {
+    // buscar datos del área de asigbo
+    const asigboAreaData = await AsigboAreaSchema.findById(asigboAreaId).session(session);
+    newAreaModel.asigboArea = asigboAreaData;
+    newAreaModel.total = newAreaHours;
+  } else {
+    // modificar datos existentes
+    area.total = newAreaHours;
+  }
+
   userData.serviceHours = {
-    areas: { ...serviceHoursAreas, [asigboAreaId]: newAreaHours },
+    areas: [...remainingAreas, area ?? newAreaModel],
     total: newTotalHours,
   };
 

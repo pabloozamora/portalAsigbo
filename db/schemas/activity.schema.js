@@ -1,16 +1,16 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { asigboAreaSubSchema } from './asigboArea.schema.js';
 import { paymentSubSchema } from './payment.schema.js';
-import { userSubSchema } from './user.schema.js';
+import UserSubSchema from './subUser.schema.js';
 import consts from '../../utils/consts.js';
+import { asigboAreaSubSchema } from './asigboArea.schema.js';
 
 const activitySchema = Schema({
   name: { type: String, required: true },
   date: { type: Date, required: true },
   serviceHours: { type: Number, required: true },
   responsible: {
-    type: [userSubSchema],
+    type: [UserSubSchema],
     required: true,
     validate: {
       validator(responsibles) {

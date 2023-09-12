@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { userSubSchema } from './user.schema.js';
+import UserSubSchema from './subUser.schema.js';
 
 const promotionSchema = Schema({
   firstYearPromotion: {
@@ -21,7 +21,7 @@ const promotionSchema = Schema({
     },
   },
   responsible: {
-    type: [userSubSchema],
+    type: [UserSubSchema],
     required: true,
     validate: {
       validator(responsibles) {

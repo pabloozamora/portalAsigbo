@@ -1,5 +1,10 @@
 import { Schema, model } from 'mongoose';
-import { ObjectId } from 'mongodb';
+import { asigboAreaSubSchema } from './asigboArea.schema.js';
+
+const AreaServiceHoursSchema = Schema({
+  asigboArea: { type: asigboAreaSubSchema, required: true },
+  total: { type: Number, default: 0 },
+});
 
 const userSchema = Schema({
   code: { type: Number, unique: true, required: [true, 'El atributo code es oblgatorio'] },
@@ -16,20 +21,12 @@ const userSchema = Schema({
   },
   passwordHash: { type: String },
   serviceHours: {
-    areas: { type: Object, default: {} },
-    total: Number,
+    areas: [{ type: AreaServiceHoursSchema }],
+    total: { type: Number, default: 0 },
   },
   blocked: { type: Boolean, default: false },
   sex: { type: String, required: true },
 });
 
-const userSubSchema = Schema({
-  _id: { type: ObjectId, ref: 'user', required: true },
-  name: { type: String, required: true },
-  lastname: { type: String, required: true },
-  promotion: { type: Number, required: true },
-});
-
 const UserSchema = model('user', userSchema);
 export default UserSchema;
-export { userSubSchema };
