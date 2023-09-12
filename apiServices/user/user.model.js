@@ -4,7 +4,7 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
-import { multiple, single } from './user.dto.js';
+import { single } from './user.dto.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import compareObjectId from '../../utils/compareObjectId.js';
 
@@ -68,7 +68,7 @@ const createUser = async ({
  * @returns
  */
 const getActiveUsers = async ({
-  promotion, search, role, promotionMin, promotionMax, priority, page = 0, showRole,
+  promotion, search, role, promotionMin, promotionMax, priority, page = 0,
 }) => {
   const query = { blocked: false };
 
@@ -130,7 +130,7 @@ const getActiveUsers = async ({
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
-  return { pages, result: multiple(users, { showRole }) };
+  return { pages, result: users };
 };
 
 const updateServiceHours = async ({
@@ -143,7 +143,6 @@ const updateServiceHours = async ({
   const userData = await UserSchema.findById(userId).session(session);
 
   if (!userData) throw new CustomError('El usuario no existe.', 400);
-  console.log(userData.serviceHours.areas);
   const serviceHoursAreas = Array.isArray(userData.serviceHours?.areas) ? userData.serviceHours?.areas : [];
 
   // Se retira el valor anterior y se ingresa el valor actualidado (previous - new)

@@ -1,7 +1,7 @@
 import sha256 from 'js-sha256';
 import fs from 'node:fs';
 import CustomError from '../../utils/customError.js';
-import { single } from './user.dto.js';
+import { multiple, single } from './user.dto.js';
 import {
   addRoleToUser,
   createUser,
@@ -146,11 +146,12 @@ const getActiveUsersController = async (req, res) => {
       promotionMax,
       page,
       priority: Array.isArray(priority) ? priority : [priority],
-      showRole: req.session.role.includes(consts.roles.admin), // mostrar role si es admin
     });
 
+    const parsedUsers = multiple(result, { showSensitiveData: req.session.role.includes(consts.roles.admin) });
+
     const resultWithPromotionGroup = await Promise.all(
-      result.map(async (user) => ({
+      parsedUsers.map(async (user) => ({
         ...user,
         promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
       })),
