@@ -82,12 +82,13 @@
   - date: fecha en que se realizará la actividad.
   - serviceHours: horas de servicio que se darán al completar la actividad.
   - responsible: (array) lista con los id's de los usuarios encargados de la actividad.
-  - idAsigboArea: id del eje de asigbo correspondiente.
   - registrationStartDate: fecha en que la actividad se muestra disponible a los becados para su inscripción.
   - registrationEndDate: fecha límite de inscripción.
   - participantsNumber: número máximo de participantes.
   - paymentAmount: monto del pago requerido para la actividad.
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
+
+  Nota: El eje de asigbo al que pertenece la actividad no puede ser modificado.
 
 
 * **/activity/:activityId**

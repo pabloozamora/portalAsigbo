@@ -76,7 +76,6 @@ const updateActivity = async ({
   date,
   serviceHours,
   responsible,
-  idAsigboArea,
   idPayment,
   registrationStartDate,
   registrationEndDate,
@@ -88,11 +87,6 @@ const updateActivity = async ({
   if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
 
   const dataBeforeChange = singleActivityDto(activity, true);
-
-  // obtener datos de area asigbo
-  const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
-
-  if (asigboAreaData === null && idAsigboArea !== undefined) throw new CustomError('No existe el área de asigbo.', 400);
 
   // obtener datos de encargados
   const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
@@ -124,7 +118,6 @@ const updateActivity = async ({
   if (date !== undefined) activity.date = new Date(date);
   if (serviceHours !== undefined) activity.serviceHours = serviceHours;
   if (responsible !== undefined) activity.responsible = responsiblesData;
-  if (idAsigboArea !== undefined) activity.asigboArea = asigboAreaData;
   if (idPayment !== undefined) activity.payment = idPayment;
   if (registrationStartDate !== undefined) activity.registrationStartDate = registrationStartDate;
   if (registrationEndDate !== undefined) activity.registrationEndDate = registrationEndDate;

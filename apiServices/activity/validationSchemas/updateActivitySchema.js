@@ -40,14 +40,6 @@ export default yup.object().shape({
     .nullable()
     .typeError("El campo 'paymentAmount' debe ser un número.")
     .min(0, "El campo 'paymentAmount' debe ser mayor o igual a 0."),
-  idAsigboArea: yup
-    .string()
-    .nullable()
-    .test(
-      'validate-id',
-      "El campo 'idAsigboArea' no es un id válido.",
-      (id) => validateId(id),
-    ),
   responsible: yup
     .array()
     .of(
