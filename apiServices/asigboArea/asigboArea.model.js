@@ -26,6 +26,13 @@ const updateAsigboAreaDependencies = async ({ area, session }) => {
     { 'activity.asigboArea': area },
     { session },
   );
+
+  // actualizar datos en las información de horas de servicio de cada usuario
+  await UserSchema.updateMany(
+    { 'serviceHours.areas.asigboArea._id': area._id },
+    { $set: { 'serviceHours.areas.$.asigboArea': area } },
+    { session, multi: true },
+  );
 };
 
 const updateAsigboArea = async ({
