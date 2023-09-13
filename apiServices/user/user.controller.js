@@ -233,7 +233,7 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => {});
+  fs.unlink(filePath, () => { });
 };
 
 const finishRegistrationController = async (req, res) => {
