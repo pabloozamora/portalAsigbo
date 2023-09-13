@@ -4,7 +4,7 @@ import CustomError from '../../utils/customError.js';
 import { getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
 import { forceUserLogout } from '../session/session.model.js';
 import {
-  addRoleToUser, removeRoleFromUser, updateServiceHours,
+  addRoleToUser, getUser, removeRoleFromUser, updateServiceHours,
 } from '../user/user.model.js';
 import { multiple, single } from './activity.dto.js';
 import {
@@ -257,6 +257,8 @@ const deleteActivityController = async (req, res) => {
 const getUserActivitiesController = async (req, res) => {
   const { idUser } = req.params || null;
   try {
+    // verificar que el usuario existe
+    await getUser(idUser);
     const activities = await getUserActivities(idUser);
     res.send(multiple(activities));
   } catch (ex) {
