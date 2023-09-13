@@ -164,6 +164,7 @@ const updateServiceHours = async ({
   if (!area) {
     // buscar datos del área de asigbo
     const asigboAreaData = await AsigboAreaSchema.findById(asigboAreaId).session(session);
+    if (!asigboAreaData) throw new CustomError('El area de asigno no existe.', 404);
     newAreaModel.asigboArea = asigboAreaData;
     newAreaModel.total = newAreaHours;
   } else {

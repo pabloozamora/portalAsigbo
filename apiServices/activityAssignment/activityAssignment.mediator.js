@@ -31,7 +31,7 @@ const assignUserToActivityMediator = async ({
     const {
       activity: {
         serviceHours,
-        asigboArea: { _id: asigboAreaId },
+        asigboArea: { id: asigboAreaId },
       },
       completed: completedValue,
     } = result;
