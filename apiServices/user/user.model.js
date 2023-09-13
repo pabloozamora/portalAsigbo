@@ -332,6 +332,19 @@ const updateUserBlockedStatus = async ({ idUser, blocked, session }) => {
   }
 };
 
+const deleteUser = async ({ idUser, session }) => {
+  try {
+    const { deletedCount, acknowledged } = await UserSchema.deleteOne({ _id: idUser }, { session });
+    if (!acknowledged) throw new CustomError('No se encontró el usuario a eliminar.', 404);
+    if (deletedCount !== 1) throw new CustomError('No se pudo eliminar el usuario.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 404);
+    }
+    throw ex;
+  }
+};
+
 export {
   createUser,
   getUsersList,
@@ -347,4 +360,5 @@ export {
   deleteAllUserAlterTokens,
   addRoleToUser,
   updateUserBlockedStatus,
+  deleteUser,
 };

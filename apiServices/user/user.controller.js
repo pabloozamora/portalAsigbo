@@ -13,6 +13,7 @@ import {
   updateUserPassword,
   validateAlterUserToken,
   updateUserBlockedStatus,
+  deleteUser,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
@@ -21,6 +22,8 @@ import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import Promotion from '../promotion/promotion.model.js';
 import { forceUserLogout } from '../session/session.model.js';
+import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
+import { getActivitiesWhereUserIsResponsible, getUserActivities } from '../activity/activity.model.js';
 
 const getLoggedUserController = async (req, res) => {
   try {
@@ -380,6 +383,56 @@ const enableUserController = async (req, res) => {
   }
 };
 
+const deleteUserController = async (req, res) => {
+  const { idUser } = req.params;
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    // verificar que el usuario no haya realizado acciones
+    let responsibleAreas;
+    try {
+      responsibleAreas = await getAreasWhereUserIsResponsible({ idUser, session });
+    } catch (ex) {
+      // Se espera un error al no encontrar resultados
+    }
+    if (responsibleAreas?.length > 0) throw new CustomError('No es posible eliminar el usuario, pues este figura como encargado de al menos un eje de ASIGBO.', 400);
+
+    let responsibleActivities;
+    try {
+      responsibleActivities = await getActivitiesWhereUserIsResponsible({ idUser, session });
+    } catch (ex) {
+      // Se espera un error al no encontrar resultados
+    }
+    if (responsibleActivities?.length > 0) throw new CustomError('No es posible eliminar el usuario, pues este figura como encargado de al menos una actividad.', 400);
+
+    let activitiesAssignments;
+    try {
+      activitiesAssignments = await getUserActivities(idUser);
+    } catch (ex) {
+      // Se espera un error al no encontrar resultados
+    }
+    if (activitiesAssignments?.length > 0) throw new CustomError('No es posible eliminar el usuario, pues este ha sido inscrito en al menos una actividad.', 400);
+
+    // verificar que no haya realizado pagos (pendiente)
+
+    await deleteUser({ idUser, session });
+
+    session.commitTransaction();
+    res.sendStatus(204);
+  } catch (ex) {
+    session.abortTransaction();
+    let err = 'Ocurrio un error al eliminar usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createUserController,
   getUsersListController,
@@ -392,4 +445,5 @@ export {
   removeAdminRoleController,
   disableUserController,
   enableUserController,
+  deleteUserController,
 };
