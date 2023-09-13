@@ -358,6 +358,16 @@
   Parámetro obligatorio en la ruta: 
   - idUser: id del usuario.
 
+  * **/user/:idUser**
+
+  Método: Delete
+
+  Eliminar un usuario. El usuario no podrá ser eliminado si es un encargado de área o actividad, ha
+  sido asignado a una actividad o ha emitido algún pago.
+
+  Parámetro obligatorio en la ruta: 
+  - idUser: id del usuario.
+
 ## Notas
 
 ### Consideraciones para la bd
