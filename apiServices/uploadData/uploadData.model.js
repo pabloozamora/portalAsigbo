@@ -3,6 +3,7 @@ import CustomError from '../../utils/customError.js';
 
 const generateUsers = async ({ users }) => {
   try {
+    if (users.length === 0) throw new CustomError('Debe enviar por lo menos un registro.');
     await UserSchema.insertMany(users);
     return users;
   } catch (ex) {
