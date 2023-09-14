@@ -9,10 +9,17 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import compareObjectId from '../../utils/compareObjectId.js';
 
 const getUser = async (idUser) => {
-  const user = await UserSchema.findById(idUser);
-  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+  try {
+    const user = await UserSchema.findById(idUser);
+    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
 
-  return user;
+    return user;
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 400);
+    }
+    throw ex;
+  }
 };
 
 const createUser = async ({
@@ -41,6 +48,43 @@ const createUser = async ({
 
     await user.save({ session });
     return single(user, { showSensitiveData: true });
+  } catch (ex) {
+    if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
+      throw new CustomError('El código proporcionado ya existe.', 400);
+    }
+    if (ex.code === 11000 && ex.keyValue?.email !== undefined) {
+      throw new CustomError('El email ya se encuentra registrado.', 400);
+    }
+    if (ex.code === 'ERR_ASSERTION' && ex.path === 'code') {
+      throw new CustomError('El código de usuario debe ser un número.');
+    }
+    throw ex;
+  }
+};
+const updateUser = async ({
+  idUser,
+  name,
+  lastname,
+  email,
+  promotion,
+  career,
+  sex,
+  session,
+}) => {
+  try {
+    const dataToUpdate = {};
+
+    if (name) dataToUpdate.name = name;
+    if (lastname) dataToUpdate.lastname = lastname;
+    if (email) dataToUpdate.email = email;
+    if (promotion) dataToUpdate.promotion = promotion;
+    if (career) dataToUpdate.career = career;
+    if (sex) dataToUpdate.sex = sex;
+
+    const { acknowledged, matchedCount } = await UserSchema.updateOne({ _id: idUser }, dataToUpdate, { session });
+
+    if (!acknowledged) throw new CustomError('No fue posible actualizar el usuario.', 500);
+    if (matchedCount !== 1) throw new CustomError('No se encontró el usuario.', 404);
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -362,4 +406,5 @@ export {
   addRoleToUser,
   updateUserBlockedStatus,
   deleteUser,
+  updateUser,
 };

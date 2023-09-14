@@ -12,6 +12,7 @@ import {
   disableUserController,
   enableUserController,
   deleteUserController,
+  updateUserController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
@@ -21,6 +22,11 @@ import ensureRegisterAuth from '../../middlewares/ensureRegisterAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import finishRegistrationSchema from './validationSchemas/finishRegistrationSchema.js';
+import validateParams from '../../middlewares/validateParams.js';
+import {
+  updateUserBodySchema,
+  updateUserParamsSchema,
+} from './validationSchemas/updateUserSchema.js';
 
 const userRouter = express.Router();
 
@@ -42,5 +48,13 @@ userRouter.delete('/:idUser/role/admin', ensureAdminAuth, removeAdminRoleControl
 userRouter.patch('/:idUser/disable', ensureAdminAuth, disableUserController);
 userRouter.patch('/:idUser/enable', ensureAdminAuth, enableUserController);
 userRouter.delete('/:idUser', ensureAdminAuth, deleteUserController);
+userRouter.patch(
+  '/:idUser',
+  ensureRefreshTokenAuth,
+  multerMiddleware(uploadImage.single('photo')),
+  validateParams(updateUserParamsSchema),
+  validateBody(updateUserBodySchema),
+  updateUserController,
+);
 
 export default userRouter;
