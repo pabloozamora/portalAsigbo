@@ -278,7 +278,7 @@ const getAdminUsersController = async (req, res) => {
       page: null,
       showRole: true, // mostrar role si es admin
     });
-    res.send(result);
+    res.send(multiple(result));
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los usuarios administradores.';
     let status = 500;
