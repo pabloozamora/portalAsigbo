@@ -205,28 +205,14 @@ const getUsersListController = async (req, res) => {
   try {
     const promotionObj = new Promotion();
 
-    const { firstYearPromotion, lastYearPromotion } = await promotionObj.getFirstAndLastYearPromotion();
     let promotionMin = null;
     let promotionMax = null;
     if (promotion) {
       // si se da un grupo de usuarios, definir rango de promociones
       if (Number.isNaN(parseInt(promotion, 10))) {
-        const promotionGroups = Object.values(consts.promotionsGroups);
-        if (!promotionGroups.includes(promotion)) {
-          throw new CustomError('No se han encontrado usuarios.', 404);
-        } // No es un grupo de usuarios
-
-        if (promotion === consts.promotionsGroups.chick) {
-          // si son pollitos
-          promotionMin = firstYearPromotion;
-        } else if (promotion === consts.promotionsGroups.student) {
-          // si son estudiantes
-          promotionMin = lastYearPromotion - 1;
-          promotionMax = firstYearPromotion + 1;
-        } else {
-          // si son graduados
-          promotionMax = lastYearPromotion;
-        }
+        const result = await promotionObj.getPromotionRange({ promotionGroup: promotion });
+        promotionMin = result.promotionMin;
+        promotionMax = result.promotionMax;
       }
     }
 

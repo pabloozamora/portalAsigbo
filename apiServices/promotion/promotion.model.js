@@ -49,6 +49,37 @@ class Promotion {
       students: { id: consts.promotionsGroups.student, years: studentPromotions },
     };
   }
+
+  /**
+   * Este método se utiliza para obtener los valores min y max  de los años de un determinado grupo de promociones.
+   * Ejemplo: los pollitos son todas las promociones mayores al 2023. Los estudiantes entre 2018 y 2023, etc.
+   * @param promotionGroup String. Grupo de promoción a buscar.
+   * @returns Object. {promotionMax, promotionMin} Limites superiores e inferiores (incluyentes) en años.
+   */
+  async getPromotionRange({ promotionGroup }) {
+    const { firstYearPromotion, lastYearPromotion } = await this.getFirstAndLastYearPromotion();
+    let promotionMin = null;
+    let promotionMax = null;
+
+    const promotionGroups = Object.values(consts.promotionsGroups);
+    if (!promotionGroups.includes(promotionGroup)) {
+      throw new CustomError('No se han encontrado usuarios.', 404);
+    } // No es un grupo de usuarios
+
+    if (promotionGroup === consts.promotionsGroups.chick) {
+      // si son pollitos
+      promotionMin = firstYearPromotion;
+    } else if (promotionGroup === consts.promotionsGroups.student) {
+      // si son estudiantes
+      promotionMin = lastYearPromotion - 1;
+      promotionMax = firstYearPromotion + 1;
+    } else {
+      // si son graduados
+      promotionMax = lastYearPromotion;
+    }
+
+    return { promotionMin, promotionMax };
+  }
 }
 
 export {

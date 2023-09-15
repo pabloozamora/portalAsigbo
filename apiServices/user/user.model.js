@@ -153,11 +153,15 @@ const getUsersList = async ({
         order: {
           $in: ['$_id', parsedPriority], // obtener valor si el id aparece en priority
         },
+        priorityIndex: {
+          $indexOfArray: [parsedPriority, '$_id'],
+        },
       },
     },
     {
       $sort: {
         order: -1, // priorizar id's que si aparecen
+        priorityIndex: 1,
       },
     },
   ];
