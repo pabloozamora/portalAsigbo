@@ -1,7 +1,16 @@
 import { parseMultipleObjects, parseSingleObject } from '../../utils/parseMongoObject.js';
 import { single as asigboAreaSingle } from '../asigboArea/asigboArea.dto.js';
 
-const single = (resource, showSensitiveData) => {
+/**
+ * Genera el dto para una actividad.
+ * @param resource. Objeto con la información del dto.
+ * @param Options. Object {showSensitiveData: Bool. Mostrar información sensible * }
+ * @returns
+ */
+const single = (
+  resource,
+  { showSensitiveData } = {},
+) => {
   const {
     id,
     _id,
@@ -31,6 +40,6 @@ const single = (resource, showSensitiveData) => {
   };
 };
 
-const multiple = (resources, showSensitiveData) => resources.map((resource) => single(resource, showSensitiveData));
+const multiple = (resources, { showSensitiveData } = {}) => resources.map((resource) => single(resource, { showSensitiveData }));
 
 export { single, multiple };

@@ -4,7 +4,7 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
-import { multiple, single, single as singleActivityDto } from './activity.dto.js';
+import { multiple, single as singleActivityDto } from './activity.dto.js';
 
 const validateResponsible = async ({ idUser, idActivity }) => {
   const { responsible } = await ActivitySchema.findById(idActivity);
@@ -86,7 +86,7 @@ const updateActivity = async ({
   const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
   if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
 
-  const dataBeforeChange = singleActivityDto(activity, true);
+  const dataBeforeChange = singleActivityDto(activity, { showSensitiveData: true });
 
   // obtener datos de encargados
   const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
@@ -127,7 +127,7 @@ const updateActivity = async ({
 
   const result = await activity.save({ session });
   return {
-    updatedData: singleActivityDto(result, true),
+    updatedData: singleActivityDto(result, { showSensitiveData: true }),
     dataBeforeChange,
   };
 };
@@ -194,7 +194,7 @@ const getActivity = async ({ idActivity, getSensitiveData = false }) => {
 
     if (result === null) throw new CustomError('No se encontró la actividad.', 404);
 
-    return single(result, getSensitiveData);
+    return singleActivityDto(result, getSensitiveData);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
     throw ex;
