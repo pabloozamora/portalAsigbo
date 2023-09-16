@@ -162,6 +162,7 @@ const getUsersList = async ({
       $sort: {
         order: -1, // priorizar id's que si aparecen
         priorityIndex: 1,
+        _id: 1,
       },
     },
   ];
