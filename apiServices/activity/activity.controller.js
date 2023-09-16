@@ -2,6 +2,7 @@ import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import { getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
+import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import { forceUserLogout } from '../session/session.model.js';
 import {
   addRoleToUser, getUser, removeRoleFromUser, updateServiceHours,
@@ -316,6 +317,18 @@ const getActivityController = async (req, res) => {
   try {
     if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idActivity });
     const result = await getActivity({ idActivity });
+
+    // Para el área de asigbo, verificar si el usuario es encargado
+    let isResponsible = false;
+    try {
+      const areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+      isResponsible = areas?.some((area) => area.id === result.asigboArea.id);
+    } catch (err) {
+      // Error no critico
+    }
+
+    result.asigboArea.isResponsible = isResponsible;
+
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener información de la actividad.';
