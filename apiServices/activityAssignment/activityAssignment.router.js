@@ -34,7 +34,7 @@ activityAssignmentRouter.post(
   assignManyUsersToActivityController,
 );
 
-activityAssignmentRouter.get('/assignment', ensureAdminAuth, validateQuery(searchActivitiesSchema), getActivitiesAssigmentsController);
+activityAssignmentRouter.get('/:idActivity/assignment', ensureAdminAuth, validateQuery(searchActivitiesSchema), getActivitiesAssigmentsController);
 activityAssignmentRouter.get('/assignment/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
 activityAssignmentRouter.patch(
   '/assignment/:idActivityAssignment/complete/',

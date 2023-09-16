@@ -7,7 +7,8 @@ import {
 } from './activityAssignment.model.js';
 
 const getActivitiesAssigmentsController = async (req, res) => {
-  const { idUser, idActivity } = req.query;
+  const { idUser } = req.query;
+  const { idActivity } = req.params;
   try {
     const activities = await getActivityAssignments({ idUser, idActivity });
     res.send(activities);

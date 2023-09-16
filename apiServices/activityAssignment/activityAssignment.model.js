@@ -3,6 +3,7 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 import parseBoolean from '../../utils/parseBoolean.js';
+import Promotion from '../promotion/promotion.model.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
 const getActivityAssignments = async ({ idUser, idActivity }) => {
@@ -12,12 +13,22 @@ const getActivityAssignments = async ({ idUser, idActivity }) => {
     if (idUser !== undefined) filter['user._id'] = idUser;
     if (idActivity !== undefined) filter['activity._id'] = idActivity;
 
-    const assignments = await ActivityAssignmentSchema.find(filter);
+    const assignments = await ActivityAssignmentSchema.find(filter).sort({ 'activity._id': 1, completed: -1, pendingPayment: 1 });
     if (assignments.length === 0) {
       throw new CustomError('No se encontraron resultados.', 404);
     }
 
-    return multiple(assignments);
+    const parsedAssignments = multiple(assignments);
+    const promotion = new Promotion();
+
+    return await Promise.all(
+      parsedAssignments.map(async (assignment) => {
+        // Agregar grupo de promoción al usuario
+        const copy = assignment;
+        copy.user.promotionGroup = await promotion.getPromotionGroup(assignment.user.promotion);
+        return copy;
+      }),
+    );
   } catch (ex) {
     if (ex?.kind === 'ObjectId') { throw new CustomError('Los ids proporcionados no son válidos.', 400); }
     throw ex;
