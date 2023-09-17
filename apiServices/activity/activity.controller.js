@@ -1,4 +1,3 @@
-import { assign } from 'nodemailer/lib/shared/index.js';
 import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
