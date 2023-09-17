@@ -6,9 +6,9 @@ import { getUser, getUsersInList, updateServiceHours } from '../user/user.model.
 import {
   assignManyUsersToActivity,
   assignUserToActivity,
-  changeActivityAssignmentCompletionStatus,
   getActivityAssignments,
   unassignUserFromActivity,
+  updateActivityAssignment,
 } from './activityAssignment.model.js';
 
 const getActivitiesAssigmentsController = async (req, res) => {
@@ -212,55 +212,49 @@ const unassignUserFromActivityController = async (req, res) => {
   }
 };
 
-const changeActivityAssignmentCompletionStatusController = async ({
-  idUser, idActivity, completed, session,
-}) => {
-  const result = await changeActivityAssignmentCompletionStatus({
-    idUser,
-    idActivity,
-    completed,
-    session,
-  });
-
-  const {
-    activity: {
-      serviceHours,
-      asigboArea: { _id: asigboAreaId },
-    },
-    completed: completedResult,
-  } = result;
-
-  // si es una actividad completada, modificar total de horas de servicio
-  // El valor completed corresponde al nuevo valor. Si es true, se deben de agregar las horas.
-  if (serviceHours > 0) {
-    if (completedResult === true) {
-      await updateServiceHours({
-        userId: idUser,
-        asigboAreaId,
-        hoursToAdd: serviceHours,
-        session,
-      });
-    } else {
-      await updateServiceHours({
-        userId: idUser,
-        asigboAreaId,
-        hoursToRemove: serviceHours,
-        session,
-      });
-    }
-  }
-};
-
-const completeActivityAssignmentController = async (req, res) => {
+const updateActivityAssignmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
+  const { completed } = req.body;
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
 
-    await changeActivityAssignmentCompletionStatusController({
-      idUser, idActivity, completed: true, session,
+    const result = await updateActivityAssignment({
+      idUser,
+      idActivity,
+      completed,
+      session,
     });
+
+    // Valores de asignación previos a la modificación
+    const {
+      activity: {
+        serviceHours,
+        asigboArea: { _id: asigboAreaId },
+      },
+      completed: prevCompletedResultValue,
+    } = result;
+
+    // Si se modificó el valor completed y tiene horas de servicio, modificarlas para el usuario.
+    // El valor completed corresponde al nuevo valor. Si es true, se deben de agregar las horas.
+    if (serviceHours > 0 && prevCompletedResultValue !== parseBoolean(completed)) {
+      if (parseBoolean(completed) === true) {
+        await updateServiceHours({
+          userId: idUser,
+          asigboAreaId,
+          hoursToAdd: serviceHours,
+          session,
+        });
+      } else {
+        await updateServiceHours({
+          userId: idUser,
+          asigboAreaId,
+          hoursToRemove: serviceHours,
+          session,
+        });
+      }
+    }
 
     await session.commitTransaction();
 
@@ -268,34 +262,7 @@ const completeActivityAssignmentController = async (req, res) => {
   } catch (ex) {
     await session.abortTransaction();
 
-    let err = 'Ocurrio un error al marcar como completada la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const uncompleteActivityAssignmentController = async (req, res) => {
-  const { idActivity, idUser } = req.params;
-  const session = await connection.startSession();
-  try {
-    session.startTransaction();
-
-    await changeActivityAssignmentCompletionStatusController({
-      idUser, idActivity, completed: false, session,
-    });
-
-    await session.commitTransaction();
-
-    res.sendStatus(204);
-  } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al marcar como completada la actividad.';
+    let err = 'Ocurrio un error al cambiar estado de completado en la asignación de la actividad.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -312,6 +279,5 @@ export {
   getActivitiesAssigmentsController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
-  completeActivityAssignmentController,
-  uncompleteActivityAssignmentController,
+  updateActivityAssignmentController,
 };

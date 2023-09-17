@@ -156,25 +156,18 @@
 
   Permite obtener las actividades en las que está inscrito el usuario en sesión.
 
-* **/activity/:idActivity/assignment/:idUser/complete**
+* **/activity/:idActivity/assignment/:idUser**
 
   Método: Patch
 
-  Permite actualizar el status de la asignación de un usuario a una actividad, como completado.
+  Permite actualizar la asignación de un usuario a una actividad.
 
   Parámetros obligatorios en la ruta:
   - idActivity: id de la actividad a completar.
   - idUser: id del usuario correspondiente.
 
-* **/activity/:idActivity/assignment/:idUser/uncomplete**
-
-  Método: Patch
-
-  Permite actualizar el status de la asignación de un usuario a una actividad, como NO completado.
-
-  Parámetros obligatorios en la ruta:
-  - idActivity: id de la actividad a completar.
-  - idUser: id del usuario correspondiente.
+  Parámetros opcionales body (campos a editar):
+  - completed: boolean. Indica si la actividad ha sido completada.
 
 * **/activity/:idActivity/assignment/:idUser**
 
