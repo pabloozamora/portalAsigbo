@@ -1,5 +1,6 @@
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import CustomError from '../../utils/customError.js';
+import exists from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
@@ -102,7 +103,7 @@ const updateActivityAssignment = async ({
 }) => {
   const dataToUpdate = {};
 
-  if (completed) dataToUpdate.completed = completed;
+  if (exists(completed)) dataToUpdate.completed = completed;
 
   const assignmentData = await ActivityAssignmentSchema.findOneAndUpdate(
     { 'user._id': idUser, 'activity._id': idActivity },
