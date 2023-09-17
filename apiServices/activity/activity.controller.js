@@ -1,7 +1,7 @@
 import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import { getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
+import { getActivityAssignments, getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
 import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import { forceUserLogout } from '../session/session.model.js';
 import {
@@ -328,6 +328,14 @@ const getActivityController = async (req, res) => {
     }
 
     result.asigboArea.isResponsible = isResponsible;
+
+    // Adjuntar asignación (si existe) del usuario en sesión
+    try {
+      const [userAssignment] = await getActivityAssignments({ idUser: req.session.id, idActivity });
+      result.userAssignment = userAssignment;
+    } catch (err) {
+      // error no critico (404)
+    }
 
     res.send(result);
   } catch (ex) {

@@ -46,6 +46,9 @@
   Método: Get
 
   Permite obtener la información de una actividad a través de su id.
+
+  Si el usuario en sesión está inscrito en la actividad, incluye el parámetro **userAssignment**
+  con la información de la asignación.
   
 
 * **/activity/**
