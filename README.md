@@ -114,6 +114,15 @@
 
 ### Asignaciones en actividades
 
+* **/activity/assignment/**
+
+  Método: Get
+
+  Permite obtener la lista de asignaciones para cualquier actividad.
+
+  Parámetros de búsqueda opcionales (?params):
+  - idUser: filtrar por usuario.
+
 * **/activity/:idActivity/assignment/:idUser**
 
   Método: Post

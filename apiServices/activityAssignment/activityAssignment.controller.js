@@ -12,12 +12,30 @@ import {
 } from './activityAssignment.model.js';
 
 const getActivitiesAssigmentsController = async (req, res) => {
+  const { idUser } = req.query;
+  try {
+    const activities = await getActivityAssignments({ idUser });
+    res.send(activities);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las asignaciones a actividades.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getActivitiesAssigmentsByActivityController = async (req, res) => {
   const { idActivity } = req.params;
   try {
     const activities = await getActivityAssignments({ idActivity });
     res.send(activities);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades del usuario.';
+    let err = 'Ocurrio un error al obtener las asignaciones de la actividad.';
     let status = 500;
 
     if (ex instanceof CustomError) {
@@ -276,8 +294,9 @@ const updateActivityAssignmentController = async (req, res) => {
 export {
   assignUserToActivityController,
   assignManyUsersToActivityController,
-  getActivitiesAssigmentsController,
+  getActivitiesAssigmentsByActivityController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
   updateActivityAssignmentController,
+  getActivitiesAssigmentsController,
 };

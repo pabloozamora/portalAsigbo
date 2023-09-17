@@ -5,6 +5,7 @@ import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js'
 import {
   assignManyUsersToActivityController,
   assignUserToActivityController,
+  getActivitiesAssigmentsByActivityController,
   getActivitiesAssigmentsController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
@@ -13,9 +14,12 @@ import {
 import validateBody from '../../middlewares/validateBody.js';
 import assignManyUsersToActivitySchema from './validationSchemas/assignManyUsersToActivitySchema.js';
 import validateParams from '../../middlewares/validateParams.js';
-import requiredIdUserSchema from './validationSchemas/requiredIdUserSchema.js';
+import requiredIdUserSchema, {
+  optionalIdUserSchema,
+} from './validationSchemas/requiredIdUserSchema.js';
 import requiredIdActivitySchema from './validationSchemas/requiredIdActivitySchema.js';
 import updateAssignmentSchema from './validationSchemas/updateAssignmentSchema.js';
+import validateQuery from '../../middlewares/validateQuery.js';
 
 const activityAssignmentRouter = express.Router();
 
@@ -32,8 +36,23 @@ activityAssignmentRouter.post(
   assignManyUsersToActivityController,
 );
 
-activityAssignmentRouter.get('/:idActivity/assignment', ensureAdminAuth, validateParams(requiredIdActivitySchema), getActivitiesAssigmentsController);
-activityAssignmentRouter.get('/assignment/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
+activityAssignmentRouter.get(
+  '/assignment',
+  ensureAdminAuth,
+  validateQuery(optionalIdUserSchema),
+  getActivitiesAssigmentsController,
+);
+activityAssignmentRouter.get(
+  '/:idActivity/assignment',
+  ensureAdminAuth,
+  validateParams(requiredIdActivitySchema),
+  getActivitiesAssigmentsByActivityController,
+);
+activityAssignmentRouter.get(
+  '/assignment/logged',
+  ensureRefreshTokenAuth,
+  getLoggedActivitiesController,
+);
 
 activityAssignmentRouter.patch(
   '/:idActivity/assignment/:idUser',
