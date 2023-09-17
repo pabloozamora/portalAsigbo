@@ -99,11 +99,12 @@ const unassignUserFromActivity = async ({ idActivity, idUser, session }) => {
  * @returns ActivityAssignment object. Datos de la asignación previo a la modificación.
  */
 const updateActivityAssignment = async ({
-  idUser, idActivity, completed, session,
+  idUser, idActivity, completed, aditionalServiceHours, session,
 }) => {
   const dataToUpdate = {};
 
   if (exists(completed)) dataToUpdate.completed = completed;
+  if (exists(aditionalServiceHours)) dataToUpdate.aditionalServiceHours = aditionalServiceHours;
 
   const assignmentData = await ActivityAssignmentSchema.findOneAndUpdate(
     { 'user._id': idUser, 'activity._id': idActivity },

@@ -1,5 +1,6 @@
 import { connection } from '../../db/connection.js';
 import CustomError from '../../utils/customError.js';
+import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import { addActivityAvailableSpaces, getActivity } from '../activity/activity.model.js';
 import { getUser, getUsersInList, updateServiceHours } from '../user/user.model.js';
@@ -232,7 +233,7 @@ const unassignUserFromActivityController = async (req, res) => {
 
 const updateActivityAssignmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
-  const { completed } = req.body;
+  const { completed, aditionalServiceHours } = req.body;
   const session = await connection.startSession();
 
   try {
@@ -242,6 +243,7 @@ const updateActivityAssignmentController = async (req, res) => {
       idUser,
       idActivity,
       completed,
+      aditionalServiceHours,
       session,
     });
 
@@ -252,25 +254,46 @@ const updateActivityAssignmentController = async (req, res) => {
         asigboArea: { _id: asigboAreaId },
       },
       completed: prevCompletedResultValue,
+      aditionalServiceHours: prevAditionalServiceHours,
     } = result;
 
-    // Si se modificó el valor completed y tiene horas de servicio, modificarlas para el usuario.
-    // El valor completed corresponde al nuevo valor. Si es true, se deben de agregar las horas.
-    if (serviceHours > 0 && prevCompletedResultValue !== parseBoolean(completed)) {
-      if (parseBoolean(completed) === true) {
+    const parsedAditionalServiceHours = exists(aditionalServiceHours) ? parseInt(aditionalServiceHours, 10) : null;
+
+    if (exists(aditionalServiceHours) && !exists(completed) && prevCompletedResultValue) {
+      // Realizar unicamente ajuste de horas adicionales para actividad completada
+      const hoursToAdd = parsedAditionalServiceHours - (prevAditionalServiceHours ?? 0);
+      if (hoursToAdd > 0) {
         await updateServiceHours({
           userId: idUser,
           asigboAreaId,
-          hoursToAdd: serviceHours,
+          hoursToAdd,
           session,
         });
+      }
+    } else if (exists(completed) && prevCompletedResultValue !== parseBoolean(completed)) {
+      // Se modificó el valor completed
+      if (parseBoolean(completed)) {
+        // agregar horas + horas adicionales (si también se modificaron, utilizar valor nuevo)
+        const hoursToAdd = serviceHours + (parsedAditionalServiceHours ?? prevAditionalServiceHours ?? 0);
+        if (hoursToAdd > 0) {
+          await updateServiceHours({
+            userId: idUser,
+            asigboAreaId,
+            hoursToAdd,
+            session,
+          });
+        }
       } else {
-        await updateServiceHours({
-          userId: idUser,
-          asigboAreaId,
-          hoursToRemove: serviceHours,
-          session,
-        });
+        // remover horas + horas adicionales previas (sin importar que se haya actualizado)
+        const hoursToRemove = serviceHours + (prevAditionalServiceHours ?? 0);
+        if (hoursToRemove > 0) {
+          await updateServiceHours({
+            userId: idUser,
+            asigboAreaId,
+            hoursToRemove,
+            session,
+          });
+        }
       }
     }
 

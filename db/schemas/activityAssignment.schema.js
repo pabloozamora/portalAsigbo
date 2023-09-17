@@ -7,6 +7,7 @@ const activityAssignmentSchema = Schema({
   activity: { type: activitySubSchema, required: true },
   pendingPayment: { type: Boolean, default: false },
   completed: { type: Boolean, default: false },
+  aditionalServiceHours: { type: Number, default: 0, min: 0 },
 });
 
 activityAssignmentSchema.index({ 'user._id': 1, 'activity._id': 1 }, { unique: true });
