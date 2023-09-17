@@ -1,6 +1,4 @@
-import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
-import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import Promotion from '../promotion/promotion.model.js';
@@ -36,50 +34,17 @@ const getActivityAssignments = async ({ idUser, idActivity }) => {
 };
 
 const assignUserToActivity = async ({
-  idUser, idActivity, completed, activity, session,
+  user, completed, activity, session,
 }) => {
   try {
-    // obtener datos de usuario
-    const userData = await UserSchema.findOne({ _id: idUser });
-
-    if (userData === null) throw new CustomError('El usuario proporcinado no existe.', 400);
-
-    // obtener datos de la actividad
-    let activityData = activity;
-    if (!activity) {
-      // Si la actividad no se pasa como parámetro, buscarla
-      activityData = await ActivitySchema.findOne({ _id: idActivity, blocked: false });
-
-      if (activityData === null) {
-        throw new CustomError('La actividad proporcionada no existe.', 400);
-      }
-    }
-    if (
-      activityData.participatingPromotions !== null
-      && !activityData.participatingPromotions.includes(userData.promotion)
-    ) {
-      throw new CustomError('La actividad no está disponible para la promoción de este usuario.');
-    }
-
-    // verificar que hayan espacios disponibles
-    if (!(activityData.availableSpaces > 0)) {
-      throw new CustomError('La actividad no cuenta con espacios disponibles.', 403);
-    }
-
-    // disminuir el número de vacantes
-    activityData.availableSpaces -= 1;
-    await activityData.save({ session });
-
     const activityAssignment = new ActivityAssignmentSchema();
 
-    activityAssignment.user = userData;
-    activityAssignment.activity = activityData;
-    activityAssignment.pendingPayment = activityData.payment !== null;
+    activityAssignment.user = user;
+    activityAssignment.activity = activity;
+    activityAssignment.pendingPayment = activity.payment !== null;
     activityAssignment.completed = completed ?? false;
 
-    const result = await activityAssignment.save({ session });
-
-    return singleAssignmentActivityDto(result);
+    await activityAssignment.save({ session });
   } catch (ex) {
     if (ex?.code === 11000) {
       // indice duplicado
@@ -89,23 +54,34 @@ const assignUserToActivity = async ({
   }
 };
 
+/**
+ * Permite asignar a varios usuarios a una actividad de forma simultánea.
+ * @param assignmentsList Array of objects. Los objetos del arreglo deben tener la forma
+ * {user: objeto del usuario, activity: objeto de la actividad, pendingPayment: boolean, completed: boolean}
+ */
+const assignManyUsersToActivity = async ({
+  assignmentsList, session,
+}) => {
+  try {
+    await ActivityAssignmentSchema.insertMany(assignmentsList, { session });
+  } catch (ex) {
+    if (ex?.code === 11000) {
+      // indice duplicado
+      throw new CustomError('Alguno de los usuarios ya se encuentra inscrito en la actividad.', 400);
+    }
+    throw ex;
+  }
+};
+
 const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
 
-const unassignUserFromActivity = async ({ idActivityAssignment, session }) => {
-  const assignmentData = await ActivityAssignmentSchema.findById(idActivityAssignment);
-
-  if (assignmentData === null) {
-    throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403);
-  }
-
-  const { deletedCount } = await ActivityAssignmentSchema.deleteOne(
-    {
-      _id: idActivityAssignment,
-    },
+const unassignUserFromActivity = async ({ idActivity, idUser, session }) => {
+  const assignmentData = await ActivityAssignmentSchema.findOneAndDelete(
+    { 'user._id': idUser, 'activity._id': idActivity },
     { session },
   );
 
-  if (deletedCount !== 1) throw new CustomError('No se encontró la asignación a eliminar.', 404);
+  if (!assignmentData) throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403);
 
   return singleAssignmentActivityDto(assignmentData);
 };
@@ -116,11 +92,12 @@ const unassignUserFromActivity = async ({ idActivityAssignment, session }) => {
  * @returns ActivityAssignment object.
  */
 const changeActivityAssignmentCompletionStatus = async ({
-  idActivityAssignment,
+  idUser,
+  idActivity,
   completed,
   session,
 }) => {
-  const assignmentData = await ActivityAssignmentSchema.findById(idActivityAssignment);
+  const assignmentData = await ActivityAssignmentSchema.findOne({ 'user._id': idUser, 'activity._id': idActivity });
 
   if (assignmentData === null) {
     throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 404);
@@ -148,4 +125,5 @@ export {
   getActivityAssignments,
   unassignUserFromActivity,
   changeActivityAssignmentCompletionStatus,
+  assignManyUsersToActivity,
 };

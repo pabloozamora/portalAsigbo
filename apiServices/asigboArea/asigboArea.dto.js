@@ -2,10 +2,11 @@ import { multiple as multipleUser } from '../user/user.dto.js';
 
 const single = (resource) => {
   const {
-    name, responsible, blocked,
-  } = resource._doc;
+    _id, id, name, responsible, blocked,
+  } = resource._doc ?? resource;
   return {
-    id: resource._id?.valueOf(),
+    id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
+    _id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
     name,
     responsible: multipleUser(responsible),
     blocked,

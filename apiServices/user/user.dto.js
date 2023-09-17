@@ -14,6 +14,7 @@ const single = (resource, { showSensitiveData = false, showHours = false, showRo
   } = resource?._doc ?? resource;
   return {
     id: resource?._id?.valueOf() ?? resource.id,
+    _id: resource?._id?.valueOf() ?? resource.id,
     code,
     name,
     lastname,

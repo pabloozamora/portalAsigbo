@@ -188,13 +188,13 @@ const getActivities = async ({ idAsigboArea, limitDate, query }) => {
   }
 };
 
-const getActivity = async ({ idActivity, getSensitiveData = false }) => {
+const getActivity = async ({ idActivity, showSensitiveData = false }) => {
   try {
     const result = await ActivitySchema.findById(idActivity);
 
     if (result === null) throw new CustomError('No se encontró la actividad.', 404);
 
-    return singleActivityDto(result, getSensitiveData);
+    return singleActivityDto(result, { showSensitiveData });
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
     throw ex;
@@ -209,6 +209,25 @@ const getActivitiesWhereUserIsResponsible = async ({ idUser, session }) => {
   return multiple(results);
 };
 
+/**
+ * Permite sumar una cantidad al valor de espacios disponibles de una actividad. Para disminuir,
+ * simplemente utilizar con valores negativos.
+ * @param idActivity Id de la actividad.
+ * @param value Number. Valor numérico a incrementar.
+ * @param session Object. Objecto de la sesión mongodb.
+ */
+const addActivityAvailableSpaces = async ({ idActivity, value, session }) => {
+  try {
+    const { acknowledged, matchedCount, modifiedCount } = await ActivitySchema.updateOne({ _id: idActivity }, { $inc: { availableSpaces: value } }, { session });
+
+    if (matchedCount === 0) throw new CustomError('No se encontró la actividad.', 404);
+    if (!acknowledged || !modifiedCount) throw new CustomError('No fue posible actualizar el número de espacios disponibles.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
+    throw ex;
+  }
+};
+
 export {
   createActivity,
   updateActivity,
@@ -219,4 +238,5 @@ export {
   getActivitiesWhereUserIsResponsible,
   getUserActivities,
   validateResponsible,
+  addActivityAvailableSpaces,
 };

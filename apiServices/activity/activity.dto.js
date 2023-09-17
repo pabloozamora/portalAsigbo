@@ -27,6 +27,7 @@ const single = (
   } = resource._doc ?? resource;
   return {
     id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
+    _id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
     name,
     date,
     serviceHours,

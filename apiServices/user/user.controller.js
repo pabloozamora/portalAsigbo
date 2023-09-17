@@ -50,8 +50,8 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
 
 const getLoggedUserController = async (req, res) => {
   try {
-    const user = await getUser(req.session.id);
-    res.send(single(user, { showSensitiveData: true }));
+    const user = await getUser({ idUser: req.session.id, showSensitiveData: true });
+    res.send(user);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
     let status = 500;
@@ -67,8 +67,8 @@ const getLoggedUserController = async (req, res) => {
 const getUserController = async (req, res) => {
   const { idUser } = req.params || null;
   try {
-    const user = await getUser(idUser);
-    res.send(single(user, { showSensitiveData: true }));
+    const user = await getUser({ idUser, showSensitiveData: true });
+    res.send(user);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
     let status = 500;

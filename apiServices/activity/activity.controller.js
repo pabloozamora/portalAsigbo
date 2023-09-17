@@ -229,7 +229,7 @@ const deleteActivityController = async (req, res) => {
 
     if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idActivity });
 
-    const { responsible } = await getActivity({ idActivity, getSensitiveData: true });
+    const { responsible } = await getActivity({ idActivity, showSensitiveData: true });
 
     await deleteActivity({ idActivity, session });
 
@@ -259,7 +259,7 @@ const getUserActivitiesController = async (req, res) => {
   const { idUser } = req.params || null;
   try {
     // verificar que el usuario existe
-    await getUser(idUser);
+    await getUser({ idUser });
     const activities = await getUserActivities(idUser);
     res.send(multiple(activities));
   } catch (ex) {

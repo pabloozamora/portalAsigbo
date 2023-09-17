@@ -4,16 +4,30 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
-import { single } from './user.dto.js';
+import { multiple, single } from './user.dto.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import compareObjectId from '../../utils/compareObjectId.js';
 
-const getUser = async (idUser) => {
+const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
-    const user = await UserSchema.findById(idUser);
+    const user = await UserSchema.findById(idUser).session(session);
     if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
 
-    return user;
+    return single(user, { showSensitiveData });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 400);
+    }
+    throw ex;
+  }
+};
+
+const getUsersInList = async ({ idUsersList, showSensitiveData = false, session }) => {
+  try {
+    const user = await UserSchema.find({ _id: { $in: idUsersList } }).session(session);
+    if (user?.length !== idUsersList.length) throw new CustomError('Algunos de los usuarios no existen.', 404);
+
+    return multiple(user, showSensitiveData);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') {
       throw new CustomError('El id del usuario no es válido.', 400);
@@ -190,10 +204,10 @@ const updateServiceHours = async ({
   hoursToAdd = 0,
   session,
 }) => {
-  const userData = await UserSchema.findById(userId).session(session);
+  const user = await UserSchema.findById(userId).session(session);
 
-  if (!userData) throw new CustomError('El usuario no existe.', 400);
-  const serviceHoursAreas = Array.isArray(userData.serviceHours?.areas) ? userData.serviceHours?.areas : [];
+  if (!user) throw new CustomError('El usuario no existe.', 400);
+  const serviceHoursAreas = Array.isArray(user.serviceHours?.areas) ? user.serviceHours?.areas : [];
 
   // Se retira el valor anterior y se ingresa el valor actualidado (previous - new)
   // Si no hay un valor previo en la bd, se ignora y se toma como si fuera 0
@@ -205,15 +219,16 @@ const updateServiceHours = async ({
     ? area.total - hoursToRemove + hoursToAdd
     : hoursToAdd - hoursToRemove;
 
-  const newTotalHours = userData.serviceHours?.total !== undefined
-    ? userData.serviceHours.total - hoursToRemove + hoursToAdd
+  const newTotalHours = user.serviceHours?.total !== undefined
+    ? user.serviceHours.total - hoursToRemove + hoursToAdd
     : hoursToAdd - hoursToRemove;
 
   const newAreaModel = {};
   if (!area) {
     // buscar datos del área de asigbo
     const asigboAreaData = await AsigboAreaSchema.findById(asigboAreaId).session(session);
-    if (!asigboAreaData) throw new CustomError('El area de asigno no existe.', 404);
+    if (!asigboAreaData) throw new CustomError('El area de asigbo no existe.', 404);
+
     newAreaModel.asigboArea = asigboAreaData;
     newAreaModel.total = newAreaHours;
   } else {
@@ -221,12 +236,12 @@ const updateServiceHours = async ({
     area.total = newAreaHours;
   }
 
-  userData.serviceHours = {
+  user.serviceHours = {
     areas: [...remainingAreas, area ?? newAreaModel],
     total: newTotalHours,
   };
 
-  return userData.save({ session });
+  return user.save({ session });
 };
 
 /**
@@ -412,4 +427,5 @@ export {
   updateUserBlockedStatus,
   deleteUser,
   updateUser,
+  getUsersInList,
 };

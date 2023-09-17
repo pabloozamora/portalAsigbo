@@ -120,7 +120,7 @@ const updateActivityMediator = async ({
 };
 
 const deleteActivityMediator = async ({ idActivity }) => {
-  const { responsible } = await getActivity({ idActivity, getSensitiveData: true });
+  const { responsible } = await getActivity({ idActivity, showSensitiveData: true });
 
   const session = await connection.startSession();
 

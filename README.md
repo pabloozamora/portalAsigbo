@@ -114,13 +114,13 @@
 
 ### Asignaciones en actividades
 
-* **/activity/assign/**
+* **/activity/:idActivity/assignment/:idUser**
 
   Método: Post
 
   Permite asignar a un usuario a una actividad existente.
 
-  Parámetros requeridos:
+  Parámetros requeridos en la ruta:
   - idUser: id del usuario a inscribir.
   - idActivity: id de la actividad en la que se va a inscribir.
   
@@ -140,14 +140,13 @@
   Parámetros opcionales:
   - completed: indíca si los becados ya completaron la actividad en la que se va a inscribir. (Valor por defecto false)
 
-* **/activity/assignment/**
+* **/activity/:idActivity/assignment/**
 
   Método: Get
 
-  Permite obtener la lista de asignaciones a actividades y filtrarla por usuario y actividad.
+  Permite obtener la lista de asignaciones de una actividad.
 
-  Parámetros de búsqueda opcionales (?params):
-  - idUser: id del usuario a buscar.
+  Parámetros requeridos en la ruta:
   - idActivity: id de la actividad a buscar.
 
 
@@ -157,32 +156,35 @@
 
   Permite obtener las actividades en las que está inscrito el usuario en sesión.
 
-* **/activity/assignment/:idAssignment/complete**
+* **/activity/:idActivity/assignment/:idUser/complete**
 
   Método: Patch
 
   Permite actualizar el status de la asignación de un usuario a una actividad, como completado.
 
   Parámetros obligatorios en la ruta:
-  - idAssignment: id de la asignación del usuario a la actividad.
+  - idActivity: id de la actividad a completar.
+  - idUser: id del usuario correspondiente.
 
-* **/activity/assignment/:idAssignment/uncomplete**
+* **/activity/:idActivity/assignment/:idUser/uncomplete**
 
   Método: Patch
 
   Permite actualizar el status de la asignación de un usuario a una actividad, como NO completado.
 
   Parámetros obligatorios en la ruta:
-  - idAssignment: id de la asignación del usuario a la actividad.
+  - idActivity: id de la actividad a completar.
+  - idUser: id del usuario correspondiente.
 
-* **/activity/assignment/:idAssignment**
+* **/activity/:idActivity/assignment/:idUser**
 
   Método: Delete
 
   Permite eliminar la inscripción de un usuario a una actividad.
 
-  Parámetros obligatorios en la ruta:
-  - idAssignment: id de la asignación del usuario a la actividad.
+   Parámetros obligatorios en la ruta:
+  - idActivity: id de la actividad a completar.
+  - idUser: id del usuario correspondiente.
 
 ### Configuración de promociones
 
