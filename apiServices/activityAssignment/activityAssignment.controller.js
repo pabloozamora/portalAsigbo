@@ -3,6 +3,7 @@ import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import { addActivityAvailableSpaces, getActivity } from '../activity/activity.model.js';
+import Promotion from '../promotion/promotion.model.js';
 import { getUser, getUsersInList, updateServiceHours } from '../user/user.model.js';
 import {
   assignManyUsersToActivity,
@@ -94,10 +95,15 @@ const assignUserToActivityController = async (req, res) => {
     const activity = await getActivity({ idActivity, showSensitiveData: true });
     const user = await getUser({ idUser, showSensitiveData: true });
 
+    const promotionObj = new Promotion();
+    const userPromotionGroup = await promotionObj.getPromotionGroup(user.promotion);
+
     // validar que la promoción esté incluida
     if (
       activity.participatingPromotions !== null
       && !activity.participatingPromotions.includes(user.promotion)
+      && !activity.participatingPromotions.includes(userPromotionGroup)
+
     ) {
       throw new CustomError('La actividad no está disponible para la promoción del usuario.');
     }
@@ -162,24 +168,31 @@ const assignManyUsersToActivityController = async (req, res) => {
 
     // Asignar a todos los usuarios.
     const assignmentsList = [];
-    idUsersList.forEach((idUser) => {
-      const user = users.find((u) => u.id === idUser);
+    const promotionObj = new Promotion();
 
-      // validar que la promoción esté incluida
-      if (
-        activity.participatingPromotions !== null
+    await Promise.all(
+      idUsersList.forEach(async (idUser) => {
+        const user = users.find((u) => u.id === idUser);
+
+        const userPromotionGroup = await promotionObj.getPromotionGroup(user.promotion);
+
+        // validar que la promoción esté incluida
+        if (
+          activity.participatingPromotions !== null
         && !activity.participatingPromotions.includes(user.promotion)
-      ) {
-        throw new CustomError(`La actividad no está disponible para la promoción del usuario ${user.name} ${user.lastname}.`);
-      }
+        && !activity.participatingPromotions.includes(userPromotionGroup)
+        ) {
+          throw new CustomError(`La actividad no está disponible para la promoción del usuario ${user.name} ${user.lastname}.`);
+        }
 
-      // verificar que hayan espacios disponibles
-      if (!(activity.availableSpaces >= users.length)) {
-        throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
-      }
+        // verificar que hayan espacios disponibles
+        if (!(activity.availableSpaces >= users.length)) {
+          throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
+        }
 
-      assignmentsList.push({ user, activity, completed });
-    });
+        assignmentsList.push({ user, activity, completed });
+      }),
+    );
 
     await assignManyUsersToActivity({ assignmentsList, session });
 

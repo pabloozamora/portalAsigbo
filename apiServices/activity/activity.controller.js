@@ -1,11 +1,17 @@
 import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import { getActivityAssignments, getCompletedActivityAssignmentsById } from '../activityAssignment/activityAssignment.model.js';
+import {
+  getActivityAssignments,
+  getCompletedActivityAssignmentsById,
+} from '../activityAssignment/activityAssignment.model.js';
 import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import { forceUserLogout } from '../session/session.model.js';
 import {
-  addRoleToUser, getUser, removeRoleFromUser, updateServiceHours,
+  addRoleToUser,
+  getUser,
+  removeRoleFromUser,
+  updateServiceHours,
 } from '../user/user.model.js';
 import { multiple, single } from './activity.dto.js';
 import {
@@ -41,7 +47,11 @@ const removeActivityResponsibleRole = async ({ idUser, session }) => {
 
 const addActivityResponsibleRole = async ({ responsible, session }) => Promise.all(
   responsible?.map(async (idUser) => {
-    const roleAdded = await addRoleToUser({ idUser, role: consts.roles.activityResponsible, session });
+    const roleAdded = await addRoleToUser({
+      idUser,
+      role: consts.roles.activityResponsible,
+      session,
+    });
     if (roleAdded) forceUserLogout(idUser);
   }),
 );
@@ -122,7 +132,7 @@ const updateActivityController = async (req, res) => {
   const session = await connection.startSession();
 
   try {
-    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser, idActivity: id });
+    if (!role.includes(consts.roles.admin)) { await validateResponsibleController({ idUser, idActivity: id }); }
 
     session.startTransaction();
 
@@ -184,9 +194,10 @@ const updateActivityController = async (req, res) => {
     // modificar el monto del pago o eliminarlo (pendiente)
 
     // retirar permisos a responsables retirados
-    const usersRemoved = dataBeforeChange.responsible.filter(
-      (beforeUser) => !updatedData.responsible.some((updatedUser) => beforeUser.id === updatedUser.id),
-    )
+    const usersRemoved = dataBeforeChange.responsible
+      .filter(
+        (beforeUser) => !updatedData.responsible.some((updatedUser) => beforeUser.id === updatedUser.id),
+      )
       .map((user) => user.id);
     await Promise.all(
       usersRemoved.map((userId) => removeActivityResponsibleRole({ idUser: userId, session })),
@@ -227,7 +238,24 @@ const deleteActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idActivity });
+    if (!role.includes(consts.roles.admin)) { await validateResponsibleController({ idUser: id, idActivity }); }
+
+    // Verificar que la actividad no tenga asignaciones
+    let assignments;
+    try {
+      assignments = await getActivityAssignments({
+        idActivity,
+        includeUserPromotionGroup: false,
+      });
+    } catch (err) {
+      // Error no crítico. Se espera un 404
+    }
+
+    if (assignments?.length > 0) {
+      throw new CustomError(
+        'La actividad no puede ser eliminada mientras existan usuarios asignados.',
+      );
+    }
 
     const { responsible } = await getActivity({ idActivity, showSensitiveData: true });
 
@@ -315,7 +343,7 @@ const getActivityController = async (req, res) => {
   const { idActivity } = req.params;
 
   try {
-    if (!role.includes(consts.roles.admin)) await validateResponsibleController({ idUser: id, idActivity });
+    if (!role.includes(consts.roles.admin)) { await validateResponsibleController({ idUser: id, idActivity }); }
     const result = await getActivity({ idActivity, showSensitiveData: true });
 
     // Para el área de asigbo, verificar si el usuario es encargado

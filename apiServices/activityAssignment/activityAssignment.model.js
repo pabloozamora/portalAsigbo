@@ -4,7 +4,7 @@ import exists from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
-const getActivityAssignments = async ({ idUser, idActivity }) => {
+const getActivityAssignments = async ({ idUser, idActivity, includeUserPromotionGroup = true }) => {
   try {
     const filter = {};
 
@@ -21,6 +21,8 @@ const getActivityAssignments = async ({ idUser, idActivity }) => {
     }
 
     const parsedAssignments = multiple(assignments);
+
+    if (!includeUserPromotionGroup) return parsedAssignments;
     const promotion = new Promotion();
 
     return await Promise.all(

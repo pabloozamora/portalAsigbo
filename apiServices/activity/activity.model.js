@@ -136,15 +136,6 @@ const updateActivityInAllAssignments = async ({ activity, session }) => Activity
 
 const deleteActivity = async ({ idActivity, session }) => {
   try {
-    // verificar que no existan asignaciones a dicha actividad
-    const assignments = await ActivityAssignmentSchema.find({ 'activity._id': idActivity });
-
-    if (assignments?.length > 0) {
-      throw new CustomError(
-        'No es posible eliminar, pues existen becados inscritos en la actividad.',
-      );
-    }
-
     const { deletedCount } = await ActivitySchema.deleteOne({ _id: idActivity }, { session });
 
     if (deletedCount === 0) throw new CustomError('No se encontró la actividad a eliminar.', 404);
