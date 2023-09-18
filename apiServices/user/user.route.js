@@ -14,6 +14,7 @@ import {
   deleteUserController,
   updateUserController,
   renewRegisterToken,
+  uploadUsersController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
@@ -24,6 +25,7 @@ import ensureRegisterAuth from '../../middlewares/ensureRegisterAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import finishRegistrationSchema from './validationSchemas/finishRegistrationSchema.js';
+import uploadUsersSchema from './validationSchemas/uploadUsersSchema.js';
 import validateParams from '../../middlewares/validateParams.js';
 import {
   updateUserBodySchema,
@@ -64,5 +66,6 @@ userRouter.patch(
   validateBody(updateUserBodySchema),
   updateUserController,
 );
+userRouter.post('/uploadUsers', ensureAdminAuth, validateBody(uploadUsersSchema), uploadUsersController);
 
 export default userRouter;
