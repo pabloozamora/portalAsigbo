@@ -48,6 +48,24 @@ const getActivitiesAssigmentsByActivityController = async (req, res) => {
   }
 };
 
+const getActivityAssigmentController = async (req, res) => {
+  const { idActivity, idUser } = req.params;
+  try {
+    const activities = await getActivityAssignments({ idActivity, idUser });
+    res.send(activities[0]);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la asignación de la actividad.';
+    let status = 500;
+
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const getLoggedActivitiesController = async (req, res) => {
   try {
     const activities = await getActivityAssignments({ idUser: req.session.id });
@@ -262,7 +280,7 @@ const updateActivityAssignmentController = async (req, res) => {
     if (exists(aditionalServiceHours) && !exists(completed) && prevCompletedResultValue) {
       // Realizar unicamente ajuste de horas adicionales para actividad completada
       const hoursToAdd = parsedAditionalServiceHours - (prevAditionalServiceHours ?? 0);
-      if (hoursToAdd > 0) {
+      if (hoursToAdd !== 0) { // Valores negativos restan al total
         await updateServiceHours({
           userId: idUser,
           asigboAreaId,
@@ -322,4 +340,5 @@ export {
   unassignUserFromActivityController,
   updateActivityAssignmentController,
   getActivitiesAssigmentsController,
+  getActivityAssigmentController,
 };

@@ -7,6 +7,7 @@ import {
   assignUserToActivityController,
   getActivitiesAssigmentsByActivityController,
   getActivitiesAssigmentsController,
+  getActivityAssigmentController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
   updateActivityAssignmentController,
@@ -47,6 +48,12 @@ activityAssignmentRouter.get(
   ensureAdminAuth,
   validateParams(requiredIdActivitySchema),
   getActivitiesAssigmentsByActivityController,
+);
+activityAssignmentRouter.get(
+  '/:idActivity/assignment/:idUser',
+  ensureAdminAuth,
+  validateParams(requiredIdActivitySchema, requiredIdUserSchema),
+  getActivityAssigmentController,
 );
 activityAssignmentRouter.get(
   '/assignment/logged',
