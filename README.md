@@ -403,6 +403,28 @@
 
   - idUser: id del usuario.
 
+  * **/user/renewRegisterToken**
+
+  Método: Post
+
+  Genera un nuevo token de registro para un usuario y lo envía nuevamente a su correo, en caso de que el token original no haya sido enviado correctamente y que el usuario en cuestión aún no haya sido activado (no se le ha asignado una contraseña).
+
+  Parámetro obligatorio en la ruta:
+
+  - idUser: id del usuario.
+
+### UploadData
+
+- **/upload**
+
+  Método: Post
+
+  Permite guardar una gran cantidad de usuarios de forma simultánea, a través de un arreglo de registros.
+
+  Parámetro obligatorio en la ruta:
+
+  - data: Arreglo de registros de tipo Usuario.
+
 ## Notas
 
 ### Consideraciones para la bd
