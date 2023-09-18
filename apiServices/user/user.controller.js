@@ -15,7 +15,6 @@ import {
   updateUserBlockedStatus,
   deleteUser,
   updateUser,
-  newRegisterToken,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
@@ -46,7 +45,7 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => {});
+  fs.unlink(filePath, () => { });
 };
 
 const getLoggedUserController = async (req, res) => {
@@ -89,12 +88,23 @@ const renewRegisterToken = async (req, res) => {
   try {
     session.startTransaction();
 
-    // renovar token de registro
-    const { email, name, token } = await newRegisterToken({ idUser, session });
+    const user = await getUser({ idUser, showSensitiveData: true, session });
+
+    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+    if (user.completeRegistration) throw new CustomError('El usuario indicado ya ha sido activado.', 400);
+
+    const token = signRegisterToken({
+      id: user.id,
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
+    });
+
+    await saveRegisterToken({ idUser, token, session });
 
     // enviar email de notificación
-    const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
-    emailSender.sendEmail();
+    const emailSender = new NewUserEmail({ addresseeEmail: user.email, name: user.name, registerToken: token });
+    await emailSender.sendEmail();
 
     await session.commitTransaction();
 
