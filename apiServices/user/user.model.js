@@ -350,7 +350,7 @@ const saveRegisterToken = async ({ idUser, token, session }) => {
 const newRegisterToken = async ({ idUser, session }) => {
   const user = await UserSchema.findById(idUser);
   if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
-  if (user.passwordHash !== null) throw new CustomError('El usuario indicado ya ha sido activado.', 400);
+  if (user.passwordHash !== null && user.passwordHash !== undefined) throw new CustomError('El usuario indicado ya ha sido activado.', 400);
 
   const token = signRegisterToken({
     id: user.id,
