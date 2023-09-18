@@ -15,6 +15,7 @@ import {
   updateUserBlockedStatus,
   deleteUser,
   updateUser,
+  newRegisterToken,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRegisterToken } from '../../services/jwt.js';
@@ -71,6 +72,37 @@ const getUserController = async (req, res) => {
     res.send(user);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const renewRegisterToken = async (req, res) => {
+  const { idUser } = req.body;
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    // renovar token de registro
+    const { email, name, token } = await newRegisterToken({ idUser, session });
+
+    // enviar email de notificación
+    const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
+    emailSender.sendEmail();
+
+    await session.commitTransaction();
+
+    res.send('Token enviado con éxito.');
+  } catch (ex) {
+    await session.abortTransaction();
+
+    let err = 'Ocurrio un error al generar el token de registro.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -522,4 +554,5 @@ export {
   enableUserController,
   deleteUserController,
   updateUserController,
+  renewRegisterToken,
 };

@@ -13,9 +13,11 @@ import {
   enableUserController,
   deleteUserController,
   updateUserController,
+  renewRegisterToken,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
+import renewRegisterTokenSchema from './validationSchemas/renewRegisterTokenSchema.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
 import ensureRegisterAuth from '../../middlewares/ensureRegisterAuth.js';
@@ -40,6 +42,12 @@ userRouter.post(
 );
 userRouter.get('/', ensureAdminAuth, getUsersListController);
 userRouter.get('/admin', ensureAdminAuth, getAdminUsersController);
+userRouter.post(
+  '/renewRegisterToken',
+  ensureAdminAuth,
+  validateBody(renewRegisterTokenSchema),
+  renewRegisterToken,
+);
 userRouter.get('/logged', ensureRefreshTokenAuth, getLoggedUserController);
 userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTokenController);
 userRouter.get('/:idUser', ensureAdminAuth, getUserController);

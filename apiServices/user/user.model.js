@@ -7,6 +7,7 @@ import exists, { someExists } from '../../utils/exists.js';
 import { multiple, single } from './user.dto.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import compareObjectId from '../../utils/compareObjectId.js';
+import { signRegisterToken } from '../../services/jwt.js';
 
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
@@ -346,6 +347,22 @@ const saveRegisterToken = async ({ idUser, token, session }) => {
   }
 };
 
+const newRegisterToken = async ({ idUser, session }) => {
+  const user = await UserSchema.findById(idUser);
+  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+  if (user.passwordHash !== null) throw new CustomError('El usuario indicado ya ha sido activado.', 400);
+
+  const token = signRegisterToken({
+    id: user.id,
+    name: user.name,
+    lastname: user.lastname,
+    email: user.email,
+  });
+
+  await saveRegisterToken({ idUser, token, session });
+  return { email: user.email, name: user.name, token };
+};
+
 const saveManyRegisterToken = async (data) => {
   try {
     // eliminar tokens previos
@@ -428,4 +445,5 @@ export {
   deleteUser,
   updateUser,
   getUsersInList,
+  newRegisterToken,
 };
