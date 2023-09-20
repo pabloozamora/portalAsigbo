@@ -56,6 +56,7 @@ const activitySubSchema = Schema({
   date: { type: Date, required: true },
   serviceHours: { type: Number, required: true },
   asigboArea: { type: asigboAreaSubSchema, required: true },
+  blocked: { type: Boolean, default: false },
 });
 
 const ActivitySchema = model('activity', activitySchema);

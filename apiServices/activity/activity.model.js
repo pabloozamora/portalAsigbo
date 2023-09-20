@@ -4,7 +4,7 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
-import { multiple, single as singleActivityDto } from './activity.dto.js';
+import { multiple, single, single as singleActivityDto } from './activity.dto.js';
 
 const validateResponsible = async ({ idUser, idActivity }) => {
   const { responsible } = await ActivitySchema.findById(idActivity);
@@ -219,6 +219,23 @@ const addActivityAvailableSpaces = async ({ idActivity, value, session }) => {
   }
 };
 
+const updateActivityBlockedStatus = async ({ idActivity, blocked, session }) => {
+  try {
+    // actualiza y retorna la data nueva
+    const activity = await ActivitySchema.findOneAndUpdate(
+      { _id: idActivity },
+      { blocked },
+      { new: true, session },
+    );
+
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
+    return single(activity, { showSensitiveData: true });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.');
+    throw ex;
+  }
+};
+
 export {
   createActivity,
   updateActivity,
@@ -230,4 +247,5 @@ export {
   getUserActivities,
   validateResponsible,
   addActivityAvailableSpaces,
+  updateActivityBlockedStatus,
 };

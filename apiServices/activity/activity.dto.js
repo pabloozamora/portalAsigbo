@@ -24,6 +24,7 @@ const single = (
     registrationEndDate,
     participatingPromotions,
     availableSpaces,
+    blocked,
   } = resource._doc ?? resource;
   return {
     id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
@@ -38,6 +39,7 @@ const single = (
     registrationEndDate,
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
     availableSpaces,
+    blocked,
   };
 };
 

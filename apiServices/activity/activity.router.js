@@ -11,10 +11,13 @@ import {
   updateActivityController,
   getLoggedActivitiesController,
   getUserActivitiesController,
+  enableActivityController,
+  disableActivityController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
 import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
+import ensureAdminAreaResponsibleAuth from '../../middlewares/ensureAdminAreaResponsibleAuth.js';
 
 const activityRouter = express.Router();
 
@@ -47,4 +50,8 @@ activityRouter.patch(
 );
 
 activityRouter.delete('/:idActivity', ensureAdminActivityResponsibleAuth, deleteActivityController);
+
+activityRouter.patch('/:idActivity/enable', ensureAdminAreaResponsibleAuth, enableActivityController);
+activityRouter.patch('/:idActivity/disable', ensureAdminAreaResponsibleAuth, disableActivityController);
+
 export default activityRouter;

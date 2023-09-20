@@ -5,7 +5,7 @@ import {
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
 } from '../activityAssignment/activityAssignment.model.js';
-import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
+import { getAreasWhereUserIsResponsible, validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
 import { forceUserLogout } from '../session/session.model.js';
 import {
   addRoleToUser,
@@ -22,6 +22,7 @@ import {
   getActivity,
   getUserActivities,
   updateActivity,
+  updateActivityBlockedStatus,
   updateActivityInAllAssignments,
   validateResponsible,
 } from './activity.model.js';
@@ -132,7 +133,9 @@ const updateActivityController = async (req, res) => {
   const session = await connection.startSession();
 
   try {
-    if (!role.includes(consts.roles.admin)) { await validateResponsibleController({ idUser, idActivity: id }); }
+    if (!role.includes(consts.roles.admin)) {
+      await validateResponsibleController({ idUser, idActivity: id });
+    }
 
     session.startTransaction();
 
@@ -238,7 +241,9 @@ const deleteActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    if (!role.includes(consts.roles.admin)) { await validateResponsibleController({ idUser: id, idActivity }); }
+    if (!role.includes(consts.roles.admin)) {
+      await validateResponsibleController({ idUser: id, idActivity });
+    }
 
     // Verificar que la actividad no tenga asignaciones
     let assignments;
@@ -343,7 +348,9 @@ const getActivityController = async (req, res) => {
   const { idActivity } = req.params;
 
   try {
-    if (!role.includes(consts.roles.admin)) { await validateResponsibleController({ idUser: id, idActivity }); }
+    if (!role.includes(consts.roles.admin)) {
+      await validateResponsibleController({ idUser: id, idActivity });
+    }
     const result = await getActivity({ idActivity, showSensitiveData: true });
 
     // Para el área de asigbo, verificar si el usuario es encargado
@@ -378,6 +385,75 @@ const getActivityController = async (req, res) => {
   }
 };
 
+const disableActivityController = async (req, res) => {
+  const { idActivity } = req.params;
+
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    const activity = await getActivity({ idActivity });
+
+    // Si no es admin, verificar si es encargado de área
+    if (!req.session.role.includes(consts.roles.admin)) {
+      await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
+    }
+
+    const updatedActivity = await updateActivityBlockedStatus({ idActivity, blocked: true, session });
+
+    await updateActivityInAllAssignments({ activity: updatedActivity, session });
+
+    await session.commitTransaction();
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+
+    let err = 'Ocurrio un error al deshabilitar la actividad.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const enableActivityController = async (req, res) => {
+  const { idActivity } = req.params;
+
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    const activity = await getActivity({ idActivity });
+
+    // Si no es admin, verificar si es encargado de área
+    if (!req.session.role.includes(consts.roles.admin)) {
+      await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
+    }
+
+    const updatedActivity = await updateActivityBlockedStatus({ idActivity, blocked: false, session });
+
+    await updateActivityInAllAssignments({ activity: updatedActivity, session });
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+
+    let err = 'Ocurrio un error al habilitar la actividad.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createActivityController,
   updateActivityController,
@@ -386,4 +462,6 @@ export {
   getActivityController,
   getLoggedActivitiesController,
   getUserActivitiesController,
+  disableActivityController,
+  enableActivityController,
 };
