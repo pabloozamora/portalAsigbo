@@ -191,6 +191,26 @@
   - idActivity: id de la actividad a completar.
   - idUser: id del usuario correspondiente.
 
+* **/activity/:idActivity/enable**
+
+  Método: Patch
+
+  Habilitar una actividad. Una actividad habilitada permite ejecutar acciones con las asignaciones 
+  de los usuarios a dicha actividad.
+
+   Parámetros obligatorios en la ruta:
+  - idActivity: id de la actividad a completar.
+
+* **/activity/:idActivity/disable**
+
+  Método: Patch
+
+  Deshabilitar una actividad. Una actividad deshabilitada NO permite ejecutar acciones con las asignaciones 
+  de los usuarios a dicha actividad.
+
+   Parámetros obligatorios en la ruta:
+  - idActivity: id de la actividad a completar.
+
 ### Configuración de promociones
 
 * **/promotion/**
