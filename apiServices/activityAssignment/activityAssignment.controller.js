@@ -93,6 +93,10 @@ const assignUserToActivityController = async (req, res) => {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    // Validar que la actividad esté habilitada
+    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+
     const user = await getUser({ idUser, showSensitiveData: true });
 
     const promotionObj = new Promotion();
@@ -164,6 +168,9 @@ const assignManyUsersToActivityController = async (req, res) => {
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
+    // Validar que la actividad esté habilitada
+    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+
     const users = await getUsersInList({ idUsersList, showSensitiveData: true });
 
     // Asignar a todos los usuarios.
@@ -223,6 +230,11 @@ const unassignUserFromActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
+    const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    // Validar que la actividad esté habilitada
+    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+
     const result = await unassignUserFromActivity({ idActivity, idUser, session });
     const {
       activity: {
@@ -269,6 +281,11 @@ const updateActivityAssignmentController = async (req, res) => {
 
   try {
     session.startTransaction();
+
+    const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    // Validar que la actividad esté habilitada
+    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
 
     const result = await updateActivityAssignment({
       idUser,

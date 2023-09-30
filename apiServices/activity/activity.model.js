@@ -179,6 +179,13 @@ const getActivities = async ({ idAsigboArea, limitDate, query }) => {
   }
 };
 
+/**
+ * Permite obtener una actividad por Id.
+ * Lanza una excepción CustomError si no encuentra resultados.
+ * @param idActivity Id de la actividad.
+ * @param showSensitiveData Boolean. Default false. Indica si se muestran los datos sensibles de la actividad.
+ * @returns Activity dto.
+ */
 const getActivity = async ({ idActivity, showSensitiveData = false }) => {
   try {
     const result = await ActivitySchema.findById(idActivity);
