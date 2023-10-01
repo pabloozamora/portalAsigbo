@@ -18,23 +18,25 @@ import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
 import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
 import ensureAdminAreaResponsibleAuth from '../../middlewares/ensureAdminAreaResponsibleAuth.js';
+import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
+import consts from '../../utils/consts.js';
 
 const activityRouter = express.Router();
 
-activityRouter.get('/', ensureAdminAuth, getActivitiesController);
 activityRouter.get(
-  '/logged',
-  ensureRefreshTokenAuth,
-  getLoggedActivitiesController,
+  '/',
+  ensureRolesAuth([
+    consts.roles.admin,
+    consts.roles.asigboAreaResponsible,
+    consts.roles.activityResponsible,
+  ], 'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.'),
+  getActivitiesController,
 );
+activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
 
 activityRouter.get('/:idActivity', ensureAdminActivityResponsibleAuth, getActivityController);
 
-activityRouter.get(
-  '/:idUser',
-  ensureAdminAuth,
-  getUserActivitiesController,
-);
+activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
 
 activityRouter.post(
   '/',
@@ -51,7 +53,15 @@ activityRouter.patch(
 
 activityRouter.delete('/:idActivity', ensureAdminActivityResponsibleAuth, deleteActivityController);
 
-activityRouter.patch('/:idActivity/enable', ensureAdminAreaResponsibleAuth, enableActivityController);
-activityRouter.patch('/:idActivity/disable', ensureAdminAreaResponsibleAuth, disableActivityController);
+activityRouter.patch(
+  '/:idActivity/enable',
+  ensureAdminAreaResponsibleAuth,
+  enableActivityController,
+);
+activityRouter.patch(
+  '/:idActivity/disable',
+  ensureAdminAreaResponsibleAuth,
+  disableActivityController,
+);
 
 export default activityRouter;
