@@ -384,13 +384,9 @@ const getActivitiesController = async (req, res) => {
 };
 
 const getActivityController = async (req, res) => {
-  const { id, role } = req.session;
   const { idActivity } = req.params;
 
   try {
-    if (!role.includes(consts.roles.admin)) {
-      await validateResponsibleController({ idUser: id, idActivity });
-    }
     const result = await getActivity({ idActivity, showSensitiveData: true });
 
     // Para el área de asigbo, verificar si el usuario es encargado

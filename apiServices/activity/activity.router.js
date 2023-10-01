@@ -34,7 +34,7 @@ activityRouter.get(
 );
 activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
 
-activityRouter.get('/:idActivity', ensureAdminActivityResponsibleAuth, getActivityController);
+activityRouter.get('/:idActivity', ensureRefreshTokenAuth, getActivityController);
 
 activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
 

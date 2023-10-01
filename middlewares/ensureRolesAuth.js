@@ -2,10 +2,12 @@ import { deleteSessionToken, validateSessionToken } from '../apiServices/session
 import { validateToken } from '../services/jwt.js';
 import consts from '../utils/consts.js';
 import CustomError from '../utils/customError.js';
+import exists from '../utils/exists.js';
 
 /**
  * Middleware que verifica que el token de usuario contenga al menos uno de los roles requeridos.
- * @param {Array[String]} roles: Arreglo que contiene los roles a verificar.
+ * @param {Array[String]} roles: Arreglo que contiene los roles a verificar. Se puede agregar
+ * un rol único o colocar null si no se desean validar roles.
  * @param {String} errorMessage: Mensaje a retornar si ninguno de los roles coincide.
  */
 const ensureRolesAuth = (roles, errorMessage) => async (req, res, next) => {
@@ -25,7 +27,8 @@ const ensureRolesAuth = (roles, errorMessage) => async (req, res, next) => {
     }
 
     // Verificar si no cuenta con al menos uno de los roles solicitados
-    if ((Array.isArray(roles) && !roles.some((role) => userData.role?.includes(role)))
+    if (exists(roles)
+       && (Array.isArray(roles) && roles.length > 0 && !roles.some((role) => userData.role?.includes(role)))
       && !userData.role?.includes(roles)) {
       throw new CustomError(errorMessage ?? 'No se cuenta con los privilegios necesarios.', 403);
     }
