@@ -63,7 +63,7 @@ const signRecoverPasswordToken = ({
     name,
     lastname,
     email,
-    exp: moment().add(6, 'hour').unix(),
+    exp: moment().add(1, 'hour').unix(),
     type: consts.token.recover,
   },
   key,

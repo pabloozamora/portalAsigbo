@@ -634,7 +634,7 @@ const recoverPasswordController = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
-    res.send({ result: `Correo de recuperación enviado correctamente a ${email}` });
+    res.send({ result: `Correo de recuperación enviado a ${email}` });
   } catch (ex) {
     await session.abortTransaction();
     session.endSession();
