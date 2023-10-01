@@ -22,6 +22,12 @@ const getUser = async ({ idUser, showSensitiveData, session }) => {
   }
 };
 
+const getUserByMail = async ({ email }) => {
+  const user = await UserSchema.findOne({ email });
+  if (user === null) throw new CustomError('El email indicado no corresponde a ningún usuario.', 404);
+  return user;
+};
+
 const getUsersInList = async ({ idUsersList, showSensitiveData = false, session }) => {
   try {
     const user = await UserSchema.find({ _id: { $in: idUsersList } }).session(session);
@@ -327,10 +333,10 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   }
 };
 
-const saveRegisterToken = async ({ idUser, token, session }) => {
+const saveAlterToken = async ({ idUser, token, session }) => {
   try {
     // eliminar tokens previos del usuario
-    await AlterUserTokenSchema.deleteMany({ idUser });
+    await AlterUserTokenSchema.deleteMany({ idUser }, { session });
 
     const alterUserToken = new AlterUserTokenSchema();
 
@@ -364,7 +370,7 @@ const saveManyRegisterToken = async (data) => {
 
 const validateAlterUserToken = async ({ idUser, token }) => {
   const result = await AlterUserTokenSchema.findOne({ idUser, token });
-  if (result === null) throw new CustomError('El token de registro no es válido.', 401);
+  if (result === null) throw new CustomError('El token de modificación no es válido.', 401);
 
   return true;
 };
@@ -410,6 +416,21 @@ const deleteUser = async ({ idUser, session }) => {
   }
 };
 
+const uploadUsers = async ({ users, session }) => {
+  try {
+    if (!users || users.length === 0) throw new CustomError('Debe enviar por lo menos un registro.', 400);
+    const savedUsers = await UserSchema.insertMany(users, { session });
+    return savedUsers;
+  } catch (ex) {
+    if (ex.errors) throw new CustomError(ex.errors[Object.keys(ex.errors)].message, 400);
+    if (ex.code === 11000) {
+      if (ex.message.includes('code')) throw new CustomError(`El código ${ex.writeErrors[0].err.op.code} ya existe en la base de datos`, 400);
+      throw new CustomError(`El correo ${ex.writeErrors[0].err.op.email} ya existe en la base de datos`, 400);
+    }
+    throw ex;
+  }
+};
+
 export {
   createUser,
   getUsersList,
@@ -417,7 +438,7 @@ export {
   getUser,
   addRoleToManyUsers,
   removeRoleFromUser,
-  saveRegisterToken,
+  saveAlterToken,
   saveManyRegisterToken,
   validateAlterUserToken,
   deleteAlterUserToken,
@@ -428,4 +449,6 @@ export {
   deleteUser,
   updateUser,
   getUsersInList,
+  uploadUsers,
+  getUserByMail,
 };

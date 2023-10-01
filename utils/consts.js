@@ -11,6 +11,7 @@ const consts = {
     refresh: 'REFRESH',
     access: 'ACCESS',
     register: 'REGISTER',
+    recover: 'RECOVER',
   },
   promotionsGroups: {
     chick: 'chick',

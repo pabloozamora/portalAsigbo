@@ -1,5 +1,6 @@
 import sha256 from 'js-sha256';
 import fs from 'node:fs';
+import mongoose from 'mongoose';
 import CustomError from '../../utils/customError.js';
 import { multiple, single } from './user.dto.js';
 import {
@@ -9,15 +10,17 @@ import {
   getUsersList,
   getUser,
   removeRoleFromUser,
-  saveRegisterToken,
+  saveAlterToken,
   updateUserPassword,
   validateAlterUserToken,
   updateUserBlockedStatus,
   deleteUser,
   updateUser,
+  uploadUsers,
+  getUserByMail,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
-import { signRegisterToken } from '../../services/jwt.js';
+import { signRecoverPasswordToken, signRegisterToken } from '../../services/jwt.js';
 import NewUserEmail from '../../services/email/NewUserEmail.js';
 import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
@@ -30,6 +33,7 @@ import {
 } from '../activity/activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import parseBoolean from '../../utils/parseBoolean.js';
+import RecoverPasswordEmail from '../../services/email/RecoverPasswordEmail.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -45,7 +49,7 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => {});
+  fs.unlink(filePath, () => { });
 };
 
 const getLoggedUserController = async (req, res) => {
@@ -71,6 +75,48 @@ const getUserController = async (req, res) => {
     res.send(user);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const renewRegisterToken = async (req, res) => {
+  const { idUser } = req.body;
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    const user = await getUser({ idUser, showSensitiveData: true, session });
+
+    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+    if (user.completeRegistration) throw new CustomError('El usuario indicado ya ha sido activado.', 400);
+
+    const token = signRegisterToken({
+      id: user.id,
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
+    });
+
+    await saveAlterToken({ idUser, token, session });
+
+    // enviar email de notificación
+    const emailSender = new NewUserEmail({ addresseeEmail: user.email, name: user.name, registerToken: token });
+    await emailSender.sendEmail();
+
+    await session.commitTransaction();
+
+    res.send('Token enviado con éxito.');
+  } catch (ex) {
+    await session.abortTransaction();
+
+    let err = 'Ocurrio un error al generar el token de registro.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -109,7 +155,7 @@ const createUserController = async (req, res) => {
       lastname: user.lastname,
       email: user.email,
     });
-    await saveRegisterToken({ idUser: user.id, token, session });
+    await saveAlterToken({ idUser: user.id, token, session });
 
     // enviar email de notificación
     const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
@@ -120,7 +166,6 @@ const createUserController = async (req, res) => {
     res.send(single(user));
   } catch (ex) {
     await session.abortTransaction();
-
     let err = 'Ocurrio un error al crear nuevo usuario.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -286,6 +331,25 @@ const validateRegisterTokenController = async (req, res) => {
     res.sendStatus(204);
   } catch (ex) {
     let err = 'Ocurrio un error al validar token de registro.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const validateRecoverTokenController = async (req, res) => {
+  const token = req.headers?.authorization;
+  const idUser = req.session?.id;
+
+  try {
+    await validateAlterUserToken({ idUser, token });
+    res.sendStatus(204);
+  } catch (ex) {
+    let err = 'Ocurrio un error al validar token para recuperación de contraseña.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -508,6 +572,115 @@ const deleteUserController = async (req, res) => {
   }
 };
 
+const uploadUsersController = async (req, res) => {
+  const { data: users } = req.body;
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+    const savedUsers = await uploadUsers({ users, session });
+
+    await Promise.all(savedUsers.map(async (user) => {
+      const token = signRegisterToken({
+        id: user.id,
+        name: user.name,
+        lastname: user.lastname,
+        email: user.email,
+      });
+      await saveAlterToken({ idUser: user.id, token, session });
+
+      // enviar email de notificación
+      const emailSender = new NewUserEmail({ addresseeEmail: user.email, name: user.name, registerToken: token });
+      emailSender.sendEmail();
+    }));
+
+    await session.commitTransaction();
+    session.endSession();
+    res.send(savedUsers);
+  } catch (ex) {
+    await session.abortTransaction();
+    session.endSession();
+    let err = 'Ocurrio un error al insertar la información.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const recoverPasswordController = async (req, res) => {
+  const { email } = req.body;
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    // Verificar que el email ingresado existe en la base de datos
+    const user = await getUserByMail({ email });
+
+    // guardar token para completar registro
+    const token = signRecoverPasswordToken({
+      id: user.id,
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
+    });
+    await saveAlterToken({ idUser: user.id, token, session });
+
+    // enviar email de notificación
+    const emailSender = new RecoverPasswordEmail({ addresseeEmail: email, name: user.name, recoverToken: token });
+    emailSender.sendEmail();
+
+    await session.commitTransaction();
+    session.endSession();
+    res.send({ result: `Correo de recuperación enviado a ${email}` });
+  } catch (ex) {
+    await session.abortTransaction();
+    session.endSession();
+    let err = 'Ocurrio un error en proceso de recuperación de contraseña.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const updateUserPasswordController = async (req, res) => {
+  const { password } = req.body;
+  const idUser = req.session.id;
+
+  const passwordHash = sha256(password);
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    await updateUserPassword({ idUser, passwordHash, session });
+
+    // eliminar tokens para modificar usuario
+    await deleteAllUserAlterTokens({ idUser, session });
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+    session.endSession();
+    let err = 'Ocurrio un error al actualizar contraseña.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createUserController,
   getUsersListController,
@@ -522,4 +695,9 @@ export {
   enableUserController,
   deleteUserController,
   updateUserController,
+  renewRegisterToken,
+  uploadUsersController,
+  recoverPasswordController,
+  updateUserPasswordController,
+  validateRecoverTokenController,
 };
