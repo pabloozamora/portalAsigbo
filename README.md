@@ -248,7 +248,8 @@
 
   Método: Get
 
-  Obtiene el listado de áreas activas.
+  Obtiene el listado de áreas activas. Si el usuario es admin, devuelve el listado completo de áreas.
+  Si es encargado de área, devuelve únicamente las áreas de las que es encargado.
 
 - **/area/:idArea**
 

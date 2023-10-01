@@ -138,19 +138,28 @@ const updateAsigboAreaBlockedStatus = async ({ idArea, blocked, session }) => {
   }
 };
 
+/**
+ * Devuelve el listado de áreas de asigbo.
+ * @returns Area dto array.
+ */
 const getAreas = async () => {
   const asigboAreas = await AsigboAreaSchema.find();
   if (asigboAreas.length === 0) throw new CustomError('No se han encontrado ejes de asigbo.', 404);
-  return asigboAreas;
+  return multiple(asigboAreas);
 };
 
+/**
+ * Devuelve los datos de un eje de asigbo.
+ * @param {string} idArea Id del área a buscar.
+ * @returns Area dto
+ */
 const getArea = async ({ idArea }) => {
   try {
     const result = await AsigboAreaSchema.findById(idArea);
     if (result === null) {
       throw new CustomError('No se encontró la información del área proporcionada.', 404);
     }
-    return result;
+    return single(result);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') {
       throw new CustomError('No se encontró la información del área proporcionada.', 404);
@@ -159,6 +168,12 @@ const getArea = async ({ idArea }) => {
   }
 };
 
+/**
+ * Devuelve el listado de áreas en donde el usuario es responsable.
+ * @param {string} idUser: Id del usuario a consultar.
+ * @param {session} object: Objeto sesión.
+ * @returns Area dto array.
+ */
 const getAreasWhereUserIsResponsible = async ({ idUser, session }) => {
   const results = await AsigboAreaSchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
 

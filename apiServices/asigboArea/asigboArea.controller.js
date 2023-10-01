@@ -3,8 +3,6 @@ import { connection } from '../../db/connection.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import { multiple, single } from './asigboArea.dto.js';
-import { multiple as multipleUser } from '../user/user.dto.js';
 import {
   createAsigboArea,
   updateAsigboArea,
@@ -13,6 +11,7 @@ import {
   getArea,
   updateAsigboAreaBlockedStatus,
   getAreasWhereUserIsResponsible,
+  validateResponsible,
   // validateResponsible,
 } from './asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
@@ -162,21 +161,24 @@ const createAsigboAreaController = async (req, res) => {
 const getAsigboAreaController = async (req, res) => {
   const { idArea } = req.params;
   try {
+    // Si no es admin, validar que sea encargado de área
+    if (!req.session.role.includes(consts.roles.admin)) {
+      await validateResponsible({ idUser: req.session.id, idArea });
+    }
+
     const areaData = await getArea({ idArea });
-    const parsedData = single(areaData);
-    const parsedUsers = multipleUser(parsedData.responsible);
 
     // get user promotion group
     const promotionObj = new Promotion();
 
-    parsedData.responsible = await Promise.all(
-      parsedUsers.map(async (user) => ({
+    areaData.responsible = await Promise.all(
+      areaData.responsible.map(async (user) => ({
         ...user,
         promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
       })),
     );
 
-    res.send(parsedData);
+    res.send(areaData);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener area de asigbo.';
     let status = 500;
@@ -230,16 +232,11 @@ const deleteAsigboAreaController = async (req, res) => {
 
 const getAreasController = async (req, res) => {
   try {
-    const areas = await getAreas();
-    const parsedAreas = multiple(areas);
+    let areas;
+    if (req.session.role.includes(consts.roles.admin)) areas = await getAreas();
+    else areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
 
-    const areasResult = parsedAreas.map((area) => {
-      const areaCopy = { ...area };
-      areaCopy.responsible = multipleUser(area.responsible);
-      return areaCopy;
-    });
-
-    res.send(areasResult);
+    res.send(areas);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener areas activas.';
     let status = 500;
