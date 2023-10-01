@@ -34,6 +34,9 @@
   Método: Get
 
   Permite obtener el listado de actividades.
+  Si el usuario es admin, devuelve el listado completo. Si es encargado de área, devuelve solo
+  aquellas actividades pertenecientes al área donde es encargado. Si es encargado de actividad,
+  devuelve solo las actividades de las que es encargado.
 
   Query Params (?params):
 

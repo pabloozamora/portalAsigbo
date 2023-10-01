@@ -5,7 +5,10 @@ import {
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
 } from '../activityAssignment/activityAssignment.model.js';
-import { getAreasWhereUserIsResponsible, validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
+import {
+  getAreasWhereUserIsResponsible,
+  validateResponsible as validateAreaResponsible,
+} from '../asigboArea/asigboArea.model.js';
 import { forceUserLogout } from '../session/session.model.js';
 import {
   addRoleToUser,
@@ -330,7 +333,43 @@ const getActivitiesController = async (req, res) => {
 
   try {
     const result = await getActivities({ idAsigboArea: asigboArea, limitDate, query });
-    res.send(result);
+
+    // Si es admin, retornar lista completa
+    if (req.session.role.includes(consts.roles.admin)) {
+      return res.send(result);
+    }
+
+    // filtrar dependiendo de privilegio
+    const areasWhereUserIsResponsible = [];
+    const activitiesWhereUserIsResponsible = [];
+
+    // Obtener áreas donde es encargado el usuario
+    if (req.session.role.includes(consts.roles.asigboAreaResponsible)) {
+      try {
+        const areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+        areasWhereUserIsResponsible.push(...areas.map((area) => area.id));
+      } catch (err) {
+        // Error no crítico: no se obtuvieron resultados
+      }
+    }
+
+    // Obtener id de actividades donde es encargado el usuario
+    if (req.session.role.includes(consts.roles.activityResponsible)) {
+      try {
+        const activities = await getActivitiesWhereUserIsResponsible({ idUser: req.session.id });
+        activitiesWhereUserIsResponsible.push(...activities.map((ac) => ac.id));
+      } catch (err) {
+        // Error no crítico: no se obtuvieron resultados
+      }
+    }
+
+    const filteredResult = result.filter(
+      (activity) => areasWhereUserIsResponsible.includes(activity.asigboArea.id)
+        || activitiesWhereUserIsResponsible.includes(activity.id),
+    );
+
+    if (filteredResult.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+    res.send(filteredResult);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener lista de actividades.';
     let status = 500;
@@ -341,6 +380,7 @@ const getActivitiesController = async (req, res) => {
     res.statusMessage = err;
     res.status(status).send({ err, status });
   }
+  return null;
 };
 
 const getActivityController = async (req, res) => {
@@ -399,7 +439,11 @@ const disableActivityController = async (req, res) => {
       await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
     }
 
-    const updatedActivity = await updateActivityBlockedStatus({ idActivity, blocked: true, session });
+    const updatedActivity = await updateActivityBlockedStatus({
+      idActivity,
+      blocked: true,
+      session,
+    });
 
     await updateActivityInAllAssignments({ activity: updatedActivity, session });
 
@@ -433,7 +477,11 @@ const enableActivityController = async (req, res) => {
       await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
     }
 
-    const updatedActivity = await updateActivityBlockedStatus({ idActivity, blocked: false, session });
+    const updatedActivity = await updateActivityBlockedStatus({
+      idActivity,
+      blocked: false,
+      session,
+    });
 
     await updateActivityInAllAssignments({ activity: updatedActivity, session });
 
