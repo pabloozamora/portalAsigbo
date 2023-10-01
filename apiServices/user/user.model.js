@@ -22,6 +22,12 @@ const getUser = async ({ idUser, showSensitiveData, session }) => {
   }
 };
 
+const getUserByMail = async ({ email }) => {
+  const user = await UserSchema.findOne({ email });
+  if (user === null) throw new CustomError('El email indicado no corresponde a ningún usuario.', 404);
+  return user;
+};
+
 const getUsersInList = async ({ idUsersList, showSensitiveData = false, session }) => {
   try {
     const user = await UserSchema.find({ _id: { $in: idUsersList } }).session(session);
@@ -327,7 +333,7 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   }
 };
 
-const saveRegisterToken = async ({ idUser, token, session }) => {
+const saveAlterToken = async ({ idUser, token, session }) => {
   try {
     // eliminar tokens previos del usuario
     await AlterUserTokenSchema.deleteMany({ idUser }, { session });
@@ -364,7 +370,7 @@ const saveManyRegisterToken = async (data) => {
 
 const validateAlterUserToken = async ({ idUser, token }) => {
   const result = await AlterUserTokenSchema.findOne({ idUser, token });
-  if (result === null) throw new CustomError('El token de registro no es válido.', 401);
+  if (result === null) throw new CustomError('El token de modificación no es válido.', 401);
 
   return true;
 };
@@ -432,7 +438,7 @@ export {
   getUser,
   addRoleToManyUsers,
   removeRoleFromUser,
-  saveRegisterToken,
+  saveAlterToken,
   saveManyRegisterToken,
   validateAlterUserToken,
   deleteAlterUserToken,
@@ -444,4 +450,5 @@ export {
   updateUser,
   getUsersInList,
   uploadUsers,
+  getUserByMail,
 };
