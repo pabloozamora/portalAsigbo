@@ -36,6 +36,8 @@ import {
   updateUserBodySchema,
   updateUserParamsSchema,
 } from './validationSchemas/updateUserSchema.js';
+import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
+import consts from '../../utils/consts.js';
 
 const userRouter = express.Router();
 
@@ -53,7 +55,19 @@ userRouter.post(
   validateBody(finishRegistrationSchema),
   updateUserPasswordController,
 );
-userRouter.get('/', ensureAdminAuth, getUsersListController);
+userRouter.get(
+  '/',
+  ensureRolesAuth(
+    [
+      consts.roles.admin,
+      consts.roles.asigboAreaResponsible,
+      consts.roles.activityResponsible,
+      consts.roles.promotionResponsible,
+    ],
+    'El usuario no cuenta con privilegios de administrador, encargado de eje de asigbo, encargado de actividad o encargado de promoción.',
+  ),
+  getUsersListController,
+);
 userRouter.get('/admin', ensureAdminAuth, getAdminUsersController);
 userRouter.post(
   '/renewRegisterToken',
@@ -78,7 +92,12 @@ userRouter.patch(
   validateBody(updateUserBodySchema),
   updateUserController,
 );
-userRouter.post('/uploadUsers', ensureAdminAuth, validateBody(uploadUsersSchema), uploadUsersController);
+userRouter.post(
+  '/uploadUsers',
+  ensureAdminAuth,
+  validateBody(uploadUsersSchema),
+  uploadUsersController,
+);
 userRouter.post('/recoverPassword', validateBody(recoverPasswordSchema), recoverPasswordController);
 
 export default userRouter;

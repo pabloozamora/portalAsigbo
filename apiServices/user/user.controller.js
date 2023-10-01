@@ -49,7 +49,7 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => { });
+  fs.unlink(filePath, () => {});
 };
 
 const getLoggedUserController = async (req, res) => {
@@ -95,7 +95,7 @@ const renewRegisterToken = async (req, res) => {
     const user = await getUser({ idUser, showSensitiveData: true, session });
 
     if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
-    if (user.completeRegistration) throw new CustomError('El usuario indicado ya ha sido activado.', 400);
+    if (user.completeRegistration) { throw new CustomError('El usuario indicado ya ha sido activado.', 400); }
 
     const token = signRegisterToken({
       id: user.id,
@@ -107,7 +107,11 @@ const renewRegisterToken = async (req, res) => {
     await saveAlterToken({ idUser, token, session });
 
     // enviar email de notificación
-    const emailSender = new NewUserEmail({ addresseeEmail: user.email, name: user.name, registerToken: token });
+    const emailSender = new NewUserEmail({
+      addresseeEmail: user.email,
+      name: user.name,
+      registerToken: token,
+    });
     await emailSender.sendEmail();
 
     await session.commitTransaction();
@@ -248,11 +252,22 @@ const getUsersListController = async (req, res) => {
     promotion, search, page, priority, role, includeBlocked,
   } = req.query;
   try {
+    let forcedPromotionFilter = null;
+    // Si el usuario cuenta solo con privilegios de encargado de año, aplicar filtro forzado
+    const { role: userRole } = req.session;
+    if (
+      !userRole.includes(consts.roles.admin)
+      && !userRole.includes(consts.roles.asigboAreaResponsible)
+      && !userRole.includes(consts.roles.activityResponsible)
+    ) {
+      forcedPromotionFilter = req.session.promotion;
+    }
+
     const promotionObj = new Promotion();
 
     let promotionMin = null;
     let promotionMax = null;
-    if (promotion) {
+    if (!forcedPromotionFilter && promotion) {
       // si se da un grupo de usuarios, definir rango de promociones
       if (Number.isNaN(parseInt(promotion, 10))) {
         const result = await promotionObj.getPromotionRange({ promotionGroup: promotion });
@@ -263,7 +278,7 @@ const getUsersListController = async (req, res) => {
 
     const { pages, result } = await getUsersList({
       idUser: req.session.id,
-      promotion: parseInt(promotion, 10) || null,
+      promotion: forcedPromotionFilter ?? (parseInt(promotion, 10) || null),
       search,
       role,
       promotionMin,
@@ -579,19 +594,25 @@ const uploadUsersController = async (req, res) => {
     session.startTransaction();
     const savedUsers = await uploadUsers({ users, session });
 
-    await Promise.all(savedUsers.map(async (user) => {
-      const token = signRegisterToken({
-        id: user.id,
-        name: user.name,
-        lastname: user.lastname,
-        email: user.email,
-      });
-      await saveAlterToken({ idUser: user.id, token, session });
+    await Promise.all(
+      savedUsers.map(async (user) => {
+        const token = signRegisterToken({
+          id: user.id,
+          name: user.name,
+          lastname: user.lastname,
+          email: user.email,
+        });
+        await saveAlterToken({ idUser: user.id, token, session });
 
-      // enviar email de notificación
-      const emailSender = new NewUserEmail({ addresseeEmail: user.email, name: user.name, registerToken: token });
-      emailSender.sendEmail();
-    }));
+        // enviar email de notificación
+        const emailSender = new NewUserEmail({
+          addresseeEmail: user.email,
+          name: user.name,
+          registerToken: token,
+        });
+        emailSender.sendEmail();
+      }),
+    );
 
     await session.commitTransaction();
     session.endSession();
@@ -629,7 +650,11 @@ const recoverPasswordController = async (req, res) => {
     await saveAlterToken({ idUser: user.id, token, session });
 
     // enviar email de notificación
-    const emailSender = new RecoverPasswordEmail({ addresseeEmail: email, name: user.name, recoverToken: token });
+    const emailSender = new RecoverPasswordEmail({
+      addresseeEmail: email,
+      name: user.name,
+      recoverToken: token,
+    });
     emailSender.sendEmail();
 
     await session.commitTransaction();
