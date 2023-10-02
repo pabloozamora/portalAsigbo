@@ -129,7 +129,7 @@ const updateUser = async ({
  * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
  * @param page número de pagina en los resultados
  * @param includeBlocked Boolean. Indica si se incluyen los usuarios bloqueados. Default false.
- * @returns
+ * @returns User dto Array. Se muestran todos los datos sensibles.
  */
 const getUsersList = async ({
   promotion, search, role, promotionMin, promotionMax, priority, page = 0, includeBlocked = false,
@@ -200,7 +200,7 @@ const getUsersList = async ({
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
-  return { pages, result: users };
+  return { pages, result: multiple(users, { showSensitiveData: true }) };
 };
 
 const updateServiceHours = async ({

@@ -75,7 +75,9 @@ const getUserController = async (req, res) => {
 
     // Filtrar datos privados si no es admin o encargado de año o el mismo usuario
     let showSensitiveData = user.id === req.session.id;
-    if (!showSensitiveData && req.session.role.includes(consts.roles.admin)) { showSensitiveData = true; }
+    if (!showSensitiveData && req.session.role.includes(consts.roles.admin)) {
+      showSensitiveData = true;
+    }
     if (!showSensitiveData && req.session.role.includes(consts.roles.promotionResponsible)) {
       showSensitiveData = user.promotion === req.session.promotion;
     }
@@ -269,15 +271,17 @@ const getUsersListController = async (req, res) => {
   const {
     promotion, search, page, priority, role, includeBlocked,
   } = req.query;
+
+  const { role: userRole } = req.session;
+  const isAdmin = userRole.includes(consts.roles.admin);
+  const isAreaResponsible = userRole.includes(consts.roles.asigboAreaResponsible);
+  const isActivityResponsible = userRole.includes(consts.roles.activityResponsible);
+  const isPromotionResponsible = userRole.includes(consts.roles.promotionResponsible);
+
   try {
     let forcedPromotionFilter = null;
     // Si el usuario cuenta solo con privilegios de encargado de año, aplicar filtro forzado
-    const { role: userRole } = req.session;
-    if (
-      !userRole.includes(consts.roles.admin)
-      && !userRole.includes(consts.roles.asigboAreaResponsible)
-      && !userRole.includes(consts.roles.activityResponsible)
-    ) {
+    if (!isAdmin && !isAreaResponsible && !isActivityResponsible) {
       forcedPromotionFilter = req.session.promotion;
     }
 
@@ -306,9 +310,18 @@ const getUsersListController = async (req, res) => {
       includeBlocked,
     });
 
-    const parsedUsers = multiple(result, {
-      showSensitiveData: req.session.role.includes(consts.roles.admin),
-    });
+    let parsedUsers = null;
+
+    // Reestringir datos según rol
+    if (isAdmin || !isPromotionResponsible) {
+      parsedUsers = multiple(result, { showSensitiveData: isAdmin });
+    } else if (isPromotionResponsible) {
+      // Esconder datos sensibles para usuarios que no coinciden promoción
+      parsedUsers = result.map((user) => single(
+        user,
+        { showSensitiveData: user.promotion === req.session.promotion },
+      ));
+    }
 
     const resultWithPromotionGroup = await Promise.all(
       parsedUsers.map(async (user) => ({
