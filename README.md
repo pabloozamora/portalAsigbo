@@ -327,6 +327,9 @@
   Método: Get
 
   Obtiene el listado de usuarios. Por defecto devuelve únicamente a los usuarios activos.
+  El usuario admin tiene acceso a los datos sensibles de todos los usuarios. 
+  El encargado de promoción tiene acceso a los datos sensibles de los usuarios de su promoción.
+  Esta ruta se encuentra disponible para admin y encargados de área, actividad y promoción.
 
   Parámetros de búsqueda opcionales (?params):
 
@@ -353,6 +356,29 @@
   - password: contraseña para iniciar sesión en el portal.
   - sex: sexo del usuario (M o F).
   - career: carrera que estudia.
+
+- **/user/:idUser**
+
+  Método: Patch
+
+  Permite la actualización de los datos del perfil de un usuario.
+  El administrador puede editar todos los perfiles.
+  El encargado de promoción puede editar los perfiles de su promoción.
+  Cada usuario puede editar su propio perfil.
+
+  Parámetros requeridos en la ruta:
+  - idUser: id del usuario a editar.
+
+  Parámetros opcionales (si no se agrega, el campo no sufre modificaciones):
+
+  - code: código de identificación del usuario.
+  - name: nombres del usuario.
+  - lastname: apellidos del usuario.
+  - email: correo electrónico.
+  - promotion: año en el que inició sus estudios universitarios.
+  - sex: sexo del usuario (M o F).
+  - career: carrera que estudia.
+  - removeProfilePicture: boolean que indica si se desea eliminar la foto de perfil.
 
 - **/user/logged**
 
