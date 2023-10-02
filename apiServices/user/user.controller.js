@@ -75,7 +75,7 @@ const getUserController = async (req, res) => {
 
     // Filtrar datos privados si no es admin o encargado de año o el mismo usuario
     let showSensitiveData = user.id === req.session.id;
-    if (!showSensitiveData && req.session.role.includes(consts.roles.admin)) showSensitiveData = true;
+    if (!showSensitiveData && req.session.role.includes(consts.roles.admin)) { showSensitiveData = true; }
     if (!showSensitiveData && req.session.role.includes(consts.roles.promotionResponsible)) {
       showSensitiveData = user.promotion === req.session.promotion;
     }
@@ -103,7 +103,9 @@ const renewRegisterToken = async (req, res) => {
     const user = await getUser({ idUser, showSensitiveData: true, session });
 
     if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
-    if (user.completeRegistration) { throw new CustomError('El usuario indicado ya ha sido activado.', 400); }
+    if (user.completeRegistration) {
+      throw new CustomError('El usuario indicado ya ha sido activado.', 400);
+    }
 
     const token = signRegisterToken({
       id: user.id,
@@ -197,13 +199,21 @@ const updateUserController = async (req, res) => {
 
   const session = await connection.startSession();
   const isAdmin = req.session.role?.includes(consts.roles.admin);
+  const isCurrentUser = req.session.id === idUser;
+  const isPromotionResponsible = req.session.role?.includes(consts.roles.promotionResponsible);
 
   try {
     session.startTransaction();
 
-    // verificar que sea admin o el mismo usuario
-    if (!isAdmin && req.session.id !== idUser) {
-      throw new CustomError('No estás autorizado para modificar este usuario.', 403);
+    // verificar que sea admin, encargado de promoción o el mismo usuario
+    if (!isAdmin && !isCurrentUser) {
+      if (isPromotionResponsible) {
+        // Obtener usuario para verificar promoción
+        const user = await getUser({ idUser });
+        if (user.promotion !== req.session.promotion) {
+          throw new CustomError('No estás autorizado para modificar este usuario.', 403);
+        }
+      } else throw new CustomError('No estás autorizado para modificar este usuario.', 403);
     }
 
     await updateUser({
