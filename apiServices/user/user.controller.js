@@ -72,7 +72,15 @@ const getUserController = async (req, res) => {
   const { idUser } = req.params || null;
   try {
     const user = await getUser({ idUser, showSensitiveData: true });
-    res.send(user);
+
+    // Filtrar datos privados si no es admin o encargado de año o el mismo usuario
+    let showSensitiveData = user.id === req.session.id;
+    if (!showSensitiveData && req.session.role.includes(consts.roles.admin)) showSensitiveData = true;
+    if (!showSensitiveData && req.session.role.includes(consts.roles.promotionResponsible)) {
+      showSensitiveData = user.promotion === req.session.promotion;
+    }
+
+    res.send(single(user, { showSensitiveData }));
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del usuario.';
     let status = 500;

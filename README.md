@@ -364,7 +364,9 @@
 
   Método: Get
 
-  Devuelve la información del usuario requerido.
+  Devuelve la información del usuario requerido. Si el usuario que lo solicita no es admin, 
+  encargado del mismo año del usuario a consultar o el usuario en cuestión, no devuelve datos
+  sensibles.
 
   Parámetro obligatorio en la ruta:
 

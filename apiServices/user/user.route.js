@@ -78,7 +78,7 @@ userRouter.post(
 userRouter.get('/logged', ensureRefreshTokenAuth, getLoggedUserController);
 userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTokenController);
 userRouter.get('/validateRecoverToken', ensureRecoverAuth, validateRecoverTokenController);
-userRouter.get('/:idUser', ensureAdminAuth, getUserController);
+userRouter.get('/:idUser', ensureRefreshTokenAuth, getUserController);
 userRouter.patch('/:idUser/role/admin', ensureAdminAuth, assignAdminRoleController);
 userRouter.delete('/:idUser/role/admin', ensureAdminAuth, removeAdminRoleController);
 userRouter.patch('/:idUser/disable', ensureAdminAuth, disableUserController);
