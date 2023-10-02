@@ -18,6 +18,9 @@ import {
   recoverPasswordController,
   updateUserPasswordController,
   validateRecoverTokenController,
+  assignPromotionResponsibleRoleController,
+  removePromotionResponsibleRoleController,
+  getPromotionResponsibleUsersController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
@@ -69,6 +72,7 @@ userRouter.get(
   getUsersListController,
 );
 userRouter.get('/admin', ensureAdminAuth, getAdminUsersController);
+userRouter.get('/promotionResponsible', ensureAdminAuth, getPromotionResponsibleUsersController);
 userRouter.post(
   '/renewRegisterToken',
   ensureAdminAuth,
@@ -81,6 +85,8 @@ userRouter.get('/validateRecoverToken', ensureRecoverAuth, validateRecoverTokenC
 userRouter.get('/:idUser', ensureRefreshTokenAuth, getUserController);
 userRouter.patch('/:idUser/role/admin', ensureAdminAuth, assignAdminRoleController);
 userRouter.delete('/:idUser/role/admin', ensureAdminAuth, removeAdminRoleController);
+userRouter.patch('/:idUser/role/promotionResponsible', ensureAdminAuth, assignPromotionResponsibleRoleController);
+userRouter.delete('/:idUser/role/promotionResponsible', ensureAdminAuth, removePromotionResponsibleRoleController);
 userRouter.patch('/:idUser/disable', ensureAdminAuth, disableUserController);
 userRouter.patch('/:idUser/enable', ensureAdminAuth, enableUserController);
 userRouter.delete('/:idUser', ensureAdminAuth, deleteUserController);

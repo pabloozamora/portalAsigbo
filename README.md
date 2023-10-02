@@ -465,6 +465,35 @@
 
   - idUser: id del usuario.
 
+  * **/user/promotionResponsible**
+
+  Método Get
+
+  Obtiene el listado de usuarios que poseen el rol de encargado de promoción.
+  Acceso solo para usuarios administradores.
+
+  * **/user/:idUser/role/promotionResponsible**
+
+  Método Patch
+
+  Permite asignar el rol de encargado de promoción a un usuario. 
+  Acceso solo para usuarios admin.
+
+  Parámetros obligatorios en la ruta:
+
+  - idUser: id del usuario.
+
+    * **/user/:idUser/role/promotionResponsible**
+
+  Método Delete
+
+  Retira el rol de encargado de promoción de un usuario.
+  Acceso solo para usuarios admin.
+
+  Parámetros obligatorios en la ruta:
+
+  - idUser: id del usuario.
+
 ### UploadData
 
 - **/upload**

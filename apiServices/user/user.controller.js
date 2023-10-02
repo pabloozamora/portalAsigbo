@@ -509,6 +509,82 @@ const removeAdminRoleController = async (req, res) => {
   }
 };
 
+const assignPromotionResponsibleRoleController = async (req, res) => {
+  const { idUser } = req.params;
+
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+    await addRoleToUser({ idUser, role: consts.roles.promotionResponsible, session });
+
+    // cerrar sesión del usuario
+    await forceUserLogout(idUser, session);
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al asignar privilegios de encargado de promoción al usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const removePromotionResponsibleRoleController = async (req, res) => {
+  const { idUser } = req.params;
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    await removeRoleFromUser({ idUser, role: consts.roles.promotionResponsible, session });
+
+    // cerrar sesión del usuario
+    await forceUserLogout(idUser, session);
+
+    await session.commitTransaction();
+
+    res.sendStatus(204);
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al remover privilegios de encargado de promoción al usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getPromotionResponsibleUsersController = async (req, res) => {
+  const { promotion } = req.query;
+  try {
+    const { result } = await getUsersList({
+      role: consts.roles.promotionResponsible,
+      page: null,
+      promotion,
+    });
+    res.send(multiple(result));
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los usuarios encargados de promoción.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const disableUserController = async (req, res) => {
   const { idUser } = req.params;
   const session = await connection.startSession();
@@ -756,4 +832,7 @@ export {
   recoverPasswordController,
   updateUserPasswordController,
   validateRecoverTokenController,
+  assignPromotionResponsibleRoleController,
+  removePromotionResponsibleRoleController,
+  getPromotionResponsibleUsersController,
 };
