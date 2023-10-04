@@ -379,6 +379,7 @@
   - sex: sexo del usuario (M o F).
   - career: carrera que estudia.
   - removeProfilePicture: boolean que indica si se desea eliminar la foto de perfil.
+  - password: modifica la contraseña del usuario. Disponible exclusivamente al editar el usuario en sesión.
 
 - **/user/logged**
 

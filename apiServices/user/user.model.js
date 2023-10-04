@@ -119,6 +119,7 @@ const updateUser = async ({
   promotion,
   career,
   sex,
+  passwordHash,
   session,
 }) => {
   try {
@@ -132,6 +133,7 @@ const updateUser = async ({
     if (exists(promotion)) user.promotion = promotion;
     if (exists(career)) user.career = career;
     if (exists(sex)) user.sex = sex;
+    if (exists(passwordHash)) user.passwordHash = passwordHash;
 
     await user.save({ session });
 

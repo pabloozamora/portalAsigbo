@@ -34,6 +34,7 @@ import {
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import RecoverPasswordEmail from '../../services/email/RecoverPasswordEmail.js';
+import exists from '../../utils/exists.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -195,7 +196,7 @@ const createUserController = async (req, res) => {
 
 const updateUserController = async (req, res) => {
   const {
-    name, lastname, email, promotion, career, sex, removeProfilePicture,
+    name, lastname, email, promotion, career, sex, removeProfilePicture, password,
   } = req.body;
   const { idUser } = req.params;
 
@@ -218,6 +219,8 @@ const updateUserController = async (req, res) => {
       } else throw new CustomError('No estás autorizado para modificar este usuario.', 403);
     }
 
+    const passwordHash = (exists(password) && req.session.id === idUser) ? sha256(password) : null;
+
     await updateUser({
       idUser,
       name,
@@ -226,6 +229,7 @@ const updateUserController = async (req, res) => {
       promotion: isAdmin ? promotion : null, // solo admin puede modificar promoción
       career,
       sex,
+      passwordHash,
       session,
     });
 
