@@ -7,6 +7,8 @@ import exists, { someExists } from '../../utils/exists.js';
 import { multiple, single } from './user.dto.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import compareObjectId from '../../utils/compareObjectId.js';
+import ActivitySchema from '../../db/schemas/activity.schema.js';
+import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
@@ -81,6 +83,34 @@ const createUser = async ({
     throw ex;
   }
 };
+
+/**
+ * Permite actualizar los datos redundantes del usuario en otras colecciones.
+ * @param {userSubSchema} user: Schema resultante de la actualización del usuario
+ */
+const updateUserInAllDependencies = async ({ user, session }) => {
+  // actualizar responsables de área de asigbo
+  await AsigboAreaSchema.updateMany(
+    { 'responsible._id': user._id },
+    { $set: { 'responsible.$': user } },
+    { session, multi: true },
+  );
+
+  // responsables de actividad
+  await ActivitySchema.updateMany(
+    { 'responsible._id': user._id },
+    { $set: { 'responsible.$': user } },
+    { session, multi: true },
+  );
+
+  // asignaciones
+  await ActivityAssignmentSchema.updateMany(
+    { 'user._id': user._id },
+    { user },
+    { session },
+  );
+};
+
 const updateUser = async ({
   idUser,
   name,
@@ -92,19 +122,23 @@ const updateUser = async ({
   session,
 }) => {
   try {
-    const dataToUpdate = {};
+    const user = await UserSchema.findById(idUser);
 
-    if (name) dataToUpdate.name = name;
-    if (lastname) dataToUpdate.lastname = lastname;
-    if (email) dataToUpdate.email = email;
-    if (promotion) dataToUpdate.promotion = promotion;
-    if (career) dataToUpdate.career = career;
-    if (sex) dataToUpdate.sex = sex;
+    if (!user) throw new CustomError('No se encontró el usuario.', 404);
 
-    const { acknowledged, matchedCount } = await UserSchema.updateOne({ _id: idUser }, dataToUpdate, { session });
+    if (exists(name)) user.name = name;
+    if (exists(lastname)) user.lastname = lastname;
+    if (exists(email)) user.email = email;
+    if (exists(promotion)) user.promotion = promotion;
+    if (exists(career)) user.career = career;
+    if (exists(sex)) user.sex = sex;
 
-    if (!acknowledged) throw new CustomError('No fue posible actualizar el usuario.', 500);
-    if (matchedCount !== 1) throw new CustomError('No se encontró el usuario.', 404);
+    await user.save({ session });
+
+    // actualizar data del usuario en otras colecciones
+    if (exists(name) || exists(lastname) || exists(promotion)) {
+      await updateUserInAllDependencies({ user, session });
+    }
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -451,4 +485,5 @@ export {
   getUsersInList,
   uploadUsers,
   getUserByMail,
+  updateUserInAllDependencies,
 };
