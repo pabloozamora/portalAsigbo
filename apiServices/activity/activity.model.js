@@ -22,6 +22,8 @@ const createActivity = async ({
   registrationEndDate,
   participatingPromotions,
   participantsNumber,
+  description,
+  hasBanner,
   session,
 }) => {
   // obtener datos de area asigbo
@@ -59,6 +61,8 @@ const createActivity = async ({
   activity.registrationEndDate = registrationEndDate;
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
   activity.availableSpaces = participantsNumber;
+  activity.description = description;
+  activity.hasBanner = hasBanner;
 
   const result = await activity.save({ session });
   return singleActivityDto(result);

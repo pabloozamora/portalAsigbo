@@ -76,5 +76,6 @@ export default yup.object().shape({
     .typeError("El campo 'date' debe ser una fecha.")
     .nullable()
     .required("El campo 'date' es obligatorio."),
+  description: yup.string().nullable().required("El campo 'description' es obligatorio."),
   name: yup.string().nullable().required("El campo 'name' es obligatorio."),
 });

@@ -21,6 +21,7 @@ const consts = {
   bucketRoutes: {
     user: 'user',
     area: 'area',
+    activity: 'activity',
   },
   resultsNumberPerPage: 7,
   imagePath: {

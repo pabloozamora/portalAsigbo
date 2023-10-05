@@ -1,6 +1,9 @@
+import fs from 'node:fs';
 import { connection } from '../../db/connection.js';
+import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import exists from '../../utils/exists.js';
 import {
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
@@ -60,6 +63,23 @@ const addActivityResponsibleRole = async ({ responsible, session }) => Promise.a
   }),
 );
 
+const saveBannerPicture = async ({ file, idActivity }) => {
+  const filePath = `${global.dirname}/files/${file.fileName}`;
+
+  // subir archivos
+
+  const fileKey = `${consts.bucketRoutes.activity}/${idActivity}`;
+
+  try {
+    await uploadFileToBucket(fileKey, filePath, file.type);
+  } catch (ex) {
+    throw new CustomError('No se pudo cargar el banner de la actividad.', 500);
+  }
+
+  // eliminar archivos temporales
+  fs.unlink(filePath, () => {});
+};
+
 const createActivityController = async (req, res) => {
   const {
     name,
@@ -72,6 +92,7 @@ const createActivityController = async (req, res) => {
     registrationEndDate,
     participatingPromotions,
     participantsNumber,
+    description,
   } = req.body;
 
   const session = await connection.startSession();
@@ -84,6 +105,9 @@ const createActivityController = async (req, res) => {
       // lógica para generar pago
     }
 
+    // Verificar si hay una imagen subida
+    const hasBanner = exists(req.uploadedFiles?.[0]);
+
     const activityResult = await createActivity({
       name,
       date,
@@ -95,11 +119,18 @@ const createActivityController = async (req, res) => {
       registrationEndDate,
       participatingPromotions,
       participantsNumber,
+      description,
+      hasBanner,
       session,
     });
 
     // añadir roles de responsables de actividad
     await addActivityResponsibleRole({ responsible, session });
+
+    // subir banner
+    if (hasBanner) {
+      await saveBannerPicture({ file: req.uploadedFiles[0], idActivity: activityResult.id });
+    }
 
     await session.commitTransaction();
 

@@ -20,6 +20,8 @@ import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
 import ensureAdminAreaResponsibleAuth from '../../middlewares/ensureAdminAreaResponsibleAuth.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 import consts from '../../utils/consts.js';
+import multerMiddleware from '../../middlewares/multerMiddleware.js';
+import uploadImage from '../../services/uploadFiles/uploadImage.js';
 
 const activityRouter = express.Router();
 
@@ -41,6 +43,7 @@ activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
 activityRouter.post(
   '/',
   ensureAdminAuth,
+  multerMiddleware(uploadImage.single('banner')),
   validateBody(createActivitySchema),
   createActivityController,
 );

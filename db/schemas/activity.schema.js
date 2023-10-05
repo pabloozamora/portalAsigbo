@@ -9,6 +9,7 @@ const activitySchema = Schema({
   name: { type: String, required: true },
   date: { type: Date, required: true },
   serviceHours: { type: Number, required: true },
+  description: { type: String, required: true },
   responsible: {
     type: [UserSubSchema],
     required: true,
@@ -48,6 +49,7 @@ const activitySchema = Schema({
     min: [0, 'El número mínimo de participantes es 0.'],
   },
   blocked: { type: Boolean, default: false },
+  hasBanner: { type: Boolean, default: false },
 });
 
 const activitySubSchema = Schema({

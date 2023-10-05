@@ -16,6 +16,7 @@ const single = (
     _id,
     name,
     date,
+    description,
     serviceHours,
     responsible,
     asigboArea,
@@ -25,12 +26,14 @@ const single = (
     participatingPromotions,
     availableSpaces,
     blocked,
+    hasBanner,
   } = resource._doc ?? resource;
   return {
     id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
     _id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
     name,
     date,
+    description,
     serviceHours,
     responsible: showSensitiveData ? parseMultipleObjects(responsible) : undefined,
     asigboArea: asigboAreaSingle(asigboArea),
@@ -40,6 +43,7 @@ const single = (
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
     availableSpaces,
     blocked,
+    hasBanner,
   };
 };
 
