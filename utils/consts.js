@@ -30,5 +30,6 @@ const consts = {
 
 consts.imagePath.user = `${consts.apiPath}/user`;
 consts.imagePath.area = `${consts.apiPath}/area`;
+consts.imagePath.activity = `${consts.apiPath}/activity`;
 
 export default consts;
