@@ -59,10 +59,11 @@
 
   Permite crear una nueva actividad relacionada a algún eje de asigbo.
 
-  Parámetros requeridos:
+  Parámetros requeridos (formData):
 
   - name: nombre de la actividad.
   - date: fecha en que se realizará la actividad.
+  - description: descripción de la actividad.
   - serviceHours: horas de servicio que se darán al completar la actividad.
   - responsible: (array) lista con los id's de los usuarios encargados de la actividad.
   - idAsigboArea: id del eje de asigbo correspondiente.
@@ -70,10 +71,11 @@
   - registrationEndDate: fecha límite de inscripción.
   - participantsNumber: número máximo de participantes.
 
-  Parámetros opcionales:
+  Parámetros opcionales (formData):
 
   - paymentAmount: monto del pago requerido para la actividad.
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
+  - banner: objeto file con imagenes .png, jpg o gif a colocar como banner.
 
 - **/activity/**
 
