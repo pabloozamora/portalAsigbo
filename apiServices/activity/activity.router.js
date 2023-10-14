@@ -42,7 +42,7 @@ activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
 
 activityRouter.post(
   '/',
-  ensureAdminAuth,
+  ensureRolesAuth([consts.roles.admin, consts.roles.asigboAreaResponsible]),
   multerMiddleware(uploadImage.single('banner')),
   validateBody(createActivitySchema),
   createActivityController,

@@ -101,6 +101,12 @@ const createActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
+    // Verificar que el usuario es admin o encargado del área de la actividad
+    const { role, id: idUser } = req.session;
+    if (!role.includes(consts.roles.admin)) {
+      await validateAreaResponsible({ idUser, idArea: idAsigboArea });
+    }
+
     const idPayment = null;
     if (paymentAmount !== undefined && paymentAmount !== null) {
       // lógica para generar pago
