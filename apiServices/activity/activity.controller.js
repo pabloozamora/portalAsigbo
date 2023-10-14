@@ -169,11 +169,6 @@ const updateActivityController = async (req, res) => {
   const session = await connection.startSession();
 
   try {
-    // Verificar que el usuario es admin o encargado del área de la actividad
-    if (!role.includes(consts.roles.admin)) {
-      await validateAreaResponsible({ idUser, idArea: id });
-    }
-
     session.startTransaction();
 
     const idPayment = null;
@@ -200,6 +195,11 @@ const updateActivityController = async (req, res) => {
       participantsNumber,
       hasBanner,
     });
+
+    // Verificar que el usuario es admin o encargado del área de la actividad
+    if (!role.includes(consts.roles.admin)) {
+      await validateAreaResponsible({ idUser, idArea: dataBeforeChange.asigboArea.id });
+    }
 
     // actualizar actividad en asignaciones
     if (
