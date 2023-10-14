@@ -32,6 +32,7 @@ import {
   updateActivityInAllAssignments,
   validateResponsible,
 } from './activity.model.js';
+import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
 const validateResponsibleController = async ({ idUser, idActivity }) => {
   const result = await validateResponsible({ idUser, idActivity });
@@ -162,13 +163,15 @@ const updateActivityController = async (req, res) => {
     registrationEndDate,
     participatingPromotions,
     participantsNumber,
+    removeBanner,
   } = req.body;
 
   const session = await connection.startSession();
 
   try {
+    // Verificar que el usuario es admin o encargado del área de la actividad
     if (!role.includes(consts.roles.admin)) {
-      await validateResponsibleController({ idUser, idActivity: id });
+      await validateAreaResponsible({ idUser, idArea: id });
     }
 
     session.startTransaction();
@@ -177,6 +180,11 @@ const updateActivityController = async (req, res) => {
     if (paymentAmount !== undefined && paymentAmount !== null) {
       // lógica para generar pago
     }
+
+    // Validar si se ha agregado o retirado el banner
+    let hasBanner = null; // Si no se agregó, no se realizan cambios
+    if (req.uploadedFiles?.length > 0) hasBanner = true;
+    if (removeBanner) hasBanner = false;
 
     const { updatedData, dataBeforeChange } = await updateActivity({
       session,
@@ -190,6 +198,7 @@ const updateActivityController = async (req, res) => {
       registrationEndDate,
       participatingPromotions,
       participantsNumber,
+      hasBanner,
     });
 
     // actualizar actividad en asignaciones
@@ -248,6 +257,21 @@ const updateActivityController = async (req, res) => {
       .map((user) => user.id);
 
     await addActivityResponsibleRole({ responsible: usersAdded, session });
+
+    // Eliminar archivo previo si ya había un banner
+    if (dataBeforeChange.hasBanner && (hasBanner || removeBanner)) {
+      const fileKey = `${consts.bucketRoutes.activity}/${id}`;
+      try {
+        await deleteFileInBucket(fileKey);
+      } catch (ex) {
+        // Error no crítico, no se eliminó el banner
+      }
+    }
+
+    // Subir nuevo banner
+    if (hasBanner) {
+      await saveBannerPicture({ file: req.uploadedFiles[0], idActivity: id });
+    }
 
     await session.commitTransaction();
 

@@ -3,6 +3,10 @@ import validateId from '../../../utils/validateId.js';
 import consts from '../../../utils/consts.js';
 
 export default yup.object().shape({
+  removeBanner: yup
+    .boolean()
+    .nullable()
+    .typeError("El campo 'removeBanner' debe ser un valor booleano."),
   participantsNumber: yup
     .number()
     .nullable()

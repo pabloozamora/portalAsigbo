@@ -49,7 +49,8 @@ activityRouter.post(
 );
 activityRouter.patch(
   '/',
-  ensureAdminActivityResponsibleAuth,
+  ensureRolesAuth([consts.roles.admin, consts.roles.asigboAreaResponsible]),
+  multerMiddleware(uploadImage.single('banner')),
   validateBody(updateActivitySchema),
   updateActivityController,
 );

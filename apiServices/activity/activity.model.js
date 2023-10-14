@@ -4,6 +4,7 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import CustomError from '../../utils/customError.js';
+import exists from '../../utils/exists.js';
 import { multiple, single, single as singleActivityDto } from './activity.dto.js';
 
 const validateResponsible = async ({ idUser, idActivity }) => {
@@ -85,6 +86,7 @@ const updateActivity = async ({
   registrationEndDate,
   participatingPromotions,
   participantsNumber,
+  hasBanner,
 }) => {
   // obtener actividad
   const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
@@ -128,6 +130,7 @@ const updateActivity = async ({
   if (participatingPromotions !== undefined) {
     activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
   }
+  if (exists(hasBanner)) activity.hasBanner = hasBanner;
 
   const result = await activity.save({ session });
   return {
