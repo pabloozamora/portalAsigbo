@@ -57,7 +57,8 @@
 
   Método: Post
 
-  Permite crear una nueva actividad relacionada a algún eje de asigbo.
+  Permite crear una nueva actividad relacionada a algún eje de asigbo. 
+  Solo el administrador y los encargados de el área respectiva pueden crear una actividad.
 
   Parámetros requeridos (formData):
 
@@ -82,6 +83,7 @@
   Método: Patch
 
   Permite actualizar los campos de una actividad. Si un campo no es proveído, su valor se mantendrá sin modificaciones.
+  Solo el administrador y los encargados de el área respectiva pueden crear una actividad.
 
   Parámetros requeridos:
 
@@ -98,6 +100,10 @@
   - participantsNumber: número máximo de participantes.
   - paymentAmount: monto del pago requerido para la actividad.
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
+  - banner: objeto file con imagenes .png, jpg o gif a colocar como banner. Si ya existía un 
+  banner previo, el banner es reemplazado.
+  - removeBanner: valor booleano que indica si se debe de eliminar el banner para la actividad. Si se
+  agregó un archivo en la propiedad banner, este valor es ignorado.
 
   Nota: El eje de asigbo al que pertenece la actividad no puede ser modificado.
 
