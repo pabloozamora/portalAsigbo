@@ -559,6 +559,31 @@ const enableActivityController = async (req, res) => {
   }
 };
 
+const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
+  const { idUser } = req.params;
+  try {
+    // Validar permisos de acceso
+    if (!req.session?.role?.includes(consts.roles.admin) && idUser !== req.session.id) {
+      throw new CustomError(
+        'No se cuentan con los privilegios para acceder a la información de este usuario.',
+        403,
+      );
+    }
+
+    const result = await getActivitiesWhereUserIsResponsible({ idUser });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las actividades en las que el usuario es encargado.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createActivityController,
   updateActivityController,
@@ -569,4 +594,5 @@ export {
   getUserActivitiesController,
   disableActivityController,
   enableActivityController,
+  getActivitiesWhereUserIsResponsibleController,
 };

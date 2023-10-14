@@ -129,6 +129,17 @@
 
   - idUser: id del usuario que se desea conocer sus actividades.
 
+- **/activity/responsible/:idUser**
+
+  Método: Get
+
+  Devuelve el listado de actividades en las que el usuario figura como responsable.
+  Cada usuario puede acceder a su propia información. El acceso a terceros es exclusivo del admin.
+
+  Parámetro obligatorio en la ruta:
+
+  - idUser: id del usuario que se desea conocer sus actividades.
+
 ### Asignaciones en actividades
 
 - **/activity/assignment/**

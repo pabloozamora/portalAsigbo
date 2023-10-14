@@ -13,6 +13,7 @@ import {
   getUserActivitiesController,
   enableActivityController,
   disableActivityController,
+  getActivitiesWhereUserIsResponsibleController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
@@ -27,11 +28,10 @@ const activityRouter = express.Router();
 
 activityRouter.get(
   '/',
-  ensureRolesAuth([
-    consts.roles.admin,
-    consts.roles.asigboAreaResponsible,
-    consts.roles.activityResponsible,
-  ], 'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.'),
+  ensureRolesAuth(
+    [consts.roles.admin, consts.roles.asigboAreaResponsible, consts.roles.activityResponsible],
+    'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.',
+  ),
   getActivitiesController,
 );
 activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
@@ -42,14 +42,20 @@ activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
 
 activityRouter.post(
   '/',
-  ensureRolesAuth([consts.roles.admin, consts.roles.asigboAreaResponsible]),
+  ensureRolesAuth(
+    [consts.roles.admin, consts.roles.asigboAreaResponsible],
+    'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.',
+  ),
   multerMiddleware(uploadImage.single('banner')),
   validateBody(createActivitySchema),
   createActivityController,
 );
 activityRouter.patch(
   '/',
-  ensureRolesAuth([consts.roles.admin, consts.roles.asigboAreaResponsible]),
+  ensureRolesAuth(
+    [consts.roles.admin, consts.roles.asigboAreaResponsible],
+    'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.',
+  ),
   multerMiddleware(uploadImage.single('banner')),
   validateBody(updateActivitySchema),
   updateActivityController,
@@ -66,6 +72,12 @@ activityRouter.patch(
   '/:idActivity/disable',
   ensureAdminAreaResponsibleAuth,
   disableActivityController,
+);
+
+activityRouter.get(
+  '/responsible/:idUser',
+  ensureRolesAuth(null),
+  getActivitiesWhereUserIsResponsibleController,
 );
 
 export default activityRouter;
