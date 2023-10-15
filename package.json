@@ -10,6 +10,7 @@
     "inspect": "cross-env NODE_ENV= node --inspect ./bin/www.js",
     "dev": "cross-env NODE_ENV= nodemon ./bin/www.js",
     "production": "export NODE_ENV=production && pm2 start ./bin/www.js --name 'asigboApp'",
+    "test-production": "cross-env NODE_ENV=production nodemon ./bin/www.js",
     "lint": "eslint ./**/*.js"
   },
   "repository": {
