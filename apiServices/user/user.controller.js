@@ -594,6 +594,12 @@ const disableUserController = async (req, res) => {
   const session = await connection.startSession();
   try {
     session.startTransaction();
+
+    // Evitar bloquearse a sí mismo
+    if (idUser === req.session.id) {
+      throw new CustomError('Un usuario no puede bloquearse a sí mismo.', 400);
+    }
+
     await updateUserBlockedStatus({ idUser, blocked: true });
 
     // Forzar logout
@@ -639,6 +645,11 @@ const deleteUserController = async (req, res) => {
   try {
     session.startTransaction();
 
+    // evitar que el usuario se elimine a sí mismo
+    if (idUser === req.session.id) {
+      throw new CustomError('Un usuario no puede eliminarse a sí mismo.', 400);
+    }
+
     // verificar que el usuario no haya realizado acciones
     let responsibleAreas;
     try {
@@ -682,6 +693,14 @@ const deleteUserController = async (req, res) => {
     // verificar que no haya realizado pagos (pendiente)
 
     await deleteUser({ idUser, session });
+
+    // eliminar foto de perfil
+    try {
+      const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
+      await deleteFileInBucket(fileKey);
+    } catch (ex) {
+      // Error no critico. Fallo al eliminar foto
+    }
 
     session.commitTransaction();
     res.sendStatus(204);
