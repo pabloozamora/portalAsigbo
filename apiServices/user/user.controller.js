@@ -25,7 +25,7 @@ import NewUserEmail from '../../services/email/NewUserEmail.js';
 import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import Promotion from '../promotion/promotion.model.js';
-import { forceUserLogout } from '../session/session.model.js';
+import { forceSessionTokenToUpdate, forceUserLogout } from '../session/session.model.js';
 import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import {
   getActivitiesWhereUserIsResponsible,
@@ -256,6 +256,9 @@ const updateUserController = async (req, res) => {
       // Subir nueva foto
       await saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
     }
+
+    // Actualizar tokens de usuario editado
+    await forceSessionTokenToUpdate({ idUser, session });
 
     await session.commitTransaction();
 

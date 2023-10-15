@@ -3,10 +3,15 @@ import moment from 'moment';
 import config from 'config';
 import CustomError from '../../utils/customError.js';
 import {
-  authenticate, deleteLinkedTokens, deleteSessionToken, storeSessionToken, validateSessionToken,
+  authenticate,
+  deleteLinkedTokens,
+  deleteSessionToken,
+  storeSessionToken,
 } from './session.model.js';
 import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
 import { connection } from '../../db/connection.js';
+import { getUser } from '../user/user.model.js';
+import consts from '../../utils/consts.js';
 
 const allowInsecureConnections = config.get('allowInsecureConnections');
 
@@ -16,6 +21,75 @@ const saveRefreshTokenInCookies = (res, token) => {
     httpOnly: true,
     expires: moment().add(1, 'weeks').toDate(),
   });
+};
+
+const createRefreshToken = async ({
+  id,
+  code,
+  name,
+  lastname,
+  promotion,
+  career,
+  sex,
+  role,
+  hasImage,
+  session,
+}) => {
+  const refreshToken = await signRefreshToken({
+    id,
+    code,
+    name,
+    lastname,
+    promotion,
+    career,
+    sex,
+    role,
+    hasImage,
+  });
+
+  // guardar refresh token en bd
+  await storeSessionToken({
+    idUser: id, token: refreshToken, tokenType: consts.token.refresh, session,
+  });
+
+  return refreshToken;
+};
+
+const createAccessToken = async ({
+  id,
+  code,
+  name,
+  lastname,
+  promotion,
+  career,
+  sex,
+  role,
+  hasImage,
+  refreshToken,
+  session,
+}) => {
+  const accessToken = await signAccessToken({
+    id,
+    code,
+    name,
+    lastname,
+    promotion,
+    career,
+    sex,
+    role,
+    hasImage,
+  });
+
+  // almacenar access token en bd
+  await storeSessionToken({
+    idUser: id,
+    token: accessToken,
+    tokenType: consts.token.access,
+    linkedToken: refreshToken,
+    session,
+  });
+
+  return accessToken;
 };
 
 const loginController = async (req, res) => {
@@ -28,35 +102,21 @@ const loginController = async (req, res) => {
 
     const passwordHash = sha256(password);
     const {
-      id,
-      code,
-      name,
-      lastname,
-      promotion,
-      career,
-      sex,
-      role,
-      hasImage,
-    } = await authenticate(user, passwordHash);
-
-    const refreshToken = await signRefreshToken({
       id, code, name, lastname, promotion, career, sex, role, hasImage,
-    });
+    } = await authenticate(
+      user,
+      passwordHash,
+    );
 
-    // guardar refresh token en bd
-    await storeSessionToken({ idUser: id, token: refreshToken, session });
+    const refreshToken = await createRefreshToken({
+      id, code, name, lastname, promotion, career, sex, role, hasImage, session,
+    });
 
     // almacenar token en cookies
     saveRefreshTokenInCookies(res, refreshToken);
 
-    // crea un access token
-    const accessToken = await signAccessToken({
-      id, code, name, lastname, promotion, career, sex, role, hasImage,
-    });
-
-    // almacenar access token en bd
-    await storeSessionToken({
-      idUser: id, token: accessToken, linkedToken: refreshToken, session,
+    const accessToken = await createAccessToken({
+      id, code, name, lastname, promotion, career, sex, role, hasImage, refreshToken, session,
     });
 
     await session.commitTransaction();
@@ -64,7 +124,6 @@ const loginController = async (req, res) => {
     res.send({ accessToken });
   } catch (ex) {
     await session.abortTransaction();
-
     let err = 'Ocurrio un error al intentar loggearse.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -77,28 +136,57 @@ const loginController = async (req, res) => {
 };
 
 const refreshAccessTokenController = async (req, res) => {
-  const {
-    id, code, name, lastname, promotion, career, sex, role, hasImage,
-  } = req.session;
+  let userData = req.session;
 
-  const { refreshToken } = req.cookies;
+  let { refreshToken } = req.cookies;
+  const session = await connection.startSession();
 
   try {
-    // validar refresh token en bd
-    await validateSessionToken(id, refreshToken);
+    session.startTransaction();
 
-    // create access token
-    const accessToken = await signAccessToken({
+    // Verificar si el refresh token debe ser actualizado
+    if (req.session.update) {
+      // Eliminar tokens anteriores
+      await deleteSessionToken(refreshToken);
+      await deleteLinkedTokens(refreshToken);
+
+      // Obtener usuario
+      userData = await getUser({ idUser: userData.id, showSensitiveData: true });
+
+      const {
+        id, code, name, lastname, promotion, career, sex, role, hasImage,
+      } = userData;
+
+      refreshToken = await createRefreshToken({
+        id,
+        code,
+        name,
+        lastname,
+        promotion,
+        career,
+        sex,
+        role,
+        hasImage,
+        session,
+      });
+
+      saveRefreshTokenInCookies(res, refreshToken);
+    }
+
+    const {
       id, code, name, lastname, promotion, career, sex, role, hasImage,
+    } = userData;
+
+    const accessToken = await createAccessToken({
+      id, code, name, lastname, promotion, career, sex, role, hasImage, refreshToken, session,
     });
 
-    // almacenar access token en bd
-    await storeSessionToken({
-      idUser: id, token: accessToken, linkedToken: refreshToken,
-    });
+    await session.commitTransaction();
 
     res.send({ accessToken });
   } catch (ex) {
+    await session.abortTransaction();
+
     let err = 'Ocurrio un error al refrescar access token.';
     let status = 500;
     if (ex instanceof CustomError) {

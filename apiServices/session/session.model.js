@@ -2,14 +2,16 @@ import CustomError from '../../utils/customError.js';
 import SessionSchema from '../../db/schemas/session.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import single from './session.dto.js';
+import consts from '../../utils/consts.js';
 
 const storeSessionToken = async ({
-  idUser, token, linkedToken, session,
+  idUser, token, tokenType, linkedToken, session,
 }) => {
   const sessionObj = new SessionSchema();
 
   sessionObj.idUser = idUser;
   sessionObj.token = token;
+  sessionObj.tokenType = tokenType;
   sessionObj.linkedToken = linkedToken;
 
   return sessionObj.save({ session });
@@ -17,16 +19,22 @@ const storeSessionToken = async ({
 
 const deleteSessionToken = async (token) => {
   const result = await SessionSchema.deleteOne({ token });
-  if (result?.deletedCount !== 1) throw new CustomError('No fue posible eliminar el refresh token.', 500);
+  if (result?.deletedCount !== 1) { throw new CustomError('No fue posible eliminar el refresh token.', 500); }
 };
 
 const deleteLinkedTokens = async (linkedToken) => SessionSchema.deleteMany({ linkedToken });
 
+/**
+ * Permite validar un session token.
+ * @param {string} idUser
+ * @param {string} token
+ * @returns Boolean. Indica si el token requiere ser actualizado.
+ */
 const validateSessionToken = async (idUser, token) => {
   const result = await SessionSchema.findOne({ idUser, token });
 
   if (result === null) throw new CustomError('Session token inválido.', 401);
-  return true;
+  return result.needUpdate;
 };
 
 const authenticate = async (user, passwordHash) => {
@@ -50,6 +58,23 @@ const authenticate = async (user, passwordHash) => {
 
 const forceUserLogout = async (idUser, session) => SessionSchema.deleteMany({ idUser }, { session });
 
+const deleteAccessTokens = async ({ idUser, session }) => SessionSchema.deleteMany({
+  idUser,
+  tokenType: consts.token.access,
+}, { session });
+
+const forceSessionTokenToUpdate = async ({ idUser, session }) => {
+  await SessionSchema.updateOne({ idUser, tokenType: consts.token.refresh }, { needUpdate: true }, { session });
+  await deleteAccessTokens({ idUser, session }); // Eliminar tokens viejos
+};
+
 export {
-  storeSessionToken, deleteSessionToken, authenticate, validateSessionToken, deleteLinkedTokens, forceUserLogout,
+  storeSessionToken,
+  deleteSessionToken,
+  authenticate,
+  validateSessionToken,
+  deleteLinkedTokens,
+  forceUserLogout,
+  forceSessionTokenToUpdate,
+  deleteAccessTokens,
 };
