@@ -2,15 +2,32 @@ import exists from '../../utils/exists.js';
 
 const parseServiceHours = (serviceHours) => {
   const areas = serviceHours?.areas?.map((val) => {
-    const { asigboArea: { _id: id, name }, total } = val;
+    const {
+      asigboArea: { _id: id, name },
+      total,
+    } = val;
     return { asigboArea: { id, name }, total };
   });
   return { areas, total: serviceHours?.total };
 };
 
-const single = (resource, { showSensitiveData = false, showHours = false, showRole = false } = {}) => {
+const single = (
+  resource,
+  { showSensitiveData = false, showHours = false, showRole = false } = {},
+) => {
   const {
-    code, name, lastname, email, promotion, career, sex, serviceHours, blocked, role, passwordHash,
+    code,
+    name,
+    lastname,
+    email,
+    promotion,
+    career,
+    sex,
+    serviceHours,
+    blocked,
+    role,
+    passwordHash,
+    hasImage,
   } = resource?._doc ?? resource;
   return {
     id: resource?._id?.valueOf() ?? resource.id,
@@ -26,6 +43,7 @@ const single = (resource, { showSensitiveData = false, showHours = false, showRo
     blocked: showSensitiveData ? blocked : undefined,
     role: showSensitiveData || showRole ? role : undefined,
     completeRegistration: showSensitiveData ? exists(passwordHash) : undefined,
+    hasImage,
   };
 };
 

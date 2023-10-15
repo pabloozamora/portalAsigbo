@@ -111,6 +111,11 @@ const updateUserInAllDependencies = async ({ user, session }) => {
   );
 };
 
+/**
+ * Actualiza la información de un usuario
+ * @returns {object} {dataBeforeChange, dataAfterChange} Contienen los datos antes y después de
+ * la actualización respectivamente.
+ */
 const updateUser = async ({
   idUser,
   name,
@@ -120,12 +125,15 @@ const updateUser = async ({
   career,
   sex,
   passwordHash,
+  hasImage,
   session,
 }) => {
   try {
     const user = await UserSchema.findById(idUser);
 
     if (!user) throw new CustomError('No se encontró el usuario.', 404);
+
+    const dataBeforeChange = single(user, { showSensitiveData: true });
 
     if (exists(name)) user.name = name;
     if (exists(lastname)) user.lastname = lastname;
@@ -134,13 +142,16 @@ const updateUser = async ({
     if (exists(career)) user.career = career;
     if (exists(sex)) user.sex = sex;
     if (exists(passwordHash)) user.passwordHash = passwordHash;
+    if (exists(hasImage)) user.hasImage = hasImage;
 
     await user.save({ session });
 
     // actualizar data del usuario en otras colecciones
-    if (exists(name) || exists(lastname) || exists(promotion)) {
+    if (exists(name) || exists(lastname) || exists(promotion) || exists(hasImage)) {
       await updateUserInAllDependencies({ user, session });
     }
+
+    return { dataBeforeChange, dataAfterChange: single(user, { showSensitiveData: true }) };
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);

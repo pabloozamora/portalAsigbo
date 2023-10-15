@@ -6,6 +6,7 @@ const userSubSchema = Schema({
   name: { type: String, required: true },
   lastname: { type: String, required: true },
   promotion: { type: Number, required: true },
+  hasImage: { type: Boolean, required: true },
 });
 
 export default userSubSchema;

@@ -204,6 +204,7 @@ const updateUserController = async (req, res) => {
   const isAdmin = req.session.role?.includes(consts.roles.admin);
   const isCurrentUser = req.session.id === idUser;
   const isPromotionResponsible = req.session.role?.includes(consts.roles.promotionResponsible);
+  const removePicture = parseBoolean(removeProfilePicture);
 
   try {
     session.startTransaction();
@@ -221,7 +222,11 @@ const updateUserController = async (req, res) => {
 
     const passwordHash = (exists(password) && req.session.id === idUser) ? sha256(password) : null;
 
-    await updateUser({
+    let hasImage = null;
+    if (removePicture) hasImage = false;
+    else if (exists(req.uploadedFiles?.[0])) hasImage = true;
+
+    const { dataBeforeChange } = await updateUser({
       idUser,
       name,
       lastname,
@@ -230,28 +235,26 @@ const updateUserController = async (req, res) => {
       career,
       sex,
       passwordHash,
+      hasImage,
       session,
     });
 
     const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
-    if (parseBoolean(removeProfilePicture)) {
-      // Eliminar foto de perfil
-
+    if (dataBeforeChange.hasImage && (removePicture || hasImage)) {
+      // Eliminar foto de perfil previa
       try {
         await deleteFileInBucket(fileKey);
       } catch {
-        throw new CustomError('No se encontró la foto de perfil a eliminar.', 404);
+        if (removePicture) {
+          // El error solo es crítico si se especificó eliminar la imagen
+          throw new CustomError('No se encontró la foto de perfil a eliminar.', 404);
+        }
       }
-    } else if (req.uploadedFiles?.length > 0) {
-      // Subir nueva foto
+    }
 
-      try {
-        await deleteFileInBucket(fileKey); // Eliminar foto antigua
-      } catch (err) {
-        // Error no critico
-      } finally {
-        await saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
-      }
+    if (hasImage) {
+      // Subir nueva foto
+      await saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
     }
 
     await session.commitTransaction();
@@ -415,18 +418,21 @@ const finishRegistrationController = async (req, res) => {
   const idUser = req.session.id;
 
   const passwordHash = sha256(password);
+  const hasImage = exists(req.uploadedFiles?.[0]);
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
 
-    await updateUserPassword({ idUser, passwordHash, session });
+    await updateUser({
+      idUser, passwordHash, hasImage, session,
+    });
 
     // eliminar tokens para modificar usuario
     await deleteAllUserAlterTokens({ idUser, session });
 
     // Subir imagen al bucket
-    if (req.uploadedFiles?.[0]) saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
+    if (hasImage) saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
 
     await session.commitTransaction();
 

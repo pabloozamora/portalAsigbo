@@ -1,6 +1,6 @@
 const single = (resource) => {
   const {
-    code, name, lastname, promotion, career, sex, role,
+    code, name, lastname, promotion, career, sex, role, hasImage,
   } = resource._doc;
   return {
     id: resource._id.valueOf(),
@@ -11,6 +11,7 @@ const single = (resource) => {
     career,
     sex,
     role,
+    hasImage,
   };
 };
 

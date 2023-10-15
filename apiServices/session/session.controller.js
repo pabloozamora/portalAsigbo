@@ -36,10 +36,11 @@ const loginController = async (req, res) => {
       career,
       sex,
       role,
+      hasImage,
     } = await authenticate(user, passwordHash);
 
     const refreshToken = await signRefreshToken({
-      id, code, name, lastname, promotion, career, sex, role,
+      id, code, name, lastname, promotion, career, sex, role, hasImage,
     });
 
     // guardar refresh token en bd
@@ -50,7 +51,7 @@ const loginController = async (req, res) => {
 
     // crea un access token
     const accessToken = await signAccessToken({
-      id, code, name, lastname, promotion, career, sex, role,
+      id, code, name, lastname, promotion, career, sex, role, hasImage,
     });
 
     // almacenar access token en bd
@@ -77,7 +78,7 @@ const loginController = async (req, res) => {
 
 const refreshAccessTokenController = async (req, res) => {
   const {
-    id, code, name, lastname, promotion, career, sex, role,
+    id, code, name, lastname, promotion, career, sex, role, hasImage,
   } = req.session;
 
   const { refreshToken } = req.cookies;
@@ -88,7 +89,7 @@ const refreshAccessTokenController = async (req, res) => {
 
     // create access token
     const accessToken = await signAccessToken({
-      id, code, name, lastname, promotion, career, sex, role,
+      id, code, name, lastname, promotion, career, sex, role, hasImage,
     });
 
     // almacenar access token en bd

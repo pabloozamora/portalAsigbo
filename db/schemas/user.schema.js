@@ -26,6 +26,7 @@ const userSchema = Schema({
   },
   blocked: { type: Boolean, default: false },
   sex: { type: String, required: true },
+  hasImage: { type: Boolean, default: false },
 });
 
 const UserSchema = model('user', userSchema);
