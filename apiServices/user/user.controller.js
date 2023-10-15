@@ -694,6 +694,9 @@ const deleteUserController = async (req, res) => {
 
     await deleteUser({ idUser, session });
 
+    // Forzar logout
+    await forceUserLogout(idUser, session);
+
     // eliminar foto de perfil
     try {
       const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
