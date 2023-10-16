@@ -257,12 +257,14 @@
 - **/promotion/**
 
   Método: Get
+  Acceso: Todos los usuarios loggeados
 
   Obtiene el año de las promociones "estudiantes" y el nombre de los grupos de promociones "no estudiantes" (pollitos y graduados).
 
 - **/promotion/currentStudents**
 
   Método: Post
+  Acceso: Admin.
 
   Almacena la promoción de primer y último año para conocer a qué promociones pertenecen los becados estudiantes.
 

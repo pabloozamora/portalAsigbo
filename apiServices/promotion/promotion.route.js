@@ -3,10 +3,11 @@ import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import validateBody from '../../middlewares/validateBody.js';
 import saveCurrentStudentPromotionsSchema from './validationSchemas/saveCurrentStudentPromotionsSchema.js';
 import { getPromotionsGroupsController, saveCurrentStudentPromotionsController } from './promotion.controller.js';
+import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 
 const promotionRouter = express.Router();
 
-promotionRouter.get('/', ensureAdminAuth, getPromotionsGroupsController);
+promotionRouter.get('/', ensureRolesAuth(null), getPromotionsGroupsController);
 
 promotionRouter.post(
   '/currentStudents',
