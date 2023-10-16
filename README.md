@@ -191,6 +191,7 @@
 - **/activity/assignMany**
 
   Método: Post
+  Acceso: admin.
 
   Permite asignar a una lista de usuarios a una actividad existente.
 
@@ -206,6 +207,7 @@
 - **/activity/:idActivity/assignment/**
 
   Método: Get
+  Acceso: Todos los usuarios loggeados.
 
   Permite obtener la lista de asignaciones de una actividad.
 
@@ -216,12 +218,14 @@
 - **/activity/assignment/logged**
 
   Método: Get
+  Acceso: Todos los usuarios loggeados.
 
   Permite obtener las actividades en las que está inscrito el usuario en sesión.
 
 - **/activity/:idActivity/assignment/:idUser**
 
   Método: Patch
+  Acceso: admin, encargado del área y encargado de la actividad.
 
   Permite actualizar la asignación de un usuario a una actividad.
 
@@ -238,6 +242,7 @@
 - **/activity/:idActivity/assignment/:idUser**
 
   Método: Delete
+  Acceso: admin, encargado del área y encargado de la actividad.
 
   Permite eliminar la inscripción de un usuario a una actividad.
 

@@ -3,7 +3,7 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
-import { addActivityAvailableSpaces, getActivity } from '../activity/activity.model.js';
+import { addActivityAvailableSpaces, getActivity, validateResponsible as validateActivityResponsible } from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import { getUser, getUsersInList, updateServiceHours } from '../user/user.model.js';
@@ -15,18 +15,21 @@ import {
   updateActivityAssignment,
 } from './activityAssignment.model.js';
 
-const validateActivityResponsibleAccess = async ({role}) => {
-
-  if(role.includes(consts.roles.admin)) return;
-  if(role.includes(consts.roles.asigboAreaResponsible)){
-    const hasAccess = await validateAreaResponsible({idUser, idArea, preventError: true})
-    if(hasAccess) return;
+const validateActivityResponsibleAccess = async ({
+  role, idUser, idArea, idActivity,
+}) => {
+  if (role.includes(consts.roles.admin)) return;
+  if (role.includes(consts.roles.asigboAreaResponsible)) {
+    const hasAccess = await validateAreaResponsible({ idUser, idArea, preventError: true });
+    if (hasAccess) return;
   }
-  if(role.includes(consts.roles.activityResponsible)){
-    const hasAccess = await 
+  if (role.includes(consts.roles.activityResponsible)) {
+    const hasAccess = await validateActivityResponsible({ idUser, idActivity, preventError: true });
+    if (hasAccess) return;
   }
 
-}
+  throw new CustomError('El usuario no figura como encargado de esta actividad ni del área al que pertenece.', 403);
+};
 
 const getActivitiesAssigmentsController = async (req, res) => {
   const { idUser } = req.query;
@@ -108,10 +111,12 @@ const assignUserToActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    // Validar acceso
-    if(!role.includes(consts.roles.admin))
-
     const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    // Validar acceso
+    await validateActivityResponsibleAccess({
+      role, idUser, idActivity, idArea: activity.asigboArea.id,
+    });
 
     // Validar que la actividad esté habilitada
     if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
@@ -243,6 +248,7 @@ const assignManyUsersToActivityController = async (req, res) => {
 
 const unassignUserFromActivityController = async (req, res) => {
   const { idActivity, idUser } = req.params;
+  const { role } = req.session;
 
   const session = await connection.startSession();
 
@@ -250,6 +256,11 @@ const unassignUserFromActivityController = async (req, res) => {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    // Validar acceso
+    await validateActivityResponsibleAccess({
+      role, idUser, idActivity, idArea: activity.asigboArea.id,
+    });
 
     // Validar que la actividad esté habilitada
     if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
@@ -296,12 +307,19 @@ const unassignUserFromActivityController = async (req, res) => {
 const updateActivityAssignmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
   const { completed, aditionalServiceHours } = req.body;
+  const { role } = req.session;
+
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    // Validar acceso
+    await validateActivityResponsibleAccess({
+      role, idUser, idActivity, idArea: activity.asigboArea.id,
+    });
 
     // Validar que la actividad esté habilitada
     if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
