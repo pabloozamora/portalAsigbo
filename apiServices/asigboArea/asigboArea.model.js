@@ -6,13 +6,18 @@ import { multiple, single } from './asigboArea.dto.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 
 /**
- * Permite validar si un usuario es un encargado de una actividad.
- * Lanza un CustomError si el usuario no posee dicho privilegio.
+ * Permite validar si un usuario es un encargado de un eje de asigbo.
+ * @param {string} idUser Id del usuario a verificar.
+ * @param {string} idArea Id del eje en donde se va a verificar si el usuario es encargado.
+ * @param {boolean} preventError. Default false. Evita que se lance una excepción al no ser el encargado.
+ * Por defecto, Lanza un CustomError si el usuario no posee dicho privilegio.
+ * @return {boolean} Indica si el usuario es encargado del eje.
  */
-const validateResponsible = async ({ idUser, idArea }) => {
+const validateResponsible = async ({ idUser, idArea, preventError = false }) => {
   const { responsible } = await AsigboAreaSchema.findById(idArea);
   const isResponsible = responsible.some((user) => user._id.toString() === idUser);
-  if (!isResponsible) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  if (!isResponsible && !preventError) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  return isResponsible;
 };
 
 /**
