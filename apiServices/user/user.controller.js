@@ -74,13 +74,10 @@ const getUserController = async (req, res) => {
   try {
     const user = await getUser({ idUser, showSensitiveData: true });
 
-    // Filtrar datos privados si no es admin o encargado de año o el mismo usuario
+    // Filtrar datos privados si no es admin
     let showSensitiveData = user.id === req.session.id;
     if (!showSensitiveData && req.session.role.includes(consts.roles.admin)) {
       showSensitiveData = true;
-    }
-    if (!showSensitiveData && req.session.role.includes(consts.roles.promotionResponsible)) {
-      showSensitiveData = user.promotion === req.session.promotion;
     }
 
     res.send(single(user, { showSensitiveData }));
@@ -203,7 +200,6 @@ const updateUserController = async (req, res) => {
   const session = await connection.startSession();
   const isAdmin = req.session.role?.includes(consts.roles.admin);
   const isCurrentUser = req.session.id === idUser;
-  const isPromotionResponsible = req.session.role?.includes(consts.roles.promotionResponsible);
   const removePicture = parseBoolean(removeProfilePicture);
 
   try {
@@ -211,13 +207,7 @@ const updateUserController = async (req, res) => {
 
     // verificar que sea admin, encargado de promoción o el mismo usuario
     if (!isAdmin && !isCurrentUser) {
-      if (isPromotionResponsible) {
-        // Obtener usuario para verificar promoción
-        const user = await getUser({ idUser });
-        if (user.promotion !== req.session.promotion) {
-          throw new CustomError('No estás autorizado para modificar este usuario.', 403);
-        }
-      } else throw new CustomError('No estás autorizado para modificar este usuario.', 403);
+      throw new CustomError('No estás autorizado para modificar este usuario.', 403);
     }
 
     const passwordHash = (exists(password) && req.session.id === idUser) ? sha256(password) : null;
@@ -286,7 +276,6 @@ const getUsersListController = async (req, res) => {
   const isAdmin = userRole.includes(consts.roles.admin);
   const isAreaResponsible = userRole.includes(consts.roles.asigboAreaResponsible);
   const isActivityResponsible = userRole.includes(consts.roles.activityResponsible);
-  const isPromotionResponsible = userRole.includes(consts.roles.promotionResponsible);
 
   try {
     let forcedPromotionFilter = null;
@@ -320,18 +309,7 @@ const getUsersListController = async (req, res) => {
       includeBlocked,
     });
 
-    let parsedUsers = null;
-
-    // Reestringir datos según rol
-    if (isAdmin || !isPromotionResponsible) {
-      parsedUsers = multiple(result, { showSensitiveData: isAdmin });
-    } else if (isPromotionResponsible) {
-      // Esconder datos sensibles para usuarios que no coinciden promoción
-      parsedUsers = result.map((user) => single(
-        user,
-        { showSensitiveData: user.promotion === req.session.promotion },
-      ));
-    }
+    const parsedUsers = multiple(result, { showSensitiveData: isAdmin });
 
     const resultWithPromotionGroup = await Promise.all(
       parsedUsers.map(async (user) => ({
