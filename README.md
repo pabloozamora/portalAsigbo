@@ -362,11 +362,10 @@
 - **/user**
 
   Método: Get
+  Acceso: Admin y encargados de área, actividad y promoción.
 
   Obtiene el listado de usuarios. Por defecto devuelve únicamente a los usuarios activos.
   El usuario admin tiene acceso a los datos sensibles de todos los usuarios. 
-  El encargado de promoción tiene acceso a los datos sensibles de los usuarios de su promoción.
-  Esta ruta se encuentra disponible para admin y encargados de área, actividad y promoción.
 
   Parámetros de búsqueda opcionales (?params):
 
@@ -380,6 +379,7 @@
 - **/user**
 
   Método: Post
+  Acceso: Admin.
 
   Permite la creación de un nuevo usuario con la información especificada.
 
@@ -397,10 +397,10 @@
 - **/user/:idUser**
 
   Método: Patch
+  Acceso: Todos los usuarios loggeados.
 
   Permite la actualización de los datos del perfil de un usuario.
   El administrador puede editar todos los perfiles.
-  El encargado de promoción puede editar los perfiles de su promoción.
   Cada usuario puede editar su propio perfil.
 
   Parámetros requeridos en la ruta:
@@ -421,16 +421,17 @@
 - **/user/logged**
 
   Método: Get
+  Access: todos los usuarios loggeados.
 
   Devuelve la información del usuario actualmente loggeado.
 
 - **/user/:idUser**
 
   Método: Get
+  Acceso: todos los usuarios loggeados.
 
-  Devuelve la información del usuario requerido. Si el usuario que lo solicita no es admin, 
-  encargado del mismo año del usuario a consultar o el usuario en cuestión, no devuelve datos
-  sensibles.
+  Devuelve la información del usuario requerido. Si el usuario que lo solicita no es admin o el
+  suario en cuestión, no devuelve datos sensibles.
 
   Parámetro obligatorio en la ruta:
 
@@ -439,12 +440,14 @@
 - **/user/admin**
 
   Método: Get
+  Acceso: Admin.
 
   Devuelve el listado de todos los usuarios administradores.
 
 - **/user/:idUser/role/admin**
 
   Método: Patch
+  Acceso: Admin.
 
   Asigna privilegios de administrador al usuario.
 
@@ -455,6 +458,7 @@
 - **/user/:idUser/role/admin**
 
   Método: Delete
+  Acceso: Admin.
 
   Remueve privilegios de administrador al usuario.
 
@@ -465,6 +469,7 @@
 - **/user/:idUser/disable**
 
   Método: Patch
+  Acceso: Admin.
 
   Deshabilita un usuario existente. Un usuario deshabilitado no puede iniciar acción ni realizar acción alguna.
 
@@ -475,6 +480,7 @@
 - **/user/:idUser/enable**
 
   Método: Patch
+  Acceso: Admin.
 
   Habilita un usuario existente.
 
@@ -485,6 +491,7 @@
   * **/user/:idUser**
 
   Método: Delete
+  Acceso: Admin.
 
   Eliminar un usuario. El usuario no podrá ser eliminado si es un encargado de área o actividad, ha
   sido asignado a una actividad o ha emitido algún pago.
@@ -496,6 +503,7 @@
   * **/user/renewRegisterToken**
 
   Método: Post
+  Acceso: Admin y encargado de año.
 
   Genera un nuevo token de registro para un usuario y lo envía nuevamente a su correo, en caso de que el token original no haya sido enviado correctamente y que el usuario en cuestión aún no haya sido activado (no se le ha asignado una contraseña).
 
@@ -503,46 +511,83 @@
 
   - idUser: id del usuario.
 
+  * **/user/finishRegistration**
+
+  Método: Post
+  Acceso: token de registro requerido.
+
+  Permite finalizar el registro de un usuario en específico. El token requerido para autenticar, es el enviado al email de cada usuario.
+
+  Parámetros obligatorios (body):
+  - password: contraseña de la cuenta.
+
+  Parámetro opcional:
+  - photo: archivo png, jpg, gif o svg.
+
+  * **/user/updatePassword**
+
+  Método: Post
+  Acceso: token para modificar contraseña.
+
+  Permite modificar la contraseña de un usuario a partir de un token de recuperación.
+
+  Parámetros obligatorios (body):
+  - password: contraseña de la cuenta.
+
   * **/user/promotionResponsible**
 
   Método Get
+  Acceso: Admin.
 
   Obtiene el listado de usuarios que poseen el rol de encargado de promoción.
-  Acceso solo para usuarios administradores.
 
   * **/user/:idUser/role/promotionResponsible**
 
   Método Patch
+  Acceso: Admin.
 
   Permite asignar el rol de encargado de promoción a un usuario. 
-  Acceso solo para usuarios admin.
 
   Parámetros obligatorios en la ruta:
 
   - idUser: id del usuario.
 
-    * **/user/:idUser/role/promotionResponsible**
+  * **/user/:idUser/role/promotionResponsible**
 
   Método Delete
+  Acceso: Admin.
 
   Retira el rol de encargado de promoción de un usuario.
-  Acceso solo para usuarios admin.
 
   Parámetros obligatorios en la ruta:
 
   - idUser: id del usuario.
 
-### UploadData
+  * **/user/validateRegisterToken**
 
-- **/upload**
+  Método: get
+  Acceso: token de registro requerido.
 
-  Método: Post
+  Permite verificar si un token de registro es válido.
 
-  Permite guardar una gran cantidad de usuarios de forma simultánea, a través de un arreglo de registros.
+  * **/user/validateRecoverToken**
 
-  Parámetro obligatorio en la ruta:
+  Método: get
+  Acceso: token de recuperación requerido.
 
-  - data: Arreglo de registros de tipo Usuario.
+  Permite verificar si un token de recuperación de contraseña es válido.
+
+  * **/user/recoverPasswor**
+
+  Método: post
+  Acceso: todos los usuarios. Auth no requerida.
+
+  Permite solicitar el envío del correo de recuperación de la cuenta.
+
+  Parámetros obligatorios:
+
+  - email: email del usuario.
+
 
 ## Notas
 
