@@ -18,19 +18,16 @@ import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
 import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
-import consts from '../../utils/consts.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
+import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityResponsibleAuth.js';
 
 const activityRouter = express.Router();
 
 activityRouter.get(
   '/',
-  ensureRolesAuth(
-    [consts.roles.admin, consts.roles.asigboAreaResponsible, consts.roles.activityResponsible],
-    'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.',
-  ),
+  ensureActivityResponsibleAuth,
   getActivitiesController,
 );
 activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
@@ -41,10 +38,7 @@ activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
 
 activityRouter.post(
   '/',
-  ensureRolesAuth(
-    [consts.roles.admin, consts.roles.asigboAreaResponsible],
-    'No se cuenta con los privilegios de administrador, responsable de área o encargado de actividad.',
-  ),
+  ensureActivityResponsibleAuth,
   multerMiddleware(uploadImage.single('banner')),
   validateBody(createActivitySchema),
   createActivityController,
