@@ -18,6 +18,7 @@ import Promotion from '../promotion/promotion.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import { addRoleToUser, removeRoleFromUser } from '../user/user.model.js';
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
+import { getActivities } from '../activity/activity.model.js';
 
 /* const validateResponsibleController = async ({ idUser, idArea }) => {
   const result = await validateResponsible({ idUser, idArea });
@@ -198,6 +199,10 @@ const deleteAsigboAreaController = async (req, res) => {
 
   try {
     session.startTransaction();
+
+    const activities = await getActivities({ idAsigboArea: idArea });
+
+    if (activities.length > 0) { throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400); }
 
     const area = await deleteAsigboArea({ idArea, session });
 

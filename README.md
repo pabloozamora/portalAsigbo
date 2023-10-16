@@ -278,6 +278,7 @@
 - **/area**
 
   Método: Get
+  Acceso: Admin y encargado de área.
 
   Obtiene el listado de áreas activas. Si el usuario es admin, devuelve el listado completo de áreas.
   Si es encargado de área, devuelve únicamente las áreas de las que es encargado.
@@ -285,8 +286,9 @@
 - **/area/:idArea**
 
   Método: Get
+  Acceso: Admin y el encargado del área.
 
-  Obtiene el listado de áreas activas.
+  Obtiene la información de un área en específico.
 
   Parámetros obligatorios en la ruta:
 
@@ -295,6 +297,7 @@
 - **/area**
 
   Método: Post
+  Acceso: Admin.
 
   Crea una nueva área de ASIGBO con la información especificada.
 
@@ -307,6 +310,7 @@
 - **/area/:idArea**
 
   Método: Patch
+  Acceso: Admin
 
   Actualiza el nombre del área especificada.
 
@@ -323,6 +327,7 @@
 - **/area/:idArea/enable**
 
   Método: Patch
+  Acceso: Admin.
 
   Actualiza el status blocked del área a falso.
 
@@ -333,6 +338,7 @@
 - **/area/:idArea/disable**
 
   Método: Patch
+  Acceso: Admin.
 
   Actualiza el status blocked del área a verdadero.
 

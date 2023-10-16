@@ -107,19 +107,10 @@ const createAsigboArea = async ({
  */
 const deleteAsigboArea = async ({ idArea, session }) => {
   try {
-    const area = await AsigboAreaSchema.findById(idArea);
-    if (area === null) throw new CustomError('No se encontró el eje a eliminar.', 400);
+    const { deletedCount, acknowledged } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
 
-    const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
-
-    // Evitar que se elimine si posee actividades
-    if (activities.length > 0) { throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400); }
-
-    const { deletedCount } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
-
-    if (deletedCount === 0) throw new CustomError('No se completó la eliminación del eje.', 500);
-
-    return single(area);
+    if (!acknowledged) throw new CustomError('No se completó la eliminación del eje.', 500);
+    if (deletedCount !== 1) throw new CustomError('No se encontró el eje a eliminar.', 404);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') {
       throw new CustomError('No se encontró la información del eje proporcionado.', 404);
