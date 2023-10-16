@@ -13,7 +13,7 @@ import createAsigboAreaSchema from './validationSchemas/createAsigboAreaSchema.j
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
-import ensureAdminAreaResponsibleAuth from '../../middlewares/ensureAdminAreaResponsibleAuth.js';
+import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 
 const asigboAreaRouter = express.Router();
 
@@ -44,7 +44,7 @@ asigboAreaRouter.patch(
 
 asigboAreaRouter.delete('/:idArea', ensureAdminAuth, deleteAsigboAreaController);
 
-asigboAreaRouter.get('/', ensureAdminAreaResponsibleAuth, getAreasController);
-asigboAreaRouter.get('/:idArea', ensureAdminAreaResponsibleAuth, getAsigboAreaController);
+asigboAreaRouter.get('/', ensureAreaResponsibleAuth, getAreasController);
+asigboAreaRouter.get('/:idArea', ensureAreaResponsibleAuth, getAsigboAreaController);
 
 export default asigboAreaRouter;

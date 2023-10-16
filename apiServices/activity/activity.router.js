@@ -21,7 +21,7 @@ import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 import consts from '../../utils/consts.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
-import ensureAdminAreaResponsibleAuth from '../../middlewares/ensureAdminAreaResponsibleAuth.js';
+import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 
 const activityRouter = express.Router();
 
@@ -51,7 +51,7 @@ activityRouter.post(
 );
 activityRouter.patch(
   '/',
-  ensureAdminAreaResponsibleAuth,
+  ensureAreaResponsibleAuth,
   multerMiddleware(uploadImage.single('banner')),
   validateBody(updateActivitySchema),
   updateActivityController,
@@ -59,18 +59,18 @@ activityRouter.patch(
 
 activityRouter.delete(
   '/:idActivity',
-  ensureAdminAreaResponsibleAuth,
+  ensureAreaResponsibleAuth,
   deleteActivityController,
 );
 
 activityRouter.patch(
   '/:idActivity/enable',
-  ensureAdminAreaResponsibleAuth,
+  ensureAreaResponsibleAuth,
   enableActivityController,
 );
 activityRouter.patch(
   '/:idActivity/disable',
-  ensureAdminAreaResponsibleAuth,
+  ensureAreaResponsibleAuth,
   disableActivityController,
 );
 
