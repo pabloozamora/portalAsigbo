@@ -7,6 +7,7 @@
 - **/session/login**
 
   Método: Post
+  Acceso: libre
 
   Permite que un usuario inicie sesión.
 
@@ -18,12 +19,14 @@
 - **/session/accessToken**
 
   Método: Get
+  Acceso: todos los usuarios loggeados.
 
   Retorna el acessToken refrescado.
 
 - **/session/logout**
 
   Método: Post
+  Acceso: todos los usuarios loggeados.
 
   Permite cerrar la sesión del usuario.
 
@@ -32,6 +35,7 @@
 - **/activity/**
 
   Método: Get
+  Acceso: Admin, AreaResponsible y activityResponsible.
 
   Permite obtener el listado de actividades.
   Si el usuario es admin, devuelve el listado completo. Si es encargado de área, devuelve solo
@@ -47,6 +51,7 @@
 - **/acitivy/:idActivity**
 
   Método: Get
+  Acceso: Todos los usuarios loggeados.
 
   Permite obtener la información de una actividad a través de su id.
 
@@ -56,6 +61,7 @@
 - **/activity/**
 
   Método: Post
+  Acceso: Admin y encargado del área.
 
   Permite crear una nueva actividad relacionada a algún eje de asigbo. 
   Solo el administrador y los encargados de el área respectiva pueden crear una actividad.
@@ -81,6 +87,7 @@
 - **/activity/**
 
   Método: Patch
+  Acceso: Admin y encargado del área.
 
   Permite actualizar los campos de una actividad. Si un campo no es proveído, su valor se mantendrá sin modificaciones.
   Solo el administrador y los encargados de el área respectiva pueden crear una actividad.
@@ -110,28 +117,21 @@
 - **/activity/:activityId**
 
   Método: delete
+  Acceso: Admin y encargado del área.
 
   Permite eliminar una actividad, siempre y cuando no hayan personas inscritas en la misma.
 
 - **/activity/logged**
 
   Método: Get
+  Acceso: Todos los usuario loggeados.
 
   Devuelve el listado de actividades en las que ha participado el usuario actualmente loggeado.
-
-- **/activity/:idUser**
-
-  Método: Get
-
-  Devuelve el listado de actividades en las que ha participado el usuario especificado.
-
-  Parámetro obligatorio en la ruta:
-
-  - idUser: id del usuario que se desea conocer sus actividades.
 
 - **/activity/responsible/:idUser**
 
   Método: Get
+  Acceso: Todos los usuarios loggeados.
 
   Devuelve el listado de actividades en las que el usuario figura como responsable.
   Cada usuario puede acceder a su propia información. El acceso a terceros es exclusivo del admin.
@@ -139,6 +139,25 @@
   Parámetro obligatorio en la ruta:
 
   - idUser: id del usuario que se desea conocer sus actividades.
+
+  **/activity/:idActivity/enable**
+
+  Método: Patch
+  Acceso: Admin y encargado del área.
+
+  Parámetro obligatorio en la ruta:
+
+  - idActivity: id de la actividad a habilitar.
+
+  **/activity/:idActivity/disable**
+
+  Método: Patch
+  Acceso: Admin y encargado del área.
+
+  Parámetro obligatorio en la ruta:
+
+  - idActivity: id de la actividad a deshabilitar.
+
 
 ### Asignaciones en actividades
 
