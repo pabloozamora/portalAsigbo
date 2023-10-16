@@ -41,7 +41,7 @@ const updateAsigboAreaDependencies = async ({ area, session }) => {
 };
 
 const updateAsigboArea = async ({
-  idArea, name, responsible, session,
+  idArea, name, responsible, color, session,
 }) => {
   try {
     const area = await AsigboAreaSchema.findById(idArea);
@@ -54,6 +54,7 @@ const updateAsigboArea = async ({
 
     area.name = name.trim();
     area.responsible = users;
+    area.color = color;
 
     await area.save({ session });
 
@@ -69,7 +70,9 @@ const updateAsigboArea = async ({
   }
 };
 
-const createAsigboArea = async ({ name, responsible, session }) => {
+const createAsigboArea = async ({
+  name, responsible, color, session,
+}) => {
   try {
     // añadir permisos de encargado a los usuarios
     const users = await UserSchema.find({ _id: { $in: responsible } });
@@ -79,6 +82,7 @@ const createAsigboArea = async ({ name, responsible, session }) => {
 
     area.name = name.trim();
     area.responsible = users;
+    area.color = color;
 
     await area.save({ session });
     return single(area);

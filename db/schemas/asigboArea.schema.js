@@ -14,6 +14,7 @@ const asigboAreaSchema = Schema({
       message: 'Debe proporcionar al menos un encargado de área.',
     },
   },
+  color: { type: String, required: true },
   blocked: { type: Boolean, default: false },
 });
 const asigboAreaSubSchema = Schema({

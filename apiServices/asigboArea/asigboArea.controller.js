@@ -45,7 +45,7 @@ const addAsigboAreaResponsibleRole = async ({ idUser, session }) => {
 };
 
 const updateAsigboAreaController = async (req, res) => {
-  const { name, responsible } = req.body;
+  const { name, responsible, color } = req.body;
   const { idArea } = req.params;
 
   const session = await connection.startSession();
@@ -57,7 +57,7 @@ const updateAsigboAreaController = async (req, res) => {
     session.startTransaction();
 
     const { dataBeforeChange, dataAfterChange } = await updateAsigboArea({
-      idArea, name, responsible, session,
+      idArea, name, responsible, color, session,
     });
 
     const responsibleToAdd = responsible.filter(
@@ -112,7 +112,7 @@ const updateAsigboAreaController = async (req, res) => {
 };
 
 const createAsigboAreaController = async (req, res) => {
-  const { name, responsible } = req.body;
+  const { name, responsible, color } = req.body;
   const session = await connection.startSession();
 
   const file = req.uploadedFiles?.[0];
@@ -124,6 +124,7 @@ const createAsigboAreaController = async (req, res) => {
     const area = await createAsigboArea({
       name,
       responsible,
+      color,
       session,
     });
 
