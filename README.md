@@ -293,6 +293,7 @@
 
   - responsible: (array) lista de usuarios que serán responsables de área.
   - name: nombre del área a crear.
+  - color: color representativo del eje. El valor debe ser en formato hexadecimal.
 
 - **/area/:idArea**
 
@@ -308,6 +309,7 @@
 
   - name: nuevo nombre del área.
   - responsible: lista de id's de los usuarios encargados. Se deben agregar todos los responsables. Si la lista no incluye alguno de los encargados anteriores, sus privilegios serán retirados.
+  - color: color representativo del eje. El valor debe ser en formato hexadecimal.
 
 - **/area/:idArea/enable**
 
