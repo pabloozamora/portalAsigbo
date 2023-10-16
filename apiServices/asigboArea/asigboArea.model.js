@@ -7,11 +7,11 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
 
 /**
  * Permite validar si un usuario es un encargado de un eje de asigbo.
- * @param {string} idUser Id del usuario a verificar.
- * @param {string} idArea Id del eje en donde se va a verificar si el usuario es encargado.
- * @param {boolean} preventError. Default false. Evita que se lance una excepción al no ser el encargado.
+ * @param idUser Id del usuario a verificar.
+ * @param idArea Id del eje en donde se va a verificar si el usuario es encargado.
+ * @param preventError. Default false. Evita que se lance una excepción al no ser el encargado.
  * Por defecto, Lanza un CustomError si el usuario no posee dicho privilegio.
- * @return {boolean} Indica si el usuario es encargado del eje.
+ * @return Boolean. Indica si el usuario es encargado del eje.
  */
 const validateResponsible = async ({ idUser, idArea, preventError = false }) => {
   const { responsible } = await AsigboAreaSchema.findById(idArea);

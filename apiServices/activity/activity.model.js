@@ -7,9 +7,19 @@ import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import { multiple, single, single as singleActivityDto } from './activity.dto.js';
 
-const validateResponsible = async ({ idUser, idActivity }) => {
+/**
+ * Permite validar si un usuario es un encargado de un eje de asigbo.
+ * @param idUser Id del usuario a verificar.
+ * @param idArea Id de la actividad en donde se va a verificar si el usuario es encargado.
+ * @param preventError. Default false. Evita que se lance una excepción al no ser el encargado.
+ * Por defecto, Lanza un CustomError si el usuario no posee dicho privilegio.
+ * @return Boolean. Indica si el usuario es encargado del eje.
+ */
+const validateResponsible = async ({ idUser, idActivity, preventError = false }) => {
   const { responsible } = await ActivitySchema.findById(idActivity);
-  return responsible.some((user) => user._id.toString() === idUser);
+  const isResponsible = responsible.some((user) => user._id.toString() === idUser);
+  if (!isResponsible && !preventError) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  return isResponsible;
 };
 
 const createActivity = async ({

@@ -164,6 +164,7 @@
 - **/activity/assignment/**
 
   Método: Get
+  Acceso: Admin.
 
   Permite obtener la lista de asignaciones para cualquier actividad.
 
@@ -174,6 +175,7 @@
 - **/activity/:idActivity/assignment/:idUser**
 
   Método: Post
+  Acceso: admin, encargado del área y encargado de la actividad.
 
   Permite asignar a un usuario a una actividad existente.
 
@@ -244,25 +246,6 @@
   - idActivity: id de la actividad a completar.
   - idUser: id del usuario correspondiente.
 
-* **/activity/:idActivity/enable**
-
-  Método: Patch
-
-  Habilitar una actividad. Una actividad habilitada permite ejecutar acciones con las asignaciones 
-  de los usuarios a dicha actividad.
-
-   Parámetros obligatorios en la ruta:
-  - idActivity: id de la actividad a completar.
-
-* **/activity/:idActivity/disable**
-
-  Método: Patch
-
-  Deshabilitar una actividad. Una actividad deshabilitada NO permite ejecutar acciones con las asignaciones 
-  de los usuarios a dicha actividad.
-
-   Parámetros obligatorios en la ruta:
-  - idActivity: id de la actividad a completar.
 
 ### Configuración de promociones
 

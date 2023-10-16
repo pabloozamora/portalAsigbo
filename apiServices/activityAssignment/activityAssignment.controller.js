@@ -1,8 +1,10 @@
 import { connection } from '../../db/connection.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import { addActivityAvailableSpaces, getActivity } from '../activity/activity.model.js';
+import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import { getUser, getUsersInList, updateServiceHours } from '../user/user.model.js';
 import {
@@ -12,6 +14,19 @@ import {
   unassignUserFromActivity,
   updateActivityAssignment,
 } from './activityAssignment.model.js';
+
+const validateActivityResponsibleAccess = async ({role}) => {
+
+  if(role.includes(consts.roles.admin)) return;
+  if(role.includes(consts.roles.asigboAreaResponsible)){
+    const hasAccess = await validateAreaResponsible({idUser, idArea, preventError: true})
+    if(hasAccess) return;
+  }
+  if(role.includes(consts.roles.activityResponsible)){
+    const hasAccess = await 
+  }
+
+}
 
 const getActivitiesAssigmentsController = async (req, res) => {
   const { idUser } = req.query;
@@ -87,10 +102,14 @@ const getLoggedActivitiesController = async (req, res) => {
 const assignUserToActivityController = async (req, res) => {
   const { idUser, idActivity } = req.params;
   const { completed } = req.body;
+  const { role } = req.session;
 
   const session = await connection.startSession();
   try {
     session.startTransaction();
+
+    // Validar acceso
+    if(!role.includes(consts.roles.admin))
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 

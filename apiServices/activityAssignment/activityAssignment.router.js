@@ -21,12 +21,13 @@ import requiredIdUserSchema, {
 import requiredIdActivitySchema from './validationSchemas/requiredIdActivitySchema.js';
 import updateAssignmentSchema from './validationSchemas/updateAssignmentSchema.js';
 import validateQuery from '../../middlewares/validateQuery.js';
+import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityResponsibleAuth.js';
 
 const activityAssignmentRouter = express.Router();
 
 activityAssignmentRouter.post(
   '/:idActivity/assignment/:idUser',
-  ensureAdminAuth,
+  ensureActivityResponsibleAuth,
   validateParams(requiredIdUserSchema, requiredIdActivitySchema),
   assignUserToActivityController,
 );
