@@ -41,6 +41,7 @@ import {
 } from './validationSchemas/updateUserSchema.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 import consts from '../../utils/consts.js';
+import ensurePromotionResponsibleAuth from '../../middlewares/ensurePromotionResponsibleAuth.js';
 
 const userRouter = express.Router();
 
@@ -75,7 +76,7 @@ userRouter.get('/admin', ensureAdminAuth, getAdminUsersController);
 userRouter.get('/promotionResponsible', ensureAdminAuth, getPromotionResponsibleUsersController);
 userRouter.post(
   '/renewRegisterToken',
-  ensureAdminAuth,
+  ensurePromotionResponsibleAuth,
   validateBody(renewRegisterTokenSchema),
   renewRegisterToken,
 );

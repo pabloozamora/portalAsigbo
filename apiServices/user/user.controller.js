@@ -96,13 +96,17 @@ const getUserController = async (req, res) => {
 const renewRegisterToken = async (req, res) => {
   const { idUser } = req.body;
   const session = await connection.startSession();
+  const { role, promotion } = req.session;
 
   try {
     session.startTransaction();
 
     const user = await getUser({ idUser, showSensitiveData: true, session });
 
-    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+    if (!role.includes(consts.roles.admin) && promotion !== user.promotion) {
+      throw new CustomError('El usuario no tiene acceso para realizar esta acción.', 403);
+    }
+
     if (user.completeRegistration) {
       throw new CustomError('El usuario indicado ya ha sido activado.', 400);
     }
@@ -205,7 +209,7 @@ const updateUserController = async (req, res) => {
   try {
     session.startTransaction();
 
-    // verificar que sea admin, encargado de promoción o el mismo usuario
+    // verificar que sea admin o el mismo usuario
     if (!isAdmin && !isCurrentUser) {
       throw new CustomError('No estás autorizado para modificar este usuario.', 403);
     }
