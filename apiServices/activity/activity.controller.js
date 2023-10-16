@@ -15,7 +15,6 @@ import {
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import {
   addRoleToUser,
-  getUser,
   removeRoleFromUser,
   updateServiceHours,
 } from '../user/user.model.js';
@@ -345,26 +344,6 @@ const deleteActivityController = async (req, res) => {
   }
 };
 
-const getUserActivitiesController = async (req, res) => {
-  const { idUser } = req.params || null;
-  try {
-    // verificar que el usuario existe
-    await getUser({ idUser });
-    const activities = await getUserActivities(idUser);
-    res.send(multiple(activities));
-  } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades del usuario.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
 const getLoggedActivitiesController = async (req, res) => {
   try {
     const activities = await getUserActivities(req.session.id);
@@ -584,7 +563,6 @@ export {
   getActivitiesController,
   getActivityController,
   getLoggedActivitiesController,
-  getUserActivitiesController,
   disableActivityController,
   enableActivityController,
   getActivitiesWhereUserIsResponsibleController,

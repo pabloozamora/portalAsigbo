@@ -1,5 +1,4 @@
 import express from 'express';
-import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
 
 import {
@@ -9,7 +8,6 @@ import {
   getActivityController,
   updateActivityController,
   getLoggedActivitiesController,
-  getUserActivitiesController,
   enableActivityController,
   disableActivityController,
   getActivitiesWhereUserIsResponsibleController,
@@ -34,11 +32,9 @@ activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesControl
 
 activityRouter.get('/:idActivity', ensureRefreshTokenAuth, getActivityController);
 
-activityRouter.get('/:idUser', ensureAdminAuth, getUserActivitiesController);
-
 activityRouter.post(
   '/',
-  ensureActivityResponsibleAuth,
+  ensureAreaResponsibleAuth,
   multerMiddleware(uploadImage.single('banner')),
   validateBody(createActivitySchema),
   createActivityController,
