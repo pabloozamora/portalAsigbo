@@ -349,12 +349,13 @@
 - **/area/:idArea**
 
   Método: Delete
+  Acceso: Admin
 
-  Modifica el área especificada como inactiva.
+  Elimina el área especificada. Un área solo puede eliminarse si esta no posee actividades.
 
   Parámetro obligatorio en la ruta:
 
-  - idArea: id del área de ASIGBO a desactivar.
+  - idArea: id del área de ASIGBO a eliminar.
 
 ### User
 
