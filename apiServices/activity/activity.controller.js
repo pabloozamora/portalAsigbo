@@ -30,15 +30,8 @@ import {
   updateActivity,
   updateActivityBlockedStatus,
   updateActivityInAllAssignments,
-  validateResponsible,
 } from './activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
-
-const validateResponsibleController = async ({ idUser, idActivity }) => {
-  const result = await validateResponsible({ idUser, idActivity });
-  if (!result) throw new CustomError('No cuenta con permisos de encargado sobre esta actividad.');
-  return true;
-};
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -297,16 +290,18 @@ const updateActivityController = async (req, res) => {
 };
 
 const deleteActivityController = async (req, res) => {
-  const { id, role } = req.session;
-  const { idActivity } = req.params;
+  const { id: idUser, role } = req.session;
+  const { idActivity, asigboArea: { id: idArea } } = req.params;
 
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
 
+    const { responsible } = await getActivity({ idActivity, showSensitiveData: true });
+
     if (!role.includes(consts.roles.admin)) {
-      await validateResponsibleController({ idUser: id, idActivity });
+      await validateAreaResponsible({ idUser, idArea });
     }
 
     // Verificar que la actividad no tenga asignaciones
@@ -325,8 +320,6 @@ const deleteActivityController = async (req, res) => {
         'La actividad no puede ser eliminada mientras existan usuarios asignados.',
       );
     }
-
-    const { responsible } = await getActivity({ idActivity, showSensitiveData: true });
 
     await deleteActivity({ idActivity, session });
 
