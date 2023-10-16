@@ -105,7 +105,7 @@ const getLoggedActivitiesController = async (req, res) => {
 const assignUserToActivityController = async (req, res) => {
   const { idUser, idActivity } = req.params;
   const { completed } = req.body;
-  const { role } = req.session;
+  const { role, id: sessionIdUser } = req.session;
 
   const session = await connection.startSession();
   try {
@@ -115,7 +115,7 @@ const assignUserToActivityController = async (req, res) => {
 
     // Validar acceso
     await validateActivityResponsibleAccess({
-      role, idUser, idActivity, idArea: activity.asigboArea.id,
+      role, idUser: sessionIdUser, idActivity, idArea: activity.asigboArea.id,
     });
 
     // Validar que la actividad esté habilitada
@@ -248,7 +248,7 @@ const assignManyUsersToActivityController = async (req, res) => {
 
 const unassignUserFromActivityController = async (req, res) => {
   const { idActivity, idUser } = req.params;
-  const { role } = req.session;
+  const { role, id: sessionIdUser } = req.session;
 
   const session = await connection.startSession();
 
@@ -259,7 +259,7 @@ const unassignUserFromActivityController = async (req, res) => {
 
     // Validar acceso
     await validateActivityResponsibleAccess({
-      role, idUser, idActivity, idArea: activity.asigboArea.id,
+      role, idUser: sessionIdUser, idActivity, idArea: activity.asigboArea.id,
     });
 
     // Validar que la actividad esté habilitada
@@ -307,7 +307,7 @@ const unassignUserFromActivityController = async (req, res) => {
 const updateActivityAssignmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
   const { completed, aditionalServiceHours } = req.body;
-  const { role } = req.session;
+  const { role, id: sessionIdUser } = req.session;
 
   const session = await connection.startSession();
 
@@ -318,7 +318,7 @@ const updateActivityAssignmentController = async (req, res) => {
 
     // Validar acceso
     await validateActivityResponsibleAccess({
-      role, idUser, idActivity, idArea: activity.asigboArea.id,
+      role, idUser: sessionIdUser, idActivity, idArea: activity.asigboArea.id,
     });
 
     // Validar que la actividad esté habilitada
