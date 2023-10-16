@@ -461,8 +461,8 @@ const assignAdminRoleController = async (req, res) => {
     session.startTransaction();
     await addRoleToUser({ idUser, role: consts.roles.admin, session });
 
-    // cerrar sesión del usuario
-    await forceUserLogout(idUser, session);
+    // actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
 
     await session.commitTransaction();
 
@@ -503,8 +503,8 @@ const removeAdminRoleController = async (req, res) => {
 
     await removeRoleFromUser({ idUser, role: consts.roles.admin, session });
 
-    // cerrar sesión del usuario
-    await forceUserLogout(idUser, session);
+    // actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
 
     await session.commitTransaction();
 
@@ -530,8 +530,8 @@ const assignPromotionResponsibleRoleController = async (req, res) => {
     session.startTransaction();
     await addRoleToUser({ idUser, role: consts.roles.promotionResponsible, session });
 
-    // cerrar sesión del usuario
-    await forceUserLogout(idUser, session);
+    // actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
 
     await session.commitTransaction();
 
@@ -558,8 +558,8 @@ const removePromotionResponsibleRoleController = async (req, res) => {
 
     await removeRoleFromUser({ idUser, role: consts.roles.promotionResponsible, session });
 
-    // cerrar sesión del usuario
-    await forceUserLogout(idUser, session);
+    // actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
 
     await session.commitTransaction();
 

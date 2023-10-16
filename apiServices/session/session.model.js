@@ -63,6 +63,12 @@ const deleteAccessTokens = async ({ idUser, session }) => SessionSchema.deleteMa
   tokenType: consts.token.access,
 }, { session });
 
+/**
+ * Este método marca los refresh tokens de un usuario, de manera que estos deben ser actualizados
+ * con los datos del usuario. También, los access tokens del usuario son eliminados.
+ * @param {string} idUser id del usuario.
+ * @param {sessionObject} session Objeto de sesión de la transacción en la bd.
+ */
 const forceSessionTokenToUpdate = async ({ idUser, session }) => {
   await SessionSchema.updateOne({ idUser, tokenType: consts.token.refresh }, { needUpdate: true }, { session });
   await deleteAccessTokens({ idUser, session }); // Eliminar tokens viejos

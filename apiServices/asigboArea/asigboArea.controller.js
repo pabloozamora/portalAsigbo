@@ -17,7 +17,7 @@ import {
 import Promotion from '../promotion/promotion.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import { addRoleToUser, removeRoleFromUser } from '../user/user.model.js';
-import { forceUserLogout } from '../session/session.model.js';
+import { forceSessionTokenToUpdate } from '../session/session.model.js';
 
 /* const validateResponsibleController = async ({ idUser, idArea }) => {
   const result = await validateResponsible({ idUser, idArea });
@@ -33,15 +33,15 @@ const removeAsigboAreaResponsibleRole = async ({ idUser, session }) => {
       // El unico eje en el que es responsable es en el que se le eliminó, retirar permiso
       await removeRoleFromUser({ idUser, role: consts.roles.asigboAreaResponsible, session });
 
-      // Forzar cerrar sesión del usuario
-      await forceUserLogout(idUser, session);
+      // Forzar actualizar sesión del usuario
+      await forceSessionTokenToUpdate({ idUser, session });
     } else throw ex;
   }
 };
 
 const addAsigboAreaResponsibleRole = async ({ idUser, session }) => {
   const roleAdded = await addRoleToUser({ idUser, role: consts.roles.asigboAreaResponsible, session });
-  if (roleAdded) forceUserLogout(idUser);
+  if (roleAdded) await forceSessionTokenToUpdate({ idUser, session });
 };
 
 const updateAsigboAreaController = async (req, res) => {

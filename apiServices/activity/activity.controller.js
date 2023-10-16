@@ -12,7 +12,7 @@ import {
   getAreasWhereUserIsResponsible,
   validateResponsible as validateAreaResponsible,
 } from '../asigboArea/asigboArea.model.js';
-import { forceUserLogout } from '../session/session.model.js';
+import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import {
   addRoleToUser,
   getUser,
@@ -47,8 +47,8 @@ const removeActivityResponsibleRole = async ({ idUser, session }) => {
     if (ex instanceof CustomError) {
       // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
       await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
-      // Forzar cerrar sesión del usuario
-      await forceUserLogout(idUser, session);
+      // Forzar actualizar sesión del usuario
+      await forceSessionTokenToUpdate({ idUser, session });
     } else throw ex;
   }
 };
@@ -60,7 +60,7 @@ const addActivityResponsibleRole = async ({ responsible, session }) => Promise.a
       role: consts.roles.activityResponsible,
       session,
     });
-    if (roleAdded) forceUserLogout(idUser);
+    if (roleAdded) await forceSessionTokenToUpdate({ idUser, session });
   }),
 );
 
