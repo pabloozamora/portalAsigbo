@@ -290,14 +290,17 @@ const updateActivityController = async (req, res) => {
 
 const deleteActivityController = async (req, res) => {
   const { id: idUser, role } = req.session;
-  const { idActivity, asigboArea: { id: idArea } } = req.params;
+  const { idActivity } = req.params;
 
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
 
-    const { responsible } = await getActivity({ idActivity, showSensitiveData: true });
+    const { responsible, asigboArea: { id: idArea } } = await getActivity({
+      idActivity,
+      showSensitiveData: true,
+    });
 
     if (!role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser, idArea });
