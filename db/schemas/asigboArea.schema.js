@@ -21,6 +21,7 @@ const asigboAreaSubSchema = Schema({
   _id: { type: ObjectId, ref: 'asigboArea', required: true },
   name: { type: String, required: true },
   blocked: { type: Boolean, default: false },
+  color: { type: String, required: true },
 });
 
 const AsigboAreaSchema = model('asigboArea', asigboAreaSchema);
