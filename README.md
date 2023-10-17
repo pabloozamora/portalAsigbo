@@ -140,6 +140,14 @@
 
   - idUser: id del usuario que se desea conocer sus actividades.
 
+  Parametros de búsqueda (?params):
+  
+  - page: indica la página a consultar. Empieza en cero la numeración. Si es null, devuelve el listado completo.
+  - lowerDate: limite inferior inclusivo para la fecha de la actividad.
+  - upperDate: limite superior inlusivo para la fecha de la actividad.
+  - search: cadena a buscar dentro del nombre de la actividad.
+
+
   **/activity/:idActivity/enable**
 
   Método: Patch

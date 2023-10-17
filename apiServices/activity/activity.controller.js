@@ -533,6 +533,9 @@ const enableActivityController = async (req, res) => {
 
 const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
   const { idUser } = req.params;
+  const {
+    search, lowerDate, upperDate, page,
+  } = req.query;
   try {
     // Validar permisos de acceso
     if (!req.session?.role?.includes(consts.roles.admin) && idUser !== req.session.id) {
@@ -542,8 +545,24 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
       );
     }
 
-    const result = await getActivitiesWhereUserIsResponsible({ idUser });
-    res.send(result);
+    let pagesNumber = null;
+    if (exists(page)) {
+      // Obtener número total de resultados si se selecciona página
+      const completeResult = await getActivitiesWhereUserIsResponsible({
+        idUser, search, lowerDate, upperDate,
+      });
+      pagesNumber = completeResult.length;
+    }
+
+    const result = await getActivitiesWhereUserIsResponsible({
+      idUser, search, lowerDate, upperDate, page,
+    });
+
+    res.send({
+      pages: Math.ceil((pagesNumber ?? result.length) / consts.resultsNumberPerPage),
+      resultsPerPage: consts.resultsNumberPerPage,
+      result,
+    });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las actividades en las que el usuario es encargado.';
     let status = 500;

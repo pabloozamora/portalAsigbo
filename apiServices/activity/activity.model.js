@@ -3,8 +3,9 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import exists from '../../utils/exists.js';
+import exists, { someExists } from '../../utils/exists.js';
 import { multiple, single, single as singleActivityDto } from './activity.dto.js';
 
 /**
@@ -216,8 +217,27 @@ const getActivity = async ({ idActivity, showSensitiveData = false }) => {
   }
 };
 
-const getActivitiesWhereUserIsResponsible = async ({ idUser, session }) => {
-  const results = await ActivitySchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
+const getActivitiesWhereUserIsResponsible = async ({
+  idUser, search = null, lowerDate = null, upperDate = null, page = null, session,
+}) => {
+  const query = { responsible: { $elemMatch: { _id: idUser } } };
+
+  if (someExists(lowerDate, upperDate)) query.date = {};
+  if (exists(lowerDate)) query.date.$gte = lowerDate;
+  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+    const searchRegex = new RegExp(search, 'i');
+    query.name = { $regex: searchRegex };
+  }
+
+  const options = {};
+  if (exists(page)) {
+    options.skip = page * consts.resultsNumberPerPage;
+    options.limit = consts.resultsNumberPerPage;
+  }
+
+  const results = await ActivitySchema.find(query, null, options).session(session);
 
   if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
