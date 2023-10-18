@@ -365,14 +365,30 @@ const getLoggedActivitiesController = async (req, res) => {
 };
 
 const getActivitiesController = async (req, res) => {
-  const { asigboArea, limitDate, query } = req.query;
+  const {
+    asigboArea, search, lowerDate, upperDate, page,
+  } = req.query;
 
   try {
-    const result = await getActivities({ idAsigboArea: asigboArea, limitDate, query });
+    let completeResult = null;
+    if (exists(page)) {
+      // Obtener número total de resultados si se selecciona página
+      completeResult = await getActivities({
+        idAsigboArea: asigboArea, search, lowerDate, upperDate,
+      });
+    }
+
+    const result = await getActivities({
+      idAsigboArea: asigboArea, search, lowerDate, upperDate, page,
+    });
 
     // Si es admin, retornar lista completa
     if (req.session.role.includes(consts.roles.admin)) {
-      return res.send(result);
+      return res.send({
+        pages: Math.ceil((completeResult?.length ?? result.length) / consts.resultsNumberPerPage),
+        resultsPerPage: consts.resultsNumberPerPage,
+        result,
+      });
     }
 
     // filtrar dependiendo de privilegio
@@ -399,13 +415,23 @@ const getActivitiesController = async (req, res) => {
       }
     }
 
+    const filteredCompleteResult = completeResult?.filter(
+      (activity) => areasWhereUserIsResponsible.includes(activity.asigboArea.id)
+        || activitiesWhereUserIsResponsible.includes(activity.id),
+    );
+
     const filteredResult = result.filter(
       (activity) => areasWhereUserIsResponsible.includes(activity.asigboArea.id)
         || activitiesWhereUserIsResponsible.includes(activity.id),
     );
 
     if (filteredResult.length === 0) throw new CustomError('No se encontraron resultados.', 404);
-    res.send(filteredResult);
+
+    res.send({
+      pages: Math.ceil((filteredCompleteResult?.length ?? filteredResult.length) / consts.resultsNumberPerPage),
+      resultsPerPage: consts.resultsNumberPerPage,
+      result: filteredResult,
+    });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener lista de actividades.';
     let status = 500;

@@ -45,8 +45,10 @@
   Query Params (?params):
 
   - asigboArea: id del eje de asigbo al que pertenece la actividad.
-  - limitDate: fecha máxima. Se mostrarán las actividades menores o iguales a este valor.
-  - query: Búsqueda de strings en el nombre de la actividad.
+  - page: indica la página a consultar. Empieza en cero la numeración. Si es null, devuelve el listado completo.
+  - lowerDate: limite inferior inclusivo para la fecha de la actividad.
+  - upperDate: limite superior inlusivo para la fecha de la actividad.
+  - search: cadena a buscar dentro del nombre de la actividad.
 
 - **/acitivy/:idActivity**
 

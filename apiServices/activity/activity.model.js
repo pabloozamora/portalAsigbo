@@ -177,15 +177,29 @@ const getUserActivities = async (idUser) => {
   return activities;
 };
 
-const getActivities = async ({ idAsigboArea, limitDate, query }) => {
-  const filter = {};
+const getActivities = async ({
+  idAsigboArea = null, search = null, lowerDate = null, upperDate = null, page = null, session,
+}) => {
+  const query = {};
 
-  if (idAsigboArea !== undefined) filter['asigboArea._id'] = idAsigboArea;
-  if (limitDate !== undefined) filter.date = { $lte: limitDate };
-  if (query !== undefined) filter.name = { $regex: query, $options: 'i' };
+  if (exists(idAsigboArea)) query['asigboArea._id'] = idAsigboArea;
+  if (someExists(lowerDate, upperDate)) query.date = {};
+  if (exists(lowerDate)) query.date.$gte = lowerDate;
+  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+    const searchRegex = new RegExp(search, 'i');
+    query.name = { $regex: searchRegex };
+  }
+
+  const options = {};
+  if (exists(page)) {
+    options.skip = page * consts.resultsNumberPerPage;
+    options.limit = consts.resultsNumberPerPage;
+  }
 
   try {
-    const result = await ActivitySchema.find(filter);
+    const result = await ActivitySchema.find(query, null, options).session(session);
 
     if (result.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
