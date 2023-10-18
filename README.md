@@ -181,6 +181,11 @@
   Parámetros de búsqueda opcionales (?params):
 
   - idUser: filtrar por usuario.
+  - idActivity: filtrar por actividad
+  - page: indica la página a consultar. Empieza en cero la numeración. Si es null, devuelve el listado completo.
+  - lowerDate: limite inferior inclusivo para la fecha de la actividad.
+  - upperDate: limite superior inlusivo para la fecha de la actividad.
+  - search: cadena a buscar dentro del nombre de la actividad.
 
 - **/activity/:idActivity/assignment/:idUser**
 

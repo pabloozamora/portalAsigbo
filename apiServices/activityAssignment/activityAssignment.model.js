@@ -1,17 +1,44 @@
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
-const getActivityAssignments = async ({ idUser, idActivity, includeUserPromotionGroup = true }) => {
+/**
+ * Permite obtener las asignaciones de una actividad.
+ * @param idUser Filtro para obtener asignaciones de un usuario. (Opcional)
+ * @param idActivity Filtro para obtener asignaciones de una actividad. (Opcional)
+ * @param search Cadena a buscar en el nombre de la actividad asignada. (Opcional)
+ * @param lowerDate Límite inferior en la fecha de la actividad asignada. (Opcional)
+ * @param upperDate Límite superior en la fecha de la actividad asignada. (Opcional)
+ * @param page Pagina a consultar. Inicia en cero. Si es null devuelve el listado completo.
+ * @param includeUserPromotionGroup Boolean. Indica si se debe agregar el grupo de promoción del usuario.
+ * @returns
+ */
+const getActivityAssignments = async ({
+  idUser, idActivity, search = null, lowerDate = null, upperDate = null, page = null, includeUserPromotionGroup = true,
+}) => {
   try {
-    const filter = {};
+    const query = {};
 
-    if (idUser !== undefined) filter['user._id'] = idUser;
-    if (idActivity !== undefined) filter['activity._id'] = idActivity;
+    if (exists(idUser)) query['user._id'] = idUser;
+    if (exists(idActivity)) query['activity._id'] = idActivity;
+    if (exists(lowerDate)) query['activity.date.$gte'] = lowerDate;
+    if (exists(upperDate)) query['activity.date.$lte'] = upperDate;
+    if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+      const searchRegex = new RegExp(search, 'i');
+      query['activity.name'] = { $regex: searchRegex };
+    }
 
-    const assignments = await ActivityAssignmentSchema.find(filter).sort({
+    const options = {};
+    if (exists(page)) {
+      options.skip = page * consts.resultsNumberPerPage;
+      options.limit = consts.resultsNumberPerPage;
+    }
+
+    const assignments = await ActivityAssignmentSchema.find(query, null, options).sort({
       'activity._id': 1,
       completed: -1,
       pendingPayment: 1,

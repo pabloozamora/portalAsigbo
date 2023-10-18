@@ -32,10 +32,28 @@ const validateActivityResponsibleAccess = async ({
 };
 
 const getActivitiesAssigmentsController = async (req, res) => {
-  const { idUser } = req.query;
+  const {
+    idUser, search, lowerDate, upperDate, page,
+  } = req.query;
   try {
-    const activities = await getActivityAssignments({ idUser });
-    res.send(activities);
+    let pagesNumber = null;
+    if (exists(page)) {
+      // Obtener número total de resultados si se selecciona página
+      const completeResult = await getActivityAssignments({
+        idUser, search, lowerDate, upperDate,
+      });
+      pagesNumber = completeResult.length;
+    }
+
+    const result = await getActivityAssignments({
+      idUser, search, lowerDate, upperDate, page,
+    });
+
+    res.send({
+      pages: Math.ceil((pagesNumber ?? result.length) / consts.resultsNumberPerPage),
+      resultsPerPage: consts.resultsNumberPerPage,
+      result,
+    });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las asignaciones a actividades.';
     let status = 500;
