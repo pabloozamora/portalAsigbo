@@ -35,18 +35,22 @@ const getActivitiesAssigmentsController = async (req, res) => {
   const {
     idUser, search, lowerDate, upperDate, page,
   } = req.query;
+  const { id: sessionUserId, role } = req.session;
+
+  // Si no es  admin, busca solo asignaciones del usuario
+  const idUserFilter = role.includes(consts.roles.admin) ? idUser : sessionUserId;
   try {
     let pagesNumber = null;
     if (exists(page)) {
       // Obtener número total de resultados si se selecciona página
       const completeResult = await getActivityAssignments({
-        idUser, search, lowerDate, upperDate,
+        idUser: idUserFilter, search, lowerDate, upperDate,
       });
       pagesNumber = completeResult.length;
     }
 
     const result = await getActivityAssignments({
-      idUser, search, lowerDate, upperDate, page,
+      idUser: idUserFilter, search, lowerDate, upperDate, page,
     });
 
     res.send({

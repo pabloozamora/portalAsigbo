@@ -174,9 +174,10 @@
 - **/activity/assignment/**
 
   Método: Get
-  Acceso: Admin.
+  Acceso: Todos los usuarios loggeados.
 
   Permite obtener la lista de asignaciones para cualquier actividad.
+  Si el usuario no es admin, devuelve únicamente los resultados del usuario en sesión.
 
   Parámetros de búsqueda opcionales (?params):
 

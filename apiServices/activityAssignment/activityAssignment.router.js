@@ -40,7 +40,7 @@ activityAssignmentRouter.post(
 
 activityAssignmentRouter.get(
   '/assignment',
-  ensureAdminAuth,
+  ensureRolesAuth(null),
   validateQuery(optionalIdUserSchema),
   getActivitiesAssigmentsController,
 );
