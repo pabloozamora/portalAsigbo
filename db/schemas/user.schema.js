@@ -7,7 +7,7 @@ const AreaServiceHoursSchema = Schema({
 });
 
 const userSchema = Schema({
-  code: { type: Number, unique: true, required: [true, 'El atributo code es oblgatorio'] },
+  code: { type: Number, unique: true, required: false },
   name: { type: String, required: true },
   lastname: { type: String, required: true },
   university: { type: String, required: true },
