@@ -48,6 +48,8 @@ const createUser = async ({
   code,
   name,
   lastname,
+  university,
+  campus,
   email,
   promotion,
   career,
@@ -67,6 +69,8 @@ const createUser = async ({
     user.role = role;
     user.passwordHash = null;
     user.sex = sex;
+    user.university = university;
+    user.campus = campus;
 
     await user.save({ session });
     return single(user, { showSensitiveData: true });
@@ -121,6 +125,8 @@ const updateUser = async ({
   name,
   lastname,
   email,
+  university,
+  campus,
   promotion,
   career,
   sex,
@@ -143,6 +149,8 @@ const updateUser = async ({
     if (exists(sex)) user.sex = sex;
     if (exists(passwordHash)) user.passwordHash = passwordHash;
     if (exists(hasImage)) user.hasImage = hasImage;
+    if (exists(university)) user.university = university;
+    if (exists(campus)) user.campus = campus;
 
     await user.save({ session });
 
@@ -170,6 +178,7 @@ const updateUser = async ({
  * Retorna la lista de usuarios.
  * @param idUser
  * @param promotion filtro para buscar una promoción en específico.
+ * @param university filtro para buscar una universidad en específico.
  * @param search subcadena a buscar en el nombre del usuario.
  * @param role role del usuario.
  * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
@@ -179,7 +188,7 @@ const updateUser = async ({
  * @returns User dto Array. Se muestran todos los datos sensibles.
  */
 const getUsersList = async ({
-  promotion, search, role, promotionMin, promotionMax, priority, page = 0, includeBlocked = false,
+  promotion, university, search, role, promotionMin, promotionMax, priority, page = 0, includeBlocked = false,
 }) => {
   const query = {};
 
@@ -188,6 +197,7 @@ const getUsersList = async ({
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
   if (exists(promotionMin)) query.promotion.$gt = promotionMin;
   if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (exists(university)) query.university.$eq = university;
   if (exists(role)) query.role = { $in: [role] };
   if (search) {
     // buscar cadena en nombre completo
@@ -432,6 +442,11 @@ const updateUserPassword = async ({ idUser, passwordHash, session }) => {
   if (user === null) throw new CustomError('El usuario no existe.', 400);
 
   user.passwordHash = passwordHash;
+
+  if (!user.university) {
+    user.university = 'temporary';
+    user.campus = 'temporary';
+  }
 
   await user.save({ session });
 };

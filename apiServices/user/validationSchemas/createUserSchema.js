@@ -21,6 +21,12 @@ export default yup.object().shape({
   career: yup
     .string()
     .required("El campo 'career' es obligatorio"),
+  university: yup
+    .string()
+    .required("El campo 'university' es obligatorio"),
+  campus: yup
+    .string()
+    .required("El campo 'campus' es obligatorio"),
   email: yup
     .string()
     .nullable()

@@ -147,7 +147,7 @@ const renewRegisterToken = async (req, res) => {
 
 const createUserController = async (req, res) => {
   const {
-    code, name, lastname, email, promotion, career, sex,
+    code, name, lastname, email, promotion, career, sex, university, campus,
   } = req.body;
 
   const session = await connection.startSession();
@@ -159,6 +159,8 @@ const createUserController = async (req, res) => {
       code,
       name,
       lastname,
+      university,
+      campus,
       email,
       promotion,
       career,
@@ -197,7 +199,7 @@ const createUserController = async (req, res) => {
 
 const updateUserController = async (req, res) => {
   const {
-    name, lastname, email, promotion, career, sex, removeProfilePicture, password,
+    name, lastname, email, promotion, career, sex, removeProfilePicture, password, university, campus,
   } = req.body;
   const { idUser } = req.params;
 
@@ -226,6 +228,8 @@ const updateUserController = async (req, res) => {
       lastname,
       email,
       promotion: isAdmin ? promotion : null, // solo admin puede modificar promoción
+      university,
+      campus,
       career,
       sex,
       passwordHash,
@@ -273,7 +277,7 @@ const updateUserController = async (req, res) => {
 
 const getUsersListController = async (req, res) => {
   const {
-    promotion, search, page, priority, role, includeBlocked,
+    promotion, search, page, priority, role, includeBlocked, university,
   } = req.query;
 
   const { role: userRole } = req.session;
@@ -304,6 +308,7 @@ const getUsersListController = async (req, res) => {
     const { pages, result } = await getUsersList({
       idUser: req.session.id,
       promotion: forcedPromotionFilter ?? (parseInt(promotion, 10) || null),
+      university,
       search,
       role,
       promotionMin,
@@ -809,7 +814,6 @@ const updateUserPasswordController = async (req, res) => {
     session.startTransaction();
 
     await updateUserPassword({ idUser, passwordHash, session });
-
     // eliminar tokens para modificar usuario
     await deleteAllUserAlterTokens({ idUser, session });
 
