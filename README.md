@@ -409,6 +409,8 @@
   - password: contraseña para iniciar sesión en el portal.
   - sex: sexo del usuario (M o F).
   - career: carrera que estudia.
+  - university: universidad en la que estudia el becado.
+  - campus: campus de estudio (ejemplo: campus altiplano)
 
 - **/user/:idUser**
 
@@ -431,6 +433,8 @@
   - promotion: año en el que inició sus estudios universitarios.
   - sex: sexo del usuario (M o F).
   - career: carrera que estudia.
+  - university: universidad en la que estudia el becado.
+  - campus: campus de estudio (ejemplo: campus altiplano)
   - removeProfilePicture: boolean que indica si se desea eliminar la foto de perfil.
   - password: modifica la contraseña del usuario. Disponible exclusivamente al editar el usuario en sesión.
 
