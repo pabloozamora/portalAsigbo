@@ -519,7 +519,7 @@
   * **/user/renewRegisterToken**
 
   Método: Post
-  Acceso: Admin y encargado de año.
+  Acceso: Admin.
 
   Genera un nuevo token de registro para un usuario y lo envía nuevamente a su correo, en caso de que el token original no haya sido enviado correctamente y que el usuario en cuestión aún no haya sido activado (no se le ha asignado una contraseña).
 
