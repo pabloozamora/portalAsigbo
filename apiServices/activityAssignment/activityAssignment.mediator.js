@@ -1,11 +1,7 @@
 import { connection } from '../../db/connection.js';
-import ActivitySchema from '../../db/schemas/activity.schema.js';
-import CustomError from '../../utils/customError.js';
 import { updateServiceHours } from '../user/user.model.js';
 import {
   assignUserToActivity,
-  changeActivityAssignmentCompletionStatus,
-  unassignUserFromActivity,
 } from './activityAssignment.model.js';
 
 const assignUserToActivityMediator = async ({
@@ -13,8 +9,6 @@ const assignUserToActivityMediator = async ({
   idActivity,
   completed,
   activity,
-  sessionTransaction,
-  preventCommit = false,
 }) => {
   const session = await connection.startSession();
   try {
@@ -55,11 +49,4 @@ const assignUserToActivityMediator = async ({
   }
 };
 
-
-
-
-export {
-  assignUserToActivityMediator,
-  assignManyUsersToActivityMediator,
-  unassignUserFromActivityMediator,
-};
+export default assignUserToActivityMediator;

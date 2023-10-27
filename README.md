@@ -593,7 +593,7 @@
 
   Permite verificar si un token de recuperación de contraseña es válido.
 
-  * **/user/recoverPasswor**
+  * **/user/recoverPassword**
 
   Método: post
   Acceso: todos los usuarios. Auth no requerida.
@@ -603,6 +603,28 @@
   Parámetros obligatorios:
 
   - email: email del usuario.
+  
+  * **/user/uploadUsers**
+
+  Método: post
+  Acceso: Admin
+
+  Permite agregar masivamente usuarios a la base de datos.
+
+  Parámetros obligatorios:
+
+  - data: arreglo con la información a importar. Este debe ser un arreglo de objetos con los siguientes atributos y tipos de dato:
+    - code: number
+    - name: string
+    - lastname: string
+    - university: string
+    - campus: string
+    - email: string
+    - career: string
+    - promotion: number
+    - sex: string
+
+  La forma en la que llegue la información (archivo csv, txt, etcétera) quedará a discresión del frontend, siempre y cuando cumpla con los atributos y tipos de dato anteriores.
 
 
 ## Notas

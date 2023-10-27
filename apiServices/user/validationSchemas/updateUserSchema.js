@@ -20,6 +20,8 @@ const updateUserBodySchema = yup.object().shape({
     .min(2000, "El campo 'promotion' debe ser mayor a 2000")
     .max(2100, "El campo 'promotion' debe ser menor o igual a 2100"),
   career: yup.string(),
+  university: yup.string(),
+  campus: yup.string(),
   email: yup
     .string()
     .nullable()
