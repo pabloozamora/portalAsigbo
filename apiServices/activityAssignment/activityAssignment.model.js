@@ -1,7 +1,7 @@
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import exists from '../../utils/exists.js';
+import exists, { someExists } from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 
@@ -24,8 +24,9 @@ const getActivityAssignments = async ({
 
     if (exists(idUser)) query['user._id'] = idUser;
     if (exists(idActivity)) query['activity._id'] = idActivity;
-    if (exists(lowerDate)) query['activity.date.$gte'] = lowerDate;
-    if (exists(upperDate)) query['activity.date.$lte'] = upperDate;
+    if (someExists(lowerDate, upperDate)) query['activity.date'] = {};
+    if (exists(lowerDate)) query['activity.date'].$gte = lowerDate;
+    if (exists(upperDate)) query['activity.date'].$lte = upperDate;
     if (exists(search)) {
     // buscar cadena en nombre de la actividad
       const searchRegex = new RegExp(search, 'i');
