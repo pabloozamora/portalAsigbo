@@ -3,10 +3,17 @@ import exists from '../../utils/exists.js';
 const parseServiceHours = (serviceHours) => {
   const areas = serviceHours?.areas?.map((val) => {
     const {
-      asigboArea: { _id: id, name },
+      asigboArea: {
+        _id, id, name, color,
+      },
       total,
     } = val;
-    return { asigboArea: { id, name }, total };
+    return {
+      asigboArea: {
+        _id, id, name, color,
+      },
+      total,
+    };
   });
   return { areas, total: serviceHours?.total };
 };
