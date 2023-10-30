@@ -299,12 +299,27 @@ const updateServiceHours = async ({
     area.total = newAreaHours;
   }
 
-  user.serviceHours = {
-    areas: [...remainingAreas, area ?? newAreaModel],
-    total: newTotalHours,
-  };
+  user.serviceHours.areas = [...remainingAreas, area ?? newAreaModel];
+  user.serviceHours.total = newTotalHours;
 
   return user.save({ session });
+};
+
+const updateActivitiesCompletedNumber = async ({
+  idUser, add, remove, session,
+}) => {
+  const { acknowledged, matchedCount } = await UserSchema.updateOne(
+    { _id: idUser },
+    {
+      $inc: {
+        'serviceHours.activitiesCompleted': (add ?? 0) - (remove ?? 0),
+      },
+    },
+    { session },
+  );
+
+  if (matchedCount === 0) throw new CustomError('El usuario no existe.', 400);
+  if (!acknowledged) throw new CustomError('No se pudo actualizar el número de actividades completadas.', 500);
 };
 
 /**
@@ -514,4 +529,5 @@ export {
   uploadUsers,
   getUserByMail,
   updateUserInAllDependencies,
+  updateActivitiesCompletedNumber,
 };

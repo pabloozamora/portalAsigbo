@@ -15,7 +15,7 @@ const parseServiceHours = (serviceHours) => {
       total,
     };
   });
-  return { areas, total: serviceHours?.total };
+  return { areas, total: serviceHours?.total, activitiesCompleted: serviceHours?.activitiesCompleted };
 };
 
 const single = (

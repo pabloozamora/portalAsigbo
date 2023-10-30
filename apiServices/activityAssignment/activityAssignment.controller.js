@@ -6,7 +6,9 @@ import parseBoolean from '../../utils/parseBoolean.js';
 import { addActivityAvailableSpaces, getActivity, validateResponsible as validateActivityResponsible } from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
-import { getUser, getUsersInList, updateServiceHours } from '../user/user.model.js';
+import {
+  getUser, getUsersInList, updateActivitiesCompletedNumber, updateServiceHours,
+} from '../user/user.model.js';
 import {
   assignManyUsersToActivity,
   assignUserToActivity,
@@ -188,6 +190,11 @@ const assignUserToActivityController = async (req, res) => {
       });
     }
 
+    // Aumentar en 1 la cantidad de activ. completadas
+    if (parseBoolean(completed)) {
+      await updateActivitiesCompletedNumber({ idUser, add: 1, session });
+    }
+
     await session.commitTransaction();
 
     res.sendStatus(204);
@@ -309,6 +316,11 @@ const unassignUserFromActivityController = async (req, res) => {
       });
     }
 
+    // Reducir en 1 la cantidad de activ. completadas
+    if (parseBoolean(completed)) {
+      await updateActivitiesCompletedNumber({ idUser, remove: 1, session });
+    }
+
     await session.commitTransaction();
 
     res.sendStatus(204);
@@ -390,6 +402,9 @@ const updateActivityAssignmentController = async (req, res) => {
             session,
           });
         }
+
+        // Aumentar en 1 la cantidad de activ. completadas
+        await updateActivitiesCompletedNumber({ idUser, add: 1, session });
       } else {
         // remover horas + horas adicionales previas (sin importar que se haya actualizado)
         const hoursToRemove = serviceHours + (prevAditionalServiceHours ?? 0);
@@ -401,6 +416,9 @@ const updateActivityAssignmentController = async (req, res) => {
             session,
           });
         }
+
+        // Reducir en 1 la cantidad de activ. completadas
+        await updateActivitiesCompletedNumber({ idUser, remove: 1, session });
       }
     }
 
@@ -409,7 +427,6 @@ const updateActivityAssignmentController = async (req, res) => {
     res.sendStatus(204);
   } catch (ex) {
     await session.abortTransaction();
-
     let err = 'Ocurrio un error al cambiar estado de completado en la asignación de la actividad.';
     let status = 500;
     if (ex instanceof CustomError) {

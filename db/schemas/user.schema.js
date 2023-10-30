@@ -25,6 +25,7 @@ const userSchema = Schema({
   serviceHours: {
     areas: [{ type: AreaServiceHoursSchema }],
     total: { type: Number, default: 0 },
+    activitiesCompleted: { type: Number, default: 0 },
   },
   blocked: { type: Boolean, default: false },
   sex: { type: String, required: true },
