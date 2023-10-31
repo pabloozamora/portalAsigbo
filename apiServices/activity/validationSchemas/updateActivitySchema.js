@@ -66,5 +66,4 @@ export default yup.object().shape({
     .typeError("El campo 'date' debe ser una fecha.")
     .nullable(),
   name: yup.string().nullable(),
-  id: yup.string().nullable().required("El campo 'id' es obligatorio."),
 });

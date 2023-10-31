@@ -86,7 +86,7 @@
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
   - banner: objeto file con imagenes .png, jpg o gif a colocar como banner.
 
-- **/activity/**
+- **/activity/:idActivity**
 
   Método: Patch
   Acceso: Admin y encargado del área.
@@ -94,11 +94,11 @@
   Permite actualizar los campos de una actividad. Si un campo no es proveído, su valor se mantendrá sin modificaciones.
   Solo el administrador y los encargados de el área respectiva pueden crear una actividad.
 
-  Parámetros requeridos:
+  Parámetros requeridos en la ruta:
 
-  - id: id de la actividad a modificar:
+  - idActivity: id de la actividad a modificar:
 
-  Parámetros opcionales:
+  Parámetros opcionales (formData):
 
   - name: nombre de la actividad.
   - date: fecha en que se realizará la actividad.

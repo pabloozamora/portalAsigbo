@@ -150,8 +150,8 @@ const createActivityController = async (req, res) => {
 
 const updateActivityController = async (req, res) => {
   const { idUser, role } = req.session;
+  const { idActivity } = req.params;
   const {
-    id,
     name,
     date,
     serviceHours,
@@ -181,7 +181,7 @@ const updateActivityController = async (req, res) => {
 
     const { updatedData, dataBeforeChange } = await updateActivity({
       session,
-      id,
+      id: idActivity,
       name,
       date,
       serviceHours,
@@ -258,7 +258,7 @@ const updateActivityController = async (req, res) => {
 
     // Eliminar archivo previo si ya había un banner
     if (dataBeforeChange.hasBanner && (hasBanner || removeBanner)) {
-      const fileKey = `${consts.bucketRoutes.activity}/${id}`;
+      const fileKey = `${consts.bucketRoutes.activity}/${idActivity}`;
       try {
         await deleteFileInBucket(fileKey);
       } catch (ex) {
@@ -268,7 +268,7 @@ const updateActivityController = async (req, res) => {
 
     // Subir nuevo banner
     if (hasBanner) {
-      await saveBannerPicture({ file: req.uploadedFiles[0], idActivity: id });
+      await saveBannerPicture({ file: req.uploadedFiles[0], idActivity });
     }
 
     await session.commitTransaction();
@@ -276,7 +276,6 @@ const updateActivityController = async (req, res) => {
     res.send(single(updatedData));
   } catch (ex) {
     await session.abortTransaction();
-
     let err = 'Ocurrio un error al actualizar actividad.';
     let status = 500;
     if (ex instanceof CustomError) {

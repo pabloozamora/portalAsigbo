@@ -40,7 +40,7 @@ activityRouter.post(
   createActivityController,
 );
 activityRouter.patch(
-  '/',
+  '/:idActivity',
   ensureAreaResponsibleAuth,
   multerMiddleware(uploadImage.single('banner')),
   validateBody(updateActivitySchema),
