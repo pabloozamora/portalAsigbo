@@ -37,6 +37,7 @@ const single = (
     role,
     passwordHash,
     hasImage,
+    completeRegistration,
   } = resource?._doc ?? resource;
   return {
     id: resource?._id?.valueOf() ?? resource.id,
@@ -53,7 +54,7 @@ const single = (
     serviceHours: showSensitiveData || showHours ? parseServiceHours(serviceHours) : undefined,
     blocked: showSensitiveData ? blocked : undefined,
     role: showSensitiveData || showRole ? role : undefined,
-    completeRegistration: showSensitiveData ? exists(passwordHash) : undefined,
+    completeRegistration: showSensitiveData ? (completeRegistration || exists(passwordHash)) : undefined,
     hasImage,
   };
 };
