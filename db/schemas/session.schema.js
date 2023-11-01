@@ -4,6 +4,9 @@ import { ObjectId } from 'mongodb';
 const sessionSchema = Schema({
   idUser: { type: ObjectId, ref: 'user', required: true },
   token: { type: String, required: true },
+  tokenType: { type: String, required: true },
+  linkedToken: { type: String },
+  needUpdate: { type: Boolean, default: false },
 });
 
 const SessionSchema = model('session', sessionSchema);

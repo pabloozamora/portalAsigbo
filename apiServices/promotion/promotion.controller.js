@@ -1,5 +1,14 @@
 import CustomError from '../../utils/customError.js';
-import Promotion, { saveCurrentStudentPromotions } from './promotion.model.js';
+import Promotion, {
+  saveCurrentStudentPromotions,
+  /* validateResponsible */
+} from './promotion.model.js';
+
+/* const validateResponsibleController = async ({ idUser, promotion }) => {
+  const result = await validateResponsible({ idUser, promotion });
+  if (!result) throw new CustomError('No cuenta con permisos de encargado sobre esta promoción.');
+  return true;
+}; */
 
 const saveCurrentStudentPromotionsController = async (req, res) => {
   const { firstYearPromotion, lastYearPromotion } = req.body;

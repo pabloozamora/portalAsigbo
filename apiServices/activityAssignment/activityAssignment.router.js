@@ -1,30 +1,34 @@
 import express from 'express';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
-import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
 
 import {
   assignManyUsersToActivityController,
   assignUserToActivityController,
-  completeActivityAssignmentController,
+  getActivitiesAssigmentsByActivityController,
   getActivitiesAssigmentsController,
+  getActivityAssigmentController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,
-  uncompleteActivityAssignmentController,
+  updateActivityAssignmentController,
 } from './activityAssignment.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
-import assignActivitySchema from './validationSchemas/assignActivitySchema.js';
 import assignManyUsersToActivitySchema from './validationSchemas/assignManyUsersToActivitySchema.js';
-import activityAssignmentIdSchema from './validationSchemas/activityAssignmentIdSchema.js';
 import validateParams from '../../middlewares/validateParams.js';
+import requiredIdUserSchema, {
+  optionalIdUserSchema,
+} from './validationSchemas/requiredIdUserSchema.js';
+import requiredIdActivitySchema from './validationSchemas/requiredIdActivitySchema.js';
+import updateAssignmentSchema from './validationSchemas/updateAssignmentSchema.js';
 import validateQuery from '../../middlewares/validateQuery.js';
-import searchActivitiesSchema from './validationSchemas/searchActivitiesSchema.js';
+import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityResponsibleAuth.js';
+import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 
 const activityAssignmentRouter = express.Router();
 
 activityAssignmentRouter.post(
-  '/assign',
-  ensureAdminAuth,
-  validateBody(assignActivitySchema),
+  '/:idActivity/assignment/:idUser',
+  ensureActivityResponsibleAuth,
+  validateParams(requiredIdUserSchema, requiredIdActivitySchema),
   assignUserToActivityController,
 );
 activityAssignmentRouter.post(
@@ -34,24 +38,41 @@ activityAssignmentRouter.post(
   assignManyUsersToActivityController,
 );
 
-activityAssignmentRouter.get('/assignment', ensureAdminAuth, validateQuery(searchActivitiesSchema), getActivitiesAssigmentsController);
-activityAssignmentRouter.get('/assignment/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
-activityAssignmentRouter.patch(
-  '/assignment/:idActivityAssignment/complete/',
-  ensureAdminAuth,
-  validateParams(activityAssignmentIdSchema),
-  completeActivityAssignmentController,
+activityAssignmentRouter.get(
+  '/assignment',
+  ensureRolesAuth(null),
+  validateQuery(optionalIdUserSchema),
+  getActivitiesAssigmentsController,
 );
-activityAssignmentRouter.patch(
-  '/assignment/:idActivityAssignment/uncomplete/',
+activityAssignmentRouter.get(
+  '/:idActivity/assignment',
+  ensureRolesAuth(null),
+  validateParams(requiredIdActivitySchema),
+  getActivitiesAssigmentsByActivityController,
+);
+activityAssignmentRouter.get(
+  '/:idActivity/assignment/:idUser',
   ensureAdminAuth,
-  validateParams(activityAssignmentIdSchema),
-  uncompleteActivityAssignmentController,
+  validateParams(requiredIdActivitySchema, requiredIdUserSchema),
+  getActivityAssigmentController,
+);
+activityAssignmentRouter.get(
+  '/assignment/logged',
+  ensureRolesAuth(null),
+  getLoggedActivitiesController,
+);
+
+activityAssignmentRouter.patch(
+  '/:idActivity/assignment/:idUser',
+  ensureActivityResponsibleAuth,
+  validateParams(requiredIdUserSchema),
+  validateBody(updateAssignmentSchema),
+  updateActivityAssignmentController,
 );
 activityAssignmentRouter.delete(
-  '/assignment/:idActivityAssignment',
-  ensureAdminAuth,
-  validateParams(activityAssignmentIdSchema),
+  '/:idActivity/assignment/:idUser',
+  ensureActivityResponsibleAuth,
+  validateParams(requiredIdUserSchema, requiredIdActivitySchema),
   unassignUserFromActivityController,
 );
 

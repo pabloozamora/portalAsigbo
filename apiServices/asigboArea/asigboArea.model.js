@@ -2,130 +2,193 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import CustomError from '../../utils/customError.js';
-import { single } from './asigboArea.dto.js';
+import { multiple, single } from './asigboArea.dto.js';
+import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 
-const updateRoles = async (users) => {
-  await Promise.all(users.map(async (idUser) => {
-    const user = await UserSchema.findById(idUser);
-    const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
+/**
+ * Permite validar si un usuario es un encargado de un eje de asigbo.
+ * @param idUser Id del usuario a verificar.
+ * @param idArea Id del eje en donde se va a verificar si el usuario es encargado.
+ * @param preventError. Default false. Evita que se lance una excepción al no ser el encargado.
+ * Por defecto, Lanza un CustomError si el usuario no posee dicho privilegio.
+ * @return Boolean. Indica si el usuario es encargado del eje.
+ */
+const validateResponsible = async ({ idUser, idArea, preventError = false }) => {
+  const { responsible } = await AsigboAreaSchema.findById(idArea);
+  const isResponsible = responsible.some((user) => user._id.toString() === idUser);
+  if (!isResponsible && !preventError) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  return isResponsible;
+};
 
-    if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
-    user.save();
-  }));
+/**
+ * Permite actualizar la redundancia de datos en documentos dependientes.
+ * @param area Documento de mongo correspondiente al area actualizada.
+ * @param session sesión de la transacción.
+ */
+const updateAsigboAreaDependencies = async ({ area, session }) => {
+  await ActivitySchema.updateMany(
+    { 'asigboArea._id': area._id },
+    { asigboArea: area },
+    { session },
+  );
+  await ActivityAssignmentSchema.updateMany(
+    { 'activity.asigboArea._id': area._id },
+    { 'activity.asigboArea': area },
+    { session },
+  );
+
+  // actualizar datos en las información de horas de servicio de cada usuario
+  await UserSchema.updateMany(
+    { 'serviceHours.areas.asigboArea._id': area._id },
+    { $set: { 'serviceHours.areas.$.asigboArea': area } },
+    { session, multi: true },
+  );
 };
 
 const updateAsigboArea = async ({
-  idArea, name,
+  idArea, name, responsible, color, session,
 }) => {
   try {
     const area = await AsigboAreaSchema.findById(idArea);
     if (area === null) throw new CustomError('El área de asigbo especificada no existe.', 404);
 
-    area.name = name.trim();
+    const users = await UserSchema.find({ _id: { $in: responsible } });
+    if (users?.length !== responsible.length) throw new CustomError('Algunos de los usuarios asignados como encargados no existen.', 404);
 
-    await area.save();
-    return area;
+    const dataBeforeChange = single(area);
+
+    area.name = name.trim();
+    area.responsible = users;
+    area.color = color;
+
+    await area.save({ session });
+
+    // actualizar actividades y asignaciones
+    await updateAsigboAreaDependencies({ area, session });
+
+    return { dataBeforeChange, dataAfterChange: single(area) };
   } catch (ex) {
-    if (ex.code === 11000 && ex.keyValue?.name !== undefined) throw new CustomError('El nombre proporcionado ya existe.', 400);
+    if (ex.code === 11000 && ex.keyValue?.name !== undefined) {
+      throw new CustomError('El nombre proporcionado ya existe.', 400);
+    }
     throw ex;
   }
 };
 
-const removeResponsible = async ({
-  idArea, idUser,
-}) => {
-  const area = await AsigboAreaSchema.findById(idArea);
-  if (area === null) throw new CustomError('El área de asigbo especificada no existe.', 404);
-  const user = await UserSchema.findById(idUser);
-  if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
-  if (!user.role.includes('encargado')) throw new CustomError('El usuario indicado no es encargado de área.');
-
-  // Areas bajo la responsabilidad del usuario indicado.
-  const areasInCharge = await AsigboAreaSchema.find({ 'responsible._id': idUser });
-
-  if (!areasInCharge.some((aic) => aic._id.toString() === idArea)) throw new CustomError('El usuario indicado no es encargado de esta área.');
-
-  area.responsible = area.responsible.filter((resp) => resp._id.toString() !== idUser);
-  if (areasInCharge.length === 1) user.role = user.role.filter((r) => r !== 'encargado');
-
-  area.save();
-  user.save();
-  return area;
-};
-
-const addResponsible = async ({
-  idArea, idUser,
-}) => {
-  const area = await AsigboAreaSchema.findById(idArea);
-  if (area === null) throw new CustomError('El área de asigbo especificada no existe.', 404);
-  const user = await UserSchema.findById(idUser);
-  if (user === null) throw new CustomError('El usuario especificado no existe.', 404);
-
-  if (area.responsible.some((resp) => resp._id.toString() === idUser)) throw new CustomError('El usuario ya es encargado de esta área', 400);
-
-  area.responsible.push(user);
-  if (!user.role.includes('encargado')) user.role.push('encargado');
-  area.save();
-  user.save();
-  return area;
-};
-
 const createAsigboArea = async ({
-  name, responsible, session,
+  name, responsible, color, session,
 }) => {
   try {
-    const users = [];
     // añadir permisos de encargado a los usuarios
-    await Promise.all(responsible.map(async (userId) => {
-      const user = await UserSchema.findById(userId);
-      if (user === null) throw new CustomError(`El usuario con id ${userId} no existe`, 404);
-      users.push(user);
-      user.role.push('encargado');
-      user.save({ session });
-      return true;
-    }));
+    const users = await UserSchema.find({ _id: { $in: responsible } });
+    if (users?.length !== responsible.length) throw new CustomError('Algunos de los usuarios proporcionados como encargados no existen.', 404);
 
     const area = new AsigboAreaSchema();
 
     area.name = name.trim();
     area.responsible = users;
+    area.color = color;
 
     await area.save({ session });
     return single(area);
   } catch (ex) {
-    if (ex.code === 11000 && ex.keyValue?.name !== undefined) throw new CustomError('El nombre proporcionado ya existe.', 400);
+    if (ex.code === 11000 && ex.keyValue?.name !== undefined) {
+      throw new CustomError('El nombre proporcionado ya existe.', 400);
+    }
     throw ex;
   }
 };
 
-const deleteAsigboArea = async ({ idArea }) => {
-  const area = await AsigboAreaSchema.findById(idArea);
-  if (area === null) throw new CustomError('El área especificada no existe.', 404);
-  if (area.blocked === true) throw new CustomError('El área especificada no se encuentra activa.', 400);
+/**
+ * Permite eliminar un área de asigbo. Fallará cuando esta cuente alguna actividad existente.
+ * @param idArea id del area
+ * @param session objeto session de la transacción de bd
+ * @returns Area. Si se completa exitosamente, devuelve la data del eje eliminado.
+ */
+const deleteAsigboArea = async ({ idArea, session }) => {
+  try {
+    const { deletedCount, acknowledged } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
 
-  const activities = await ActivitySchema.find({ 'asigboArea._id': idArea });
-  const responsibles = area.responsible.map((resp) => resp._id);
-  await updateRoles(responsibles);
-
-  if (activities.length > 0) {
-    activities.forEach((act) => {
-      // eslint-disable-next-line no-param-reassign
-      act.blocked = true;
-      act.save();
-    });
+    if (!acknowledged) throw new CustomError('No se completó la eliminación del eje.', 500);
+    if (deletedCount !== 1) throw new CustomError('No se encontró el eje a eliminar.', 404);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('No se encontró la información del eje proporcionado.', 404);
+    }
+    throw ex;
   }
-
-  area.blocked = true;
-  area.save();
-  return area;
 };
 
-const getActiveAreas = async () => {
-  const asigboAreas = await AsigboAreaSchema.find({ blocked: false });
-  if (asigboAreas.length === 0) throw new CustomError('No se han encontrado áreas activas.', 404);
-  return asigboAreas;
+const updateAsigboAreaBlockedStatus = async ({ idArea, blocked, session }) => {
+  try {
+    const area = await AsigboAreaSchema.findById({ _id: idArea });
+
+    if (area === null) throw new CustomError('No se encontró el eje a modificar.', 404);
+
+    area.blocked = blocked;
+
+    await area.save({ session });
+
+    await updateAsigboAreaDependencies({ area, session });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('No se encontró la información del eje proporcionado.', 404);
+    }
+    throw ex;
+  }
+};
+
+/**
+ * Devuelve el listado de áreas de asigbo.
+ * @returns Area dto array.
+ */
+const getAreas = async () => {
+  const asigboAreas = await AsigboAreaSchema.find();
+  if (asigboAreas.length === 0) throw new CustomError('No se han encontrado ejes de asigbo.', 404);
+  return multiple(asigboAreas);
+};
+
+/**
+ * Devuelve los datos de un eje de asigbo.
+ * @param {string} idArea Id del área a buscar.
+ * @returns Area dto
+ */
+const getArea = async ({ idArea }) => {
+  try {
+    const result = await AsigboAreaSchema.findById(idArea);
+    if (result === null) {
+      throw new CustomError('No se encontró la información del área proporcionada.', 404);
+    }
+    return single(result);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('No se encontró la información del área proporcionada.', 404);
+    }
+    throw ex;
+  }
+};
+
+/**
+ * Devuelve el listado de áreas en donde el usuario es responsable.
+ * @param {string} idUser: Id del usuario a consultar.
+ * @param {session} object: Objeto sesión.
+ * @returns Area dto array.
+ */
+const getAreasWhereUserIsResponsible = async ({ idUser, session }) => {
+  const results = await AsigboAreaSchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
+
+  if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return multiple(results);
 };
 
 export {
-  createAsigboArea, updateAsigboArea, addResponsible, removeResponsible, getActiveAreas, deleteAsigboArea,
+  createAsigboArea,
+  updateAsigboArea,
+  getAreas,
+  deleteAsigboArea,
+  getArea,
+  updateAsigboAreaBlockedStatus,
+  validateResponsible,
+  getAreasWhereUserIsResponsible,
 };

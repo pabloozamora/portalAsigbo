@@ -3,6 +3,10 @@ import validateId from '../../../utils/validateId.js';
 import consts from '../../../utils/consts.js';
 
 export default yup.object().shape({
+  removeBanner: yup
+    .boolean()
+    .nullable()
+    .typeError("El campo 'removeBanner' debe ser un valor booleano."),
   participantsNumber: yup
     .number()
     .nullable()
@@ -40,14 +44,6 @@ export default yup.object().shape({
     .nullable()
     .typeError("El campo 'paymentAmount' debe ser un número.")
     .min(0, "El campo 'paymentAmount' debe ser mayor o igual a 0."),
-  idAsigboArea: yup
-    .string()
-    .nullable()
-    .test(
-      'validate-id',
-      "El campo 'idAsigboArea' no es un id válido.",
-      (id) => validateId(id),
-    ),
   responsible: yup
     .array()
     .of(
@@ -70,5 +66,4 @@ export default yup.object().shape({
     .typeError("El campo 'date' debe ser una fecha.")
     .nullable(),
   name: yup.string().nullable(),
-  id: yup.string().nullable().required("El campo 'id' es obligatorio."),
 });

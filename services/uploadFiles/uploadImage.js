@@ -33,4 +33,8 @@ const fileFilter = (req, file, callback) => {
   }
 };
 
-export default multer({ storage, fileFilter });
+const limits = {
+  fileSize: 1000000, // archivos de máximo 1 MB
+};
+
+export default multer({ storage, fileFilter, limits });

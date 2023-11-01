@@ -1,21 +1,55 @@
+import { ObjectId } from 'mongodb';
 import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
 import { multiple, single } from './user.dto.js';
+import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
+import compareObjectId from '../../utils/compareObjectId.js';
+import ActivitySchema from '../../db/schemas/activity.schema.js';
+import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 
-const getUser = async (idUser) => {
-  const user = await UserSchema.findById(idUser);
-  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+const getUser = async ({ idUser, showSensitiveData, session }) => {
+  try {
+    const user = await UserSchema.findById(idUser).session(session);
+    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
 
+    return single(user, { showSensitiveData });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 400);
+    }
+    throw ex;
+  }
+};
+
+const getUserByMail = async ({ email }) => {
+  const user = await UserSchema.findOne({ email });
+  if (user === null) throw new CustomError('El email indicado no corresponde a ningún usuario.', 404);
   return user;
+};
+
+const getUsersInList = async ({ idUsersList, showSensitiveData = false, session }) => {
+  try {
+    const user = await UserSchema.find({ _id: { $in: idUsersList } }).session(session);
+    if (user?.length !== idUsersList.length) throw new CustomError('Algunos de los usuarios no existen.', 404);
+
+    return multiple(user, showSensitiveData);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 400);
+    }
+    throw ex;
+  }
 };
 
 const createUser = async ({
   code,
   name,
   lastname,
+  university,
+  campus,
   email,
   promotion,
   career,
@@ -35,9 +69,11 @@ const createUser = async ({
     user.role = role;
     user.passwordHash = null;
     user.sex = sex;
+    user.university = university;
+    user.campus = campus;
 
     await user.save({ session });
-    return single(user, true);
+    return single(user, { showSensitiveData: true });
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
       throw new CustomError('El código proporcionado ya existe.', 400);
@@ -53,23 +89,116 @@ const createUser = async ({
 };
 
 /**
- *
+ * Permite actualizar los datos redundantes del usuario en otras colecciones.
+ * @param {userSubSchema} user: Schema resultante de la actualización del usuario
+ */
+const updateUserInAllDependencies = async ({ user, session }) => {
+  // actualizar responsables de área de asigbo
+  await AsigboAreaSchema.updateMany(
+    { 'responsible._id': user._id },
+    { $set: { 'responsible.$': user } },
+    { session, multi: true },
+  );
+
+  // responsables de actividad
+  await ActivitySchema.updateMany(
+    { 'responsible._id': user._id },
+    { $set: { 'responsible.$': user } },
+    { session, multi: true },
+  );
+
+  // asignaciones
+  await ActivityAssignmentSchema.updateMany(
+    { 'user._id': user._id },
+    { user },
+    { session },
+  );
+};
+
+/**
+ * Actualiza la información de un usuario
+ * @returns {object} {dataBeforeChange, dataAfterChange} Contienen los datos antes y después de
+ * la actualización respectivamente.
+ */
+const updateUser = async ({
+  idUser,
+  name,
+  lastname,
+  email,
+  university,
+  campus,
+  promotion,
+  career,
+  sex,
+  passwordHash,
+  hasImage,
+  session,
+}) => {
+  try {
+    const user = await UserSchema.findById(idUser);
+
+    if (!user) throw new CustomError('No se encontró el usuario.', 404);
+
+    const dataBeforeChange = single(user, { showSensitiveData: true });
+
+    if (exists(name)) user.name = name;
+    if (exists(lastname)) user.lastname = lastname;
+    if (exists(email)) user.email = email;
+    if (exists(promotion)) user.promotion = promotion;
+    if (exists(career)) user.career = career;
+    if (exists(sex)) user.sex = sex;
+    if (exists(passwordHash)) user.passwordHash = passwordHash;
+    if (exists(hasImage)) user.hasImage = hasImage;
+    if (exists(university)) user.university = university;
+    if (exists(campus)) user.campus = campus;
+
+    await user.save({ session });
+
+    // actualizar data del usuario en otras colecciones
+    if (exists(name) || exists(lastname) || exists(promotion) || exists(hasImage)) {
+      await updateUserInAllDependencies({ user, session });
+    }
+
+    return { dataBeforeChange, dataAfterChange: single(user, { showSensitiveData: true }) };
+  } catch (ex) {
+    if (ex.code === 11000 && ex.keyValue?.code !== undefined) {
+      throw new CustomError('El código proporcionado ya existe.', 400);
+    }
+    if (ex.code === 11000 && ex.keyValue?.email !== undefined) {
+      throw new CustomError('El email ya se encuentra registrado.', 400);
+    }
+    if (ex.code === 'ERR_ASSERTION' && ex.path === 'code') {
+      throw new CustomError('El código de usuario debe ser un número.');
+    }
+    throw ex;
+  }
+};
+
+/**
+ * Retorna la lista de usuarios.
  * @param idUser
  * @param promotion filtro para buscar una promoción en específico.
+ * @param university filtro para buscar una universidad en específico.
+ * @param search subcadena a buscar en el nombre del usuario.
+ * @param role role del usuario.
  * @param promotionMin filtro para buscar promociones por arriba de ese año. No incluye a ese valor.
  * @param promotionMax filtro para buscar promociones por abajo de ese año. No incluye a ese valor.
  * @param page número de pagina en los resultados
- * @returns
+ * @param includeBlocked Boolean. Indica si se incluyen los usuarios bloqueados. Default false.
+ * @returns User dto Array. Se muestran todos los datos sensibles.
  */
-const getActiveUsers = async ({
-  idUser, promotion, search, promotionMin, promotionMax, page = 0,
+const getUsersList = async ({
+  promotion, university, search, role, promotionMin, promotionMax, priority, page = 0, includeBlocked = false,
 }) => {
-  const query = { blocked: false, _id: { $ne: idUser } };
+  const query = {};
 
+  if (!includeBlocked) query.blocked = false;
   if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
   if (exists(promotionMin)) query.promotion.$gt = promotionMin;
   if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (exists(university)) query.university.$eq = university;
+  if (exists(role)) query.role = { $in: [role] };
   if (search) {
     // buscar cadena en nombre completo
     const searchRegex = new RegExp(search, 'i');
@@ -78,14 +207,57 @@ const getActiveUsers = async ({
     ];
   }
 
+  // parsear id de usuarios prioritarios
+  const parsedPriority = priority?.map((id) => {
+    if (!exists(id)) return null;
+    try {
+      return new ObjectId(id);
+    } catch (ex) {
+      return null;
+    }
+  }) ?? [];
+
   // obtener número de páginas
   const usersCount = await UserSchema.countDocuments(query);
   const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
-  const users = await UserSchema.find(query).skip(page * consts.resultsNumberPerPage).limit(consts.resultsNumberPerPage);
+
+  const queryPipeline = [
+    {
+      $match: query,
+    },
+    {
+      $addFields: {
+        order: {
+          $in: ['$_id', parsedPriority], // obtener valor si el id aparece en priority
+        },
+        priorityIndex: {
+          $indexOfArray: [parsedPriority, '$_id'],
+        },
+      },
+    },
+    {
+      $sort: {
+        order: -1, // priorizar id's que si aparecen
+        priorityIndex: 1,
+        _id: 1,
+      },
+    },
+  ];
+
+  if (page) {
+    queryPipeline.push({
+      $skip: page * consts.resultsNumberPerPage,
+    });
+    queryPipeline.push({
+      $limit: consts.resultsNumberPerPage,
+    });
+  }
+
+  const users = await UserSchema.aggregate(queryPipeline);
 
   if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
 
-  return { pages, result: multiple(users, false) };
+  return { pages, result: multiple(users, { showSensitiveData: true }) };
 };
 
 const updateServiceHours = async ({
@@ -95,29 +267,84 @@ const updateServiceHours = async ({
   hoursToAdd = 0,
   session,
 }) => {
-  const userData = await UserSchema.findById(userId);
+  const user = await UserSchema.findById(userId).session(session);
 
-  if (!userData) throw new CustomError('El usuario no existe.', 400);
-
-  const serviceHoursAreas = userData.serviceHours?.areas ?? {};
+  if (!user) throw new CustomError('El usuario no existe.', 400);
+  const serviceHoursAreas = Array.isArray(user.serviceHours?.areas) ? user.serviceHours?.areas : [];
 
   // Se retira el valor anterior y se ingresa el valor actualidado (previous - new)
   // Si no hay un valor previo en la bd, se ignora y se toma como si fuera 0
 
-  const newAreaHours = serviceHoursAreas[asigboAreaId] !== undefined
-    ? serviceHoursAreas[asigboAreaId] - hoursToRemove + hoursToAdd
+  const area = serviceHoursAreas.find((data) => data?.asigboArea && compareObjectId(data.asigboArea._id, asigboAreaId));
+  const remainingAreas = serviceHoursAreas.filter((data) => data?.asigboArea && !compareObjectId(data.asigboArea._id, asigboAreaId));
+
+  const newAreaHours = area !== undefined
+    ? area.total - hoursToRemove + hoursToAdd
     : hoursToAdd - hoursToRemove;
 
-  const newTotalHours = userData.serviceHours?.total !== undefined
-    ? userData.serviceHours.total - hoursToRemove + hoursToAdd
+  const newTotalHours = user.serviceHours?.total !== undefined
+    ? user.serviceHours.total - hoursToRemove + hoursToAdd
     : hoursToAdd - hoursToRemove;
 
-  userData.serviceHours = {
-    areas: { ...serviceHoursAreas, [asigboAreaId]: newAreaHours },
-    total: newTotalHours,
-  };
+  const newAreaModel = {};
+  if (!area) {
+    // buscar datos del área de asigbo
+    const asigboAreaData = await AsigboAreaSchema.findById(asigboAreaId).session(session);
+    if (!asigboAreaData) throw new CustomError('El area de asigbo no existe.', 404);
 
-  return userData.save({ session });
+    newAreaModel.asigboArea = asigboAreaData;
+    newAreaModel.total = newAreaHours;
+  } else {
+    // modificar datos existentes
+    area.total = newAreaHours;
+  }
+
+  user.serviceHours.areas = [...remainingAreas, area ?? newAreaModel];
+  user.serviceHours.total = newTotalHours;
+
+  return user.save({ session });
+};
+
+const updateActivitiesCompletedNumber = async ({
+  idUser, add, remove, session,
+}) => {
+  const { acknowledged, matchedCount } = await UserSchema.updateOne(
+    { _id: idUser },
+    {
+      $inc: {
+        'serviceHours.activitiesCompleted': (add ?? 0) - (remove ?? 0),
+      },
+    },
+    { session },
+  );
+
+  if (matchedCount === 0) throw new CustomError('El usuario no existe.', 400);
+  if (!acknowledged) throw new CustomError('No se pudo actualizar el número de actividades completadas.', 500);
+};
+
+/**
+ * Permite agregar un rol a un usuario.
+ * @param idUser id del usuario a modificar.
+ * @param role role a añadir.
+ * @session objeto session de la transacción de bd.
+ * @returns Boolean. Retorna true si el rol fue añadido y false si el usuario ya poseía el rol, por
+ * lo que no le fue asignado.
+ */
+const addRoleToUser = async ({ idUser, role, session }) => {
+  try {
+    const result = await UserSchema.updateOne({ _id: idUser }, { $addToSet: { role } }, { session });
+    const { acknowledged, matchedCount, modifiedCount } = result;
+
+    if (matchedCount === 0) throw new CustomError('No se encontró el usuario.', 404);
+    if (!acknowledged) throw new CustomError('No fue posible asignar el role.', 500);
+
+    return modifiedCount === 1;
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válidos.', 400);
+    }
+    throw ex;
+  }
 };
 
 const addRoleToManyUsers = async ({ usersIdList = [], role, session }) => {
@@ -178,10 +405,10 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   }
 };
 
-const saveRegisterToken = async ({ idUser, token, session }) => {
+const saveAlterToken = async ({ idUser, token, session }) => {
   try {
     // eliminar tokens previos del usuario
-    await AlterUserTokenSchema.deleteMany({ idUser });
+    await AlterUserTokenSchema.deleteMany({ idUser }, { session });
 
     const alterUserToken = new AlterUserTokenSchema();
 
@@ -215,7 +442,7 @@ const saveManyRegisterToken = async (data) => {
 
 const validateAlterUserToken = async ({ idUser, token }) => {
   const result = await AlterUserTokenSchema.findOne({ idUser, token });
-  if (result === null) throw new CustomError('El token de registro no es válido.', 401);
+  if (result === null) throw new CustomError('El token de modificación no es válido.', 401);
 
   return true;
 };
@@ -231,20 +458,76 @@ const updateUserPassword = async ({ idUser, passwordHash, session }) => {
 
   user.passwordHash = passwordHash;
 
+  if (!user.university) {
+    user.university = 'temporary';
+    user.campus = 'temporary';
+  }
+
   await user.save({ session });
+};
+
+const updateUserBlockedStatus = async ({ idUser, blocked, session }) => {
+  try {
+    const { acknowledged, matchedCount } = await UserSchema.updateOne({ _id: idUser }, { blocked }, { session });
+
+    if (!matchedCount) throw new CustomError('No se encontró al usuario a modificar.', 404);
+    if (!acknowledged) throw new CustomError('No fue posible realizar la modificación del status blocked.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 404);
+    }
+    throw ex;
+  }
+};
+
+const deleteUser = async ({ idUser, session }) => {
+  try {
+    const { deletedCount, acknowledged } = await UserSchema.deleteOne({ _id: idUser }, { session });
+    if (!acknowledged) throw new CustomError('No se encontró el usuario a eliminar.', 404);
+    if (deletedCount !== 1) throw new CustomError('No se pudo eliminar el usuario.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 404);
+    }
+    throw ex;
+  }
+};
+
+const uploadUsers = async ({ users, session }) => {
+  try {
+    if (!users || users.length === 0) throw new CustomError('Debe enviar por lo menos un registro.', 400);
+    const savedUsers = await UserSchema.insertMany(users, { session });
+    return savedUsers;
+  } catch (ex) {
+    if (ex.errors) throw new CustomError(ex.errors[Object.keys(ex.errors)].message, 400);
+    if (ex.code === 11000) {
+      if (ex.message.includes('code')) throw new CustomError(`El código ${ex.writeErrors[0].err.op.code} ya existe en la base de datos`, 400);
+      throw new CustomError(`El correo ${ex.writeErrors[0].err.op.email} ya existe en la base de datos`, 400);
+    }
+    throw ex;
+  }
 };
 
 export {
   createUser,
-  getActiveUsers,
+  getUsersList,
   updateServiceHours,
   getUser,
   addRoleToManyUsers,
   removeRoleFromUser,
-  saveRegisterToken,
+  saveAlterToken,
   saveManyRegisterToken,
   validateAlterUserToken,
   deleteAlterUserToken,
   updateUserPassword,
   deleteAllUserAlterTokens,
+  addRoleToUser,
+  updateUserBlockedStatus,
+  deleteUser,
+  updateUser,
+  getUsersInList,
+  uploadUsers,
+  getUserByMail,
+  updateUserInAllDependencies,
+  updateActivitiesCompletedNumber,
 };

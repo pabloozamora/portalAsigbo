@@ -6,7 +6,7 @@ import consts from '../utils/consts.js';
 const key = config.get('jwtKey');
 
 const signRefreshToken = async ({
-  id, code, name, lastname, promotion, career, sex, role,
+  id, code, name, lastname, promotion, career, sex, role, hasImage,
 }) => jwt.sign(
   {
     id,
@@ -17,6 +17,7 @@ const signRefreshToken = async ({
     career,
     sex,
     role,
+    hasImage,
     exp: moment().add(1, 'week').unix(),
     type: consts.token.refresh,
   },
@@ -24,7 +25,7 @@ const signRefreshToken = async ({
 );
 
 const signAccessToken = ({
-  id, code, name, lastname, promotion, career, sex, role,
+  id, code, name, lastname, promotion, career, sex, role, hasImage,
 }) => jwt.sign(
   {
     id,
@@ -35,6 +36,7 @@ const signAccessToken = ({
     career,
     sex,
     role,
+    hasImage,
     exp: moment().add(1, 'day').unix(),
     type: consts.token.access,
   },
@@ -55,8 +57,22 @@ const signRegisterToken = ({
   key,
 );
 
+const signRecoverPasswordToken = ({
+  id, name, lastname, email,
+}) => jwt.sign(
+  {
+    id,
+    name,
+    lastname,
+    email,
+    exp: moment().add(1, 'hour').unix(),
+    type: consts.token.recover,
+  },
+  key,
+);
+
 const validateToken = async (token) => jwt.verify(token, key);
 
 export {
-  signAccessToken, signRefreshToken, signRegisterToken, validateToken,
+  signAccessToken, signRefreshToken, signRegisterToken, validateToken, signRecoverPasswordToken,
 };

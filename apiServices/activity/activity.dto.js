@@ -1,11 +1,22 @@
 import { parseMultipleObjects, parseSingleObject } from '../../utils/parseMongoObject.js';
+import { single as asigboAreaSingle } from '../asigboArea/asigboArea.dto.js';
 
-const single = (resource, showSensitiveData) => {
+/**
+ * Genera el dto para una actividad.
+ * @param resource. Objeto con la información del dto.
+ * @param Options. Object {showSensitiveData: Bool. Mostrar información sensible * }
+ * @returns
+ */
+const single = (
+  resource,
+  { showSensitiveData } = {},
+) => {
   const {
     id,
     _id,
     name,
     date,
+    description,
     serviceHours,
     responsible,
     asigboArea,
@@ -14,22 +25,28 @@ const single = (resource, showSensitiveData) => {
     registrationEndDate,
     participatingPromotions,
     availableSpaces,
+    blocked,
+    hasBanner,
   } = resource._doc ?? resource;
   return {
     id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
+    _id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
     name,
     date,
+    description,
     serviceHours,
     responsible: showSensitiveData ? parseMultipleObjects(responsible) : undefined,
-    asigboArea: parseSingleObject(asigboArea),
+    asigboArea: asigboAreaSingle(asigboArea),
     payment: parseSingleObject(payment),
     registrationStartDate,
     registrationEndDate,
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
     availableSpaces,
+    blocked,
+    hasBanner,
   };
 };
 
-const multiple = (resources, showSensitiveData) => resources.map((resource) => single(resource, showSensitiveData));
+const multiple = (resources, { showSensitiveData } = {}) => resources.map((resource) => single(resource, { showSensitiveData }));
 
 export { single, multiple };

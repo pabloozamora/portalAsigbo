@@ -11,6 +11,7 @@ const consts = {
     refresh: 'REFRESH',
     access: 'ACCESS',
     register: 'REGISTER',
+    recover: 'RECOVER',
   },
   promotionsGroups: {
     chick: 'chick',
@@ -20,6 +21,7 @@ const consts = {
   bucketRoutes: {
     user: 'user',
     area: 'area',
+    activity: 'activity',
   },
   resultsNumberPerPage: 7,
   imagePath: {
@@ -28,5 +30,6 @@ const consts = {
 
 consts.imagePath.user = `${consts.apiPath}/user`;
 consts.imagePath.area = `${consts.apiPath}/area`;
+consts.imagePath.activity = `${consts.apiPath}/activity`;
 
 export default consts;

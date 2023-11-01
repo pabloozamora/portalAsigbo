@@ -12,6 +12,27 @@ const getUserImageController = async (req, res) => {
     res.sendStatus(404);
   }
 };
+const getAreaImageController = async (req, res) => {
+  const { id } = req.params;
 
-// eslint-disable-next-line import/prefer-default-export
-export { getUserImageController };
+  try {
+    const fileResult = await getFileFromBucket(`${consts.bucketRoutes.area}/${id}`);
+    res.write(fileResult, 'binary');
+    res.end(null, 'binary');
+  } catch (ex) {
+    res.sendStatus(404);
+  }
+};
+const getActivityImageController = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const fileResult = await getFileFromBucket(`${consts.bucketRoutes.activity}/${id}`);
+    res.write(fileResult, 'binary');
+    res.end(null, 'binary');
+  } catch (ex) {
+    res.sendStatus(404);
+  }
+};
+
+export { getUserImageController, getAreaImageController, getActivityImageController };

@@ -1,19 +1,19 @@
 import express from 'express';
 import {
-  addResponsibleController,
   createAsigboAreaController,
   deleteAsigboAreaController,
-  getActiveAreasController,
-  removeResponsibleController,
+  disableAsigboAreaController,
+  enableAsigboAreaController,
+  getAreasController,
+  getAsigboAreaController,
   updateAsigboAreaController,
 } from './asigboArea.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createAsigboAreaSchema from './validationSchemas/createAsigboAreaSchema.js';
-import updateAsigboAreaSchema from './validationSchemas/updateAsigboAreaSchema.js';
-import areaResponsibleSchema from './validationSchemas/areaResponsibleSchema.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
+import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 
 const asigboAreaRouter = express.Router();
 
@@ -24,25 +24,27 @@ asigboAreaRouter.post(
   validateBody(createAsigboAreaSchema),
   createAsigboAreaController,
 );
-asigboAreaRouter.put(
-  '/update/:idArea',
+asigboAreaRouter.patch(
+  '/:idArea',
   ensureAdminAuth,
-  validateBody(updateAsigboAreaSchema),
+  multerMiddleware(uploadImage.single('icon')),
+  validateBody(createAsigboAreaSchema),
   updateAsigboAreaController,
 );
-asigboAreaRouter.put(
-  '/responsible',
+asigboAreaRouter.patch(
+  '/:idArea/disable',
   ensureAdminAuth,
-  validateBody(areaResponsibleSchema),
-  addResponsibleController,
+  disableAsigboAreaController,
 );
-asigboAreaRouter.put('/delete/:idArea', ensureAdminAuth, deleteAsigboAreaController);
-asigboAreaRouter.put(
-  '/responsible/remove',
+asigboAreaRouter.patch(
+  '/:idArea/enable',
   ensureAdminAuth,
-  validateBody(areaResponsibleSchema),
-  removeResponsibleController,
+  enableAsigboAreaController,
 );
-asigboAreaRouter.get('/', ensureAdminAuth, getActiveAreasController);
+
+asigboAreaRouter.delete('/:idArea', ensureAdminAuth, deleteAsigboAreaController);
+
+asigboAreaRouter.get('/', ensureAreaResponsibleAuth, getAreasController);
+asigboAreaRouter.get('/:idArea', ensureAreaResponsibleAuth, getAsigboAreaController);
 
 export default asigboAreaRouter;

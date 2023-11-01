@@ -3,8 +3,25 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import exists, { someExists } from '../../utils/exists.js';
 import { multiple, single, single as singleActivityDto } from './activity.dto.js';
+
+/**
+ * Permite validar si un usuario es un encargado de un eje de asigbo.
+ * @param idUser Id del usuario a verificar.
+ * @param idArea Id de la actividad en donde se va a verificar si el usuario es encargado.
+ * @param preventError. Default false. Evita que se lance una excepción al no ser el encargado.
+ * Por defecto, Lanza un CustomError si el usuario no posee dicho privilegio.
+ * @return Boolean. Indica si el usuario es encargado del eje.
+ */
+const validateResponsible = async ({ idUser, idActivity, preventError = false }) => {
+  const { responsible } = await ActivitySchema.findById(idActivity);
+  const isResponsible = responsible.some((user) => user._id.toString() === idUser);
+  if (!isResponsible && !preventError) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  return isResponsible;
+};
 
 const createActivity = async ({
   name,
@@ -17,6 +34,8 @@ const createActivity = async ({
   registrationEndDate,
   participatingPromotions,
   participantsNumber,
+  description,
+  hasBanner,
   session,
 }) => {
   // obtener datos de area asigbo
@@ -54,6 +73,8 @@ const createActivity = async ({
   activity.registrationEndDate = registrationEndDate;
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
   activity.availableSpaces = participantsNumber;
+  activity.description = description;
+  activity.hasBanner = hasBanner;
 
   const result = await activity.save({ session });
   return singleActivityDto(result);
@@ -71,82 +92,73 @@ const updateActivity = async ({
   date,
   serviceHours,
   responsible,
-  idAsigboArea,
   idPayment,
   registrationStartDate,
   registrationEndDate,
   participatingPromotions,
   participantsNumber,
+  hasBanner,
 }) => {
+  try {
   // obtener actividad
-  const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
-  if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
+    const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
+    if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
 
-  const dataBeforeChange = singleActivityDto(activity, true);
+    const dataBeforeChange = singleActivityDto(activity, { showSensitiveData: true });
 
-  // obtener datos de area asigbo
-  const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
+    // obtener datos de encargados
+    const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
 
-  if (asigboAreaData === null && idAsigboArea !== undefined) throw new CustomError('No existe el área de asigbo.', 400);
-
-  // obtener datos de encargados
-  const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
-
-  if (responsible !== undefined && (responsiblesData === null || responsiblesData.length === 0)) {
-    throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
-  }
-  if (responsible !== undefined && (responsiblesData.length !== responsible.length)) {
-    throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
-  }
-
-  // realizar el cálculo de espacios disponibles
-  if (participantsNumber !== undefined) {
-    const registeredUsers = await ActivityAssignmentSchema.find({ 'activity._id': activity._id });
-
-    if (registeredUsers.length > participantsNumber) {
-      throw new CustomError(
-        'El nuevo número de participantes en menor al número de becados que se encuentran ya inscritos.',
-        400,
-      );
+    if (responsible !== undefined && (responsiblesData === null || responsiblesData.length === 0)) {
+      throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
+    }
+    if (responsible !== undefined && (responsiblesData.length !== responsible.length)) {
+      throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
     }
 
-    activity.availableSpaces = participantsNumber - registeredUsers.length;
+    // realizar el cálculo de espacios disponibles
+    if (participantsNumber !== undefined) {
+      const registeredUsers = await ActivityAssignmentSchema.find({ 'activity._id': activity._id });
+
+      if (registeredUsers.length > participantsNumber) {
+        throw new CustomError(
+          'El nuevo número de participantes en menor al número de becados que se encuentran ya inscritos.',
+          400,
+        );
+      }
+
+      activity.availableSpaces = participantsNumber - registeredUsers.length;
+    }
+
+    // actualizar actividad
+
+    if (name !== undefined) activity.name = name;
+    if (date !== undefined) activity.date = new Date(date);
+    if (serviceHours !== undefined) activity.serviceHours = serviceHours;
+    if (responsible !== undefined) activity.responsible = responsiblesData;
+    if (idPayment !== undefined) activity.payment = idPayment;
+    if (registrationStartDate !== undefined) activity.registrationStartDate = registrationStartDate;
+    if (registrationEndDate !== undefined) activity.registrationEndDate = registrationEndDate;
+    if (participatingPromotions !== undefined) {
+      activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
+    }
+    if (exists(hasBanner)) activity.hasBanner = hasBanner;
+
+    const result = await activity.save({ session });
+    return {
+      updatedData: singleActivityDto(result, { showSensitiveData: true }),
+      dataBeforeChange,
+    };
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('Se proporcionó un id inválido.', 400);
+    throw ex;
   }
-
-  // actualizar actividad
-
-  if (name !== undefined) activity.name = name;
-  if (date !== undefined) activity.date = new Date(date);
-  if (serviceHours !== undefined) activity.serviceHours = serviceHours;
-  if (responsible !== undefined) activity.responsible = responsiblesData;
-  if (idAsigboArea !== undefined) activity.asigboArea = asigboAreaData;
-  if (idPayment !== undefined) activity.payment = idPayment;
-  if (registrationStartDate !== undefined) activity.registrationStartDate = registrationStartDate;
-  if (registrationEndDate !== undefined) activity.registrationEndDate = registrationEndDate;
-  if (participatingPromotions !== undefined) {
-    activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
-  }
-
-  const result = await activity.save({ session });
-  return {
-    updatedData: singleActivityDto(result, true),
-    dataBeforeChange,
-  };
 };
 
 const updateActivityInAllAssignments = async ({ activity, session }) => ActivityAssignmentSchema.updateMany({ 'activity._id': activity.id }, { activity }, { session });
 
 const deleteActivity = async ({ idActivity, session }) => {
   try {
-    // verificar que no existan asignaciones a dicha actividad
-    const assignments = await ActivityAssignmentSchema.find({ 'activity._id': idActivity });
-
-    if (assignments?.length > 0) {
-      throw new CustomError(
-        'No es posible eliminar, pues existen becados inscritos en la actividad.',
-      );
-    }
-
     const { deletedCount } = await ActivitySchema.deleteOne({ _id: idActivity }, { session });
 
     if (deletedCount === 0) throw new CustomError('No se encontró la actividad a eliminar.', 404);
@@ -157,9 +169,6 @@ const deleteActivity = async ({ idActivity, session }) => {
 };
 
 const getUserActivities = async (idUser) => {
-  const user = await UserSchema.findById(idUser);
-  if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
-
   const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
   if (assignments.length === 0) throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
 
@@ -173,15 +182,29 @@ const getUserActivities = async (idUser) => {
   return activities;
 };
 
-const getActivities = async ({ idAsigboArea, limitDate, query }) => {
-  const filter = {};
+const getActivities = async ({
+  idAsigboArea = null, search = null, lowerDate = null, upperDate = null, page = null, session,
+}) => {
+  const query = {};
 
-  if (idAsigboArea !== undefined) filter['asigboArea._id'] = idAsigboArea;
-  if (limitDate !== undefined) filter.date = { $lte: limitDate };
-  if (query !== undefined) filter.name = { $regex: query, $options: 'i' };
+  if (exists(idAsigboArea)) query['asigboArea._id'] = idAsigboArea;
+  if (someExists(lowerDate, upperDate)) query.date = {};
+  if (exists(lowerDate)) query.date.$gte = lowerDate;
+  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+    const searchRegex = new RegExp(search, 'i');
+    query.name = { $regex: searchRegex };
+  }
+
+  const options = {};
+  if (exists(page)) {
+    options.skip = page * consts.resultsNumberPerPage;
+    options.limit = consts.resultsNumberPerPage;
+  }
 
   try {
-    const result = await ActivitySchema.find(filter);
+    const result = await ActivitySchema.find(query, null, options).session(session);
 
     if (result.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
@@ -193,25 +216,87 @@ const getActivities = async ({ idAsigboArea, limitDate, query }) => {
   }
 };
 
-const getActivity = async ({ idActivity, getSensitiveData = false }) => {
+/**
+ * Permite obtener una actividad por Id.
+ * Lanza una excepción CustomError si no encuentra resultados.
+ * @param idActivity Id de la actividad.
+ * @param showSensitiveData Boolean. Default false. Indica si se muestran los datos sensibles de la actividad.
+ * @returns Activity dto.
+ */
+const getActivity = async ({ idActivity, showSensitiveData = false }) => {
   try {
     const result = await ActivitySchema.findById(idActivity);
 
     if (result === null) throw new CustomError('No se encontró la actividad.', 404);
 
-    return single(result, getSensitiveData);
+    return singleActivityDto(result, { showSensitiveData });
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
     throw ex;
   }
 };
 
-const getActivitiesWhereUserIsResponsible = async ({ idUser }) => {
-  const results = await ActivitySchema.find({ responsible: { $elemMatch: { _id: idUser } } });
+const getActivitiesWhereUserIsResponsible = async ({
+  idUser, search = null, lowerDate = null, upperDate = null, page = null, session,
+}) => {
+  const query = { responsible: { $elemMatch: { _id: idUser } } };
+
+  if (someExists(lowerDate, upperDate)) query.date = {};
+  if (exists(lowerDate)) query.date.$gte = lowerDate;
+  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+    const searchRegex = new RegExp(search, 'i');
+    query.name = { $regex: searchRegex };
+  }
+
+  const options = {};
+  if (exists(page)) {
+    options.skip = page * consts.resultsNumberPerPage;
+    options.limit = consts.resultsNumberPerPage;
+  }
+
+  const results = await ActivitySchema.find(query, null, options).session(session);
 
   if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return multiple(results);
+};
+
+/**
+ * Permite sumar una cantidad al valor de espacios disponibles de una actividad. Para disminuir,
+ * simplemente utilizar con valores negativos.
+ * @param idActivity Id de la actividad.
+ * @param value Number. Valor numérico a incrementar.
+ * @param session Object. Objecto de la sesión mongodb.
+ */
+const addActivityAvailableSpaces = async ({ idActivity, value, session }) => {
+  try {
+    const { acknowledged, matchedCount, modifiedCount } = await ActivitySchema.updateOne({ _id: idActivity }, { $inc: { availableSpaces: value } }, { session });
+
+    if (matchedCount === 0) throw new CustomError('No se encontró la actividad.', 404);
+    if (!acknowledged || !modifiedCount) throw new CustomError('No fue posible actualizar el número de espacios disponibles.', 500);
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
+    throw ex;
+  }
+};
+
+const updateActivityBlockedStatus = async ({ idActivity, blocked, session }) => {
+  try {
+    // actualiza y retorna la data nueva
+    const activity = await ActivitySchema.findOneAndUpdate(
+      { _id: idActivity },
+      { blocked },
+      { new: true, session },
+    );
+
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
+    return single(activity, { showSensitiveData: true });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.');
+    throw ex;
+  }
 };
 
 export {
@@ -223,4 +308,7 @@ export {
   getActivity,
   getActivitiesWhereUserIsResponsible,
   getUserActivities,
+  validateResponsible,
+  addActivityAvailableSpaces,
+  updateActivityBlockedStatus,
 };
