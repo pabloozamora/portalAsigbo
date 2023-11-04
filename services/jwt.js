@@ -44,13 +44,14 @@ const signAccessToken = ({
 );
 
 const signRegisterToken = ({
-  id, name, lastname, email,
+  id, name, lastname, email, sex,
 }) => jwt.sign(
   {
     id,
     name,
     lastname,
     email,
+    sex,
     exp: moment().add(6, 'month').unix(),
     type: consts.token.register,
   },
