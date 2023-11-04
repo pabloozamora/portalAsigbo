@@ -26,6 +26,7 @@ const consts = {
   resultsNumberPerPage: 7,
   imagePath: {
   },
+  activityFileHeaders: ['Actividad', 'Area', 'Fecha', 'Participante', 'Horas'],
 };
 
 consts.imagePath.user = `${consts.apiPath}/user`;
