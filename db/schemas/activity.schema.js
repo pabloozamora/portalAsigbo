@@ -43,10 +43,21 @@ const activitySchema = Schema({
       message: 'Debe contener el año de la promoción o el grupo al que pertenece.',
     },
   },
-  availableSpaces: {
+  maxParticipants: {
     type: Number,
     required: true,
+    min: [0, 'El número máximo de participantes debe ser al menos cero.'],
+  },
+  participantsNumber: {
+    type: Number,
+    default: 0,
     min: [0, 'El número mínimo de participantes es 0.'],
+    validate: {
+      validator(participants) {
+        return participants <= this.maxParticipants;
+      },
+      message: 'El número de participantes no puede ser mayor que el número máximo de participantes.',
+    },
   },
   blocked: { type: Boolean, default: false },
   hasBanner: { type: Boolean, default: false },

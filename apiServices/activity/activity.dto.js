@@ -24,7 +24,8 @@ const single = (
     registrationStartDate,
     registrationEndDate,
     participatingPromotions,
-    availableSpaces,
+    participantsNumber,
+    maxParticipants,
     blocked,
     hasBanner,
   } = resource._doc ?? resource;
@@ -41,7 +42,9 @@ const single = (
     registrationStartDate,
     registrationEndDate,
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
-    availableSpaces,
+    participantsNumber,
+    maxParticipants,
+    availableSpaces: (maxParticipants ?? 0) - (participantsNumber ?? 0),
     blocked,
     hasBanner,
   };
