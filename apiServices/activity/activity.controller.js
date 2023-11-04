@@ -1,20 +1,26 @@
+/* eslint-disable no-await-in-loop */
 import fs from 'node:fs';
+import helper from 'csvtojson';
 import { connection } from '../../db/connection.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import {
+  assignManyUsersToActivity,
+  getActivityAssignment,
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
 } from '../activityAssignment/activityAssignment.model.js';
 import {
+  getAreas,
   getAreasWhereUserIsResponsible,
   validateResponsible as validateAreaResponsible,
 } from '../asigboArea/asigboArea.model.js';
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import {
   addRoleToUser,
+  getUsersList,
   removeRoleFromUser,
   updateServiceHours,
 } from '../user/user.model.js';
@@ -29,6 +35,7 @@ import {
   updateActivity,
   updateActivityBlockedStatus,
   updateActivityInAllAssignments,
+  uploadActivities,
 } from './activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
@@ -70,7 +77,7 @@ const saveBannerPicture = async ({ file, idActivity }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => {});
+  fs.unlink(filePath, () => { });
 };
 
 const createActivityController = async (req, res) => {
@@ -603,6 +610,127 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
   }
 };
 
+const uploadActivitiesDataController = async (req, res) => {
+  const { path } = req.body;
+  const session = await connection.startSession();
+
+  try {
+    const problems = [];
+    const assignments = [];
+    const activities = [];
+    const { result: admins } = await getUsersList({ role: consts.roles.admin });
+    const { result: users } = await getUsersList({
+      promotion: null, university: null, search: null, role: null, promotionMin: null, promotionMax: null, priority: null,
+    });
+    const areas = await getAreas();
+
+    const rows = await helper().fromFile(path, { encoding: 'binary' });
+
+    session.startTransaction();
+    const currentActivities = await getActivities(session);
+
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      const {
+        Actividad: activityName, Area: area, Fecha: activityDate, Participante: attendantCode, Horas: serviceHours,
+      } = row;
+
+      try {
+        const existsActivity = currentActivities && currentActivities.length > 0
+          ? currentActivities.find((current) => current.name === activityName && current.asigboArea._id.toString() === area)
+          : undefined;
+
+        const existsArea = areas && areas.length > 0
+          ? areas.find((a) => a._id === area) : undefined;
+        const existsUser = users && users.length > 0
+          ? users.find((u) => u.code.toString() === attendantCode) : undefined;
+        if (!existsArea || !existsUser) {
+          const reason = !existsArea ? 'El área indicada no existe' : 'El usuario indicado no existe';
+          problems.push({ row, index: i + 1, reason });
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        if (existsActivity) {
+          const existsAssignment = await getActivityAssignment({ idUser: existsUser._id, idActivity: existsActivity._id, session });
+
+          if (existsAssignment && existsAssignment.length > 0) {
+            problems.push({ row, index: i + 1, reason: `El usuario con el código ${attendantCode} ya está asignado a la actividad '${activityName}'` });
+            // eslint-disable-next-line no-continue
+            continue;
+          }
+        }
+
+        const foundAssignment = assignments.find((a) => (
+          a.activity.name === activityName && a.activity.asigboArea._id === area
+        ));
+
+        const activity = existsActivity || (foundAssignment ? foundAssignment.activity : undefined);
+
+        const attendant = {
+          user: existsUser,
+          completed: true,
+          aditionalServiceHours: serviceHours.trim(),
+          session,
+        };
+
+        const formatedDate = new Date(activityDate.trim());
+
+        if (activity) {
+          assignments.push({ ...attendant, activity });
+        } else {
+          const newActivity = {
+            name: activityName.trim(),
+            date: formatedDate,
+            serviceHours: 0,
+            responsible: admins.map((admin) => ({ ...admin, hasImage: false })),
+            asigboArea: existsArea,
+            payment: null,
+            registrationStartDate: formatedDate,
+            registrationEndDate: formatedDate,
+            participatingPromotions: null,
+            availableSpaces: 0,
+            description: 'Sin descripción',
+            hasBanner: false,
+          };
+          assignments.push({ ...attendant, activity: newActivity });
+          activities.push(newActivity);
+        }
+      } catch (ex) {
+        problems.push({ row, index: i + 1, reason: ex?.message });
+      }
+    }
+    const savedActivities = activities.length > 0
+      ? await uploadActivities({ activities, session })
+      : undefined;
+    assignments.forEach((assignment) => {
+      if (assignment.activity._id) return;
+
+      const savedActivity = savedActivities.find((act) => (
+        act.name === assignment.activity.name && act.asigboArea._id.toString() === assignment.activity.asigboArea._id
+      ));
+      // eslint-disable-next-line no-param-reassign
+      assignment.activity = savedActivity;
+    });
+    if (assignments.length > 0) {
+      await assignManyUsersToActivity({ assignmentsList: assignments.flat(), session });
+    }
+
+    await session.commitTransaction();
+    res.send({ success: true, problems });
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al insertar la información.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createActivityController,
   updateActivityController,
@@ -613,4 +741,5 @@ export {
   disableActivityController,
   enableActivityController,
   getActivitiesWhereUserIsResponsibleController,
+  uploadActivitiesDataController,
 };

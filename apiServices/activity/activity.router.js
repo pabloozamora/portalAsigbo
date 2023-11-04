@@ -11,6 +11,7 @@ import {
   enableActivityController,
   disableActivityController,
   getActivitiesWhereUserIsResponsibleController,
+  uploadActivitiesDataController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
@@ -20,6 +21,7 @@ import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityResponsibleAuth.js';
+import consts from '../../utils/consts.js';
 
 const activityRouter = express.Router();
 
@@ -68,6 +70,19 @@ activityRouter.get(
   '/responsible/:idUser',
   ensureRolesAuth(null),
   getActivitiesWhereUserIsResponsibleController,
+);
+
+activityRouter.post(
+  '/uploadData',
+  ensureRolesAuth(
+    [
+      consts.roles.admin,
+      consts.roles.asigboAreaResponsible,
+      consts.roles.activityResponsible,
+    ],
+    'El usuario no cuenta con privilegios de administrador, encargado de eje de asigbo, encargado de actividad o encargado de promoción.',
+  ),
+  uploadActivitiesDataController,
 );
 
 export default activityRouter;

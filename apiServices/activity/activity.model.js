@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
@@ -100,7 +101,7 @@ const updateActivity = async ({
   hasBanner,
 }) => {
   try {
-  // obtener actividad
+    // obtener actividad
     const activity = await ActivitySchema.findOne({ _id: id, blocked: false });
     if (activity === null) throw new CustomError('No existe la actividad a actualizar.', 400);
 
@@ -235,6 +236,11 @@ const getActivity = async ({ idActivity, showSensitiveData = false }) => {
     throw ex;
   }
 };
+const getActivityByNameAndArea = async ({ name, idArea, session }) => {
+  const result = await ActivitySchema.findOne({ name, 'asigboArea._id': new ObjectId(idArea) }).session(session);
+
+  return result ? result.id : null;
+};
 
 const getActivitiesWhereUserIsResponsible = async ({
   idUser, search = null, lowerDate = null, upperDate = null, page = null, session,
@@ -299,6 +305,12 @@ const updateActivityBlockedStatus = async ({ idActivity, blocked, session }) => 
   }
 };
 
+const uploadActivities = async ({ activities, session }) => {
+  if (!activities || activities.length === 0) throw new CustomError('Debe enviar por lo menos un registro.', 400);
+  const savedActivities = await ActivitySchema.insertMany(activities, { session });
+  return savedActivities;
+};
+
 export {
   createActivity,
   updateActivity,
@@ -311,4 +323,6 @@ export {
   validateResponsible,
   addActivityAvailableSpaces,
   updateActivityBlockedStatus,
+  getActivityByNameAndArea,
+  uploadActivities,
 };

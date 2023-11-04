@@ -24,6 +24,20 @@ const getUser = async ({ idUser, showSensitiveData, session }) => {
   }
 };
 
+const getUserByCode = async ({ code, session }) => {
+  try {
+    const user = await UserSchema.findOne({ code }).session(session);
+    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+
+    return single(user, { showSensitiveData: false });
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('El id del usuario no es válido.', 400);
+    }
+    throw ex;
+  }
+};
+
 const getUserByMail = async ({ email }) => {
   const user = await UserSchema.findOne({ email });
   if (user === null) throw new CustomError('El email indicado no corresponde a ningún usuario.', 404);
@@ -530,4 +544,5 @@ export {
   getUserByMail,
   updateUserInAllDependencies,
   updateActivitiesCompletedNumber,
+  getUserByCode,
 };
