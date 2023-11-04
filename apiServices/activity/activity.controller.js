@@ -169,6 +169,7 @@ const updateActivityController = async (req, res) => {
     participatingPromotions,
     participantsNumber,
     removeBanner,
+    description,
   } = req.body;
 
   const session = await connection.startSession();
@@ -199,6 +200,7 @@ const updateActivityController = async (req, res) => {
       participatingPromotions,
       participantsNumber,
       hasBanner,
+      description,
     });
 
     // Verificar que el usuario es admin o encargado del área de la actividad
@@ -283,6 +285,7 @@ const updateActivityController = async (req, res) => {
     res.send(single(updatedData));
   } catch (ex) {
     await session.abortTransaction();
+
     let err = 'Ocurrio un error al actualizar actividad.';
     let status = 500;
     if (ex instanceof CustomError) {
