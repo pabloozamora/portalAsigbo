@@ -98,6 +98,7 @@ const updateActivity = async ({
   participatingPromotions,
   participantsNumber,
   hasBanner,
+  description,
 }) => {
   try {
   // obtener actividad
@@ -143,6 +144,7 @@ const updateActivity = async ({
       activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
     }
     if (exists(hasBanner)) activity.hasBanner = hasBanner;
+    if (exists(description)) activity.description = description;
 
     const result = await activity.save({ session });
     return {
