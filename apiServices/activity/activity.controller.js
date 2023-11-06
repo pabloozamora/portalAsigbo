@@ -132,6 +132,11 @@ const createActivityController = async (req, res) => {
       session,
     });
 
+    // Verificar si el área está bloqueada
+    if (activityResult.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+
     // añadir roles de responsables de actividad
     await addActivityResponsibleRole({ responsible, session });
 
@@ -208,6 +213,11 @@ const updateActivityController = async (req, res) => {
     // Verificar que el usuario es admin o encargado del área de la actividad
     if (!role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser, idArea: dataBeforeChange.asigboArea.id });
+    }
+
+    // Verificar si el eje está bloqueado
+    if (updatedData.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     // actualizar actividad en asignaciones
@@ -308,13 +318,18 @@ const deleteActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    const { responsible, asigboArea: { id: idArea } } = await getActivity({
+    const { responsible, asigboArea: { id: idArea, blocked } } = await getActivity({
       idActivity,
       showSensitiveData: true,
     });
 
     if (!role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser, idArea });
+    }
+
+    // Verificar que el eje no se encuentre bloqueado
+    if (blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     // Verificar que la actividad no tenga asignaciones
@@ -508,6 +523,11 @@ const disableActivityController = async (req, res) => {
       await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
     }
 
+    // Verificar que el eje no se encuentre bloqueado
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+
     const updatedActivity = await updateActivityBlockedStatus({
       idActivity,
       blocked: true,
@@ -544,6 +564,11 @@ const enableActivityController = async (req, res) => {
     // Si no es admin, verificar si es encargado de área
     if (!req.session.role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
+    }
+
+    // Verificar que el eje no se encuentre bloqueado
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     const updatedActivity = await updateActivityBlockedStatus({
