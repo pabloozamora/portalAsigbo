@@ -718,6 +718,8 @@ const uploadActivitiesDataController = async (req, res) => {
 
       if (activity) {
         assignments.push({ ...attendant, activity });
+        activity.participantsNumber += 1;
+        activity.maxParticipants += 1;
       } else {
         const newActivity = {
           name: activityName.trim(),
@@ -729,7 +731,8 @@ const uploadActivitiesDataController = async (req, res) => {
           registrationStartDate: formatedDate,
           registrationEndDate: formatedDate,
           participatingPromotions: null,
-          availableSpaces: 0,
+          participantsNumber: 1,
+          maxParticipants: 1,
           description: 'Sin descripción',
           hasBanner: false,
         };
