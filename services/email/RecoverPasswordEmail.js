@@ -4,16 +4,10 @@ import Email from './Email.js';
 const host = config.get('host');
 
 export default class RecoverPasswordEmail extends Email {
-  constructor({
-    addresseeEmail, name, recoverToken,
-  }) {
-    super({
-      addresseeEmail, subject: 'Recuperación de contraseña - Portal ASIGBO.', name,
-    });
-
+  sendEmail({ addresseeEmail, name, recoverToken }) {
     const recoverLink = `${host}/actualizarContrasena?access=${recoverToken}`;
 
-    super.message = `
+    const message = `
     
     Has recibido este correo como respuesta a tu solicitod de restablecimiento de contraseña. Si no has
     sido tú, por favor ignora este mensaje y ponte en contacto con tus encargados de promoción.
@@ -31,5 +25,12 @@ export default class RecoverPasswordEmail extends Email {
     Enlace de recuperación: <a href='${recoverLink}'> ${recoverLink} </a>
     
     `;
+
+    return super.sendEmail({
+      addresseeEmail,
+      subject: 'Recuperación de contraseña - Portal ASIGBO.',
+      name,
+      message,
+    });
   }
 }

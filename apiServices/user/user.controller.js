@@ -121,12 +121,12 @@ const renewRegisterToken = async (req, res) => {
     await saveAlterToken({ idUser, token, session });
 
     // enviar email de notificación
-    const emailSender = new NewUserEmail({
+    const emailSender = new NewUserEmail();
+    await emailSender.sendEmail({
       addresseeEmail: user.email,
       name: user.name,
       registerToken: token,
     });
-    await emailSender.sendEmail();
 
     await session.commitTransaction();
 
@@ -178,8 +178,9 @@ const createUserController = async (req, res) => {
     await saveAlterToken({ idUser: user.id, token, session });
 
     // enviar email de notificación
-    const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
-    emailSender.sendEmail();
+    const emailSender = new NewUserEmail();
+    emailSender.sendEmail({ addresseeEmail: email, name, registerToken: token })
+      .catch(() => {});
 
     await session.commitTransaction();
 
@@ -723,6 +724,10 @@ const uploadUsersController = async (req, res) => {
     session.startTransaction();
     const savedUsers = await uploadUsers({ users, session });
 
+    const emailSender = new NewUserEmail();
+
+    const email = [];
+
     await Promise.all(
       savedUsers.map(async (user) => {
         const token = signRegisterToken({
@@ -734,14 +739,18 @@ const uploadUsersController = async (req, res) => {
         await saveAlterToken({ idUser: user.id, token, session });
 
         // enviar email de notificación
-        const emailSender = new NewUserEmail({
+        const emailRes = emailSender.sendEmail({
           addresseeEmail: user.email,
           name: user.name,
           registerToken: token,
         });
-        emailSender.sendEmail();
+        email.push(emailRes);
       }),
     );
+
+    await Promise.all(email);
+
+    throw new CustomError('El envio fue exitoso');
 
     await session.commitTransaction();
     session.endSession();
@@ -749,6 +758,7 @@ const uploadUsersController = async (req, res) => {
   } catch (ex) {
     await session.abortTransaction();
     session.endSession();
+    // console.log(ex);
     let err = 'Ocurrio un error al insertar la información.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -779,12 +789,12 @@ const recoverPasswordController = async (req, res) => {
     await saveAlterToken({ idUser: user.id, token, session });
 
     // enviar email de notificación
-    const emailSender = new RecoverPasswordEmail({
+    const emailSender = new RecoverPasswordEmail();
+    emailSender.sendEmail({
       addresseeEmail: email,
       name: user.name,
       recoverToken: token,
     });
-    emailSender.sendEmail();
 
     await session.commitTransaction();
     session.endSession();
@@ -792,6 +802,7 @@ const recoverPasswordController = async (req, res) => {
   } catch (ex) {
     await session.abortTransaction();
     session.endSession();
+    console.log(ex);
     let err = 'Ocurrio un error en proceso de recuperación de contraseña.';
     let status = 500;
     if (ex instanceof CustomError) {

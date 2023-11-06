@@ -4,16 +4,10 @@ import Email from './Email.js';
 const host = config.get('host');
 
 export default class NewUserEmail extends Email {
-  constructor({
-    addresseeEmail, name, registerToken,
-  }) {
-    super({
-      addresseeEmail, subject: 'Tu cuenta del portal de Asigbo ha sido creada.', name,
-    });
-
+  sendEmail({ addresseeEmail, name, registerToken }) {
     const registerLink = `${host}/registro?access=${registerToken}`;
 
-    super.message = `
+    const message = `
     
     Es un gusto saludarte y darte de nuevo la bienvenida a la familia de la Fundación y también a ASIGBO.
     Esperamos que esta sea una experiencia grata y emocionante para ti.
@@ -29,5 +23,12 @@ export default class NewUserEmail extends Email {
     Enlace de acceso: <a href='${registerLink}'> ${registerLink} </a>
     
     `;
+
+    return super.sendEmail({
+      addresseeEmail,
+      subject: 'Tu cuenta del portal de Asigbo ha sido creada.',
+      name,
+      message,
+    });
   }
 }
