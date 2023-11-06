@@ -3,7 +3,7 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
-import { addActivityAvailableSpaces, getActivity, validateResponsible as validateActivityResponsible } from '../activity/activity.model.js';
+import { addActivityParticipants, getActivity, validateResponsible as validateActivityResponsible } from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import {
@@ -161,7 +161,7 @@ const assignUserToActivityController = async (req, res) => {
     }
 
     // verificar que hayan espacios disponibles
-    if (!(activity.availableSpaces > 0)) {
+    if (activity.participantsNumber >= activity.maxParticipants) {
       throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
     }
 
@@ -172,8 +172,8 @@ const assignUserToActivityController = async (req, res) => {
       session,
     });
 
-    // restar 1 en espacios disponibles de actividad
-    await addActivityAvailableSpaces({ idActivity, value: -1, session });
+    // Añadir un participante
+    await addActivityParticipants({ idActivity, value: 1, session });
 
     const {
       serviceHours,
@@ -245,8 +245,9 @@ const assignManyUsersToActivityController = async (req, res) => {
           throw new CustomError(`La actividad no está disponible para la promoción del usuario ${user.name} ${user.lastname}.`);
         }
 
+        const availableSpaces = activity.maxParticipants - activity.participantsNumber;
         // verificar que hayan espacios disponibles
-        if (!(activity.availableSpaces >= users.length)) {
+        if (availableSpaces < users.length) {
           throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
         }
 
@@ -256,8 +257,8 @@ const assignManyUsersToActivityController = async (req, res) => {
 
     await assignManyUsersToActivity({ assignmentsList, session });
 
-    // restar espacios disponibles de actividad
-    await addActivityAvailableSpaces({ idActivity, value: users.length, session });
+    // Añadir x cantidad de participantes
+    await addActivityParticipants({ idActivity, value: users.length, session });
 
     await session.commitTransaction();
 
@@ -303,8 +304,8 @@ const unassignUserFromActivityController = async (req, res) => {
       completed,
     } = result;
 
-    // habilitar espacios en al actividad
-    await addActivityAvailableSpaces({ idActivity, value: 1, session });
+    // Remover participantes en la actividad
+    await addActivityParticipants({ idActivity, value: -1, session });
 
     // si es una actividad completada, modificar total de horas de servicio
     if (completed === true && serviceHours > 0) {

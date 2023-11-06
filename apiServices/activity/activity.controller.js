@@ -200,7 +200,7 @@ const updateActivityController = async (req, res) => {
       registrationStartDate,
       registrationEndDate,
       participatingPromotions,
-      participantsNumber,
+      maxParticipantsNumber: participantsNumber,
       hasBanner,
       description,
     });
