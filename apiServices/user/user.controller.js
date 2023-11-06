@@ -116,6 +116,7 @@ const renewRegisterToken = async (req, res) => {
       name: user.name,
       lastname: user.lastname,
       email: user.email,
+      sex: user.sex,
     });
 
     await saveAlterToken({ idUser, token, session });
@@ -174,6 +175,7 @@ const createUserController = async (req, res) => {
       name: user.name,
       lastname: user.lastname,
       email: user.email,
+      sex: user.sex,
     });
     await saveAlterToken({ idUser: user.id, token, session });
 
@@ -730,6 +732,7 @@ const uploadUsersController = async (req, res) => {
           name: user.name,
           lastname: user.lastname,
           email: user.email,
+          sex: user.sex,
         });
         await saveAlterToken({ idUser: user.id, token, session });
 

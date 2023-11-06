@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
@@ -28,7 +29,7 @@ const getActivityAssignments = async ({
     if (exists(lowerDate)) query['activity.date'].$gte = lowerDate;
     if (exists(upperDate)) query['activity.date'].$lte = upperDate;
     if (exists(search)) {
-    // buscar cadena en nombre de la actividad
+      // buscar cadena en nombre de la actividad
       const searchRegex = new RegExp(search, 'i');
       query['activity.name'] = { $regex: searchRegex };
     }
@@ -70,7 +71,7 @@ const getActivityAssignments = async ({
 };
 
 const assignUserToActivity = async ({
-  user, completed, activity, session,
+  user, completed, activity, session, aditionalServiceHours = 0,
 }) => {
   try {
     const activityAssignment = new ActivityAssignmentSchema();
@@ -79,6 +80,7 @@ const assignUserToActivity = async ({
     activityAssignment.activity = activity;
     activityAssignment.pendingPayment = activity.payment !== null;
     activityAssignment.completed = completed ?? false;
+    activityAssignment.aditionalServiceHours = aditionalServiceHours;
 
     await activityAssignment.save({ session });
   } catch (ex) {
@@ -149,6 +151,22 @@ const updateActivityAssignment = async ({
   return singleAssignmentActivityDto(assignmentData);
 };
 
+const getActivityAssignment = async ({
+  idUser, idActivity, session,
+}) => {
+  try {
+    const assignments = await ActivityAssignmentSchema.find({ 'user._id': new ObjectId(idUser), 'activity._id': new ObjectId(idActivity) });
+
+    return assignments;
+  } catch (ex) {
+    await session.abortTransaction();
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('Los ids proporcionados no son válidos.', 400);
+    }
+    throw ex;
+  }
+};
+
 export {
   assignUserToActivity,
   getCompletedActivityAssignmentsById,
@@ -156,4 +174,5 @@ export {
   unassignUserFromActivity,
   updateActivityAssignment,
   assignManyUsersToActivity,
+  getActivityAssignment,
 };

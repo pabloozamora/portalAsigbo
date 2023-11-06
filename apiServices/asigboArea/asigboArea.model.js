@@ -103,14 +103,15 @@ const createAsigboArea = async ({
  * Permite eliminar un área de asigbo. Fallará cuando esta cuente alguna actividad existente.
  * @param idArea id del area
  * @param session objeto session de la transacción de bd
- * @returns Area. Si se completa exitosamente, devuelve la data del eje eliminado.
+ * @returns Area. Si se completa exitosamente, devuelve la data (area dto) del eje eliminado.
  */
 const deleteAsigboArea = async ({ idArea, session }) => {
   try {
-    const { deletedCount, acknowledged } = await AsigboAreaSchema.deleteOne({ _id: idArea }, { session });
+    const area = await AsigboAreaSchema.findOneAndDelete({ _id: idArea }, { session });
 
-    if (!acknowledged) throw new CustomError('No se completó la eliminación del eje.', 500);
-    if (deletedCount !== 1) throw new CustomError('No se encontró el eje a eliminar.', 404);
+    if (!area) throw new CustomError('No se encontró el eje a eliminar.', 404);
+
+    return single(area);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') {
       throw new CustomError('No se encontró la información del eje proporcionado.', 404);

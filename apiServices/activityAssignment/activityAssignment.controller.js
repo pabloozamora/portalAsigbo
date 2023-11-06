@@ -3,11 +3,18 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
-import { addActivityAvailableSpaces, getActivity, validateResponsible as validateActivityResponsible } from '../activity/activity.model.js';
+import {
+  addActivityParticipants,
+  getActivity,
+  validateResponsible as validateActivityResponsible,
+} from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import {
-  getUser, getUsersInList, updateActivitiesCompletedNumber, updateServiceHours,
+  getUser,
+  getUsersInList,
+  updateActivitiesCompletedNumber,
+  updateServiceHours,
 } from '../user/user.model.js';
 import {
   assignManyUsersToActivity,
@@ -30,7 +37,10 @@ const validateActivityResponsibleAccess = async ({
     if (hasAccess) return;
   }
 
-  throw new CustomError('El usuario no figura como encargado de esta actividad ni del área al que pertenece.', 403);
+  throw new CustomError(
+    'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
+    403,
+  );
 };
 
 const getActivitiesAssigmentsController = async (req, res) => {
@@ -46,13 +56,20 @@ const getActivitiesAssigmentsController = async (req, res) => {
     if (exists(page)) {
       // Obtener número total de resultados si se selecciona página
       const completeResult = await getActivityAssignments({
-        idUser: idUserFilter, search, lowerDate, upperDate,
+        idUser: idUserFilter,
+        search,
+        lowerDate,
+        upperDate,
       });
       pagesNumber = completeResult.length;
     }
 
     const result = await getActivityAssignments({
-      idUser: idUserFilter, search, lowerDate, upperDate, page,
+      idUser: idUserFilter,
+      search,
+      lowerDate,
+      upperDate,
+      page,
     });
 
     res.send({
@@ -139,11 +156,19 @@ const assignUserToActivityController = async (req, res) => {
 
     // Validar acceso
     await validateActivityResponsibleAccess({
-      role, idUser: sessionIdUser, idActivity, idArea: activity.asigboArea.id,
+      role,
+      idUser: sessionIdUser,
+      idActivity,
+      idArea: activity.asigboArea.id,
     });
 
-    // Validar que la actividad esté habilitada
-    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    // Validar que la actividad y eje estén habilitados
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+    if (activity.blocked) {
+      throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    }
 
     const user = await getUser({ idUser, showSensitiveData: true });
 
@@ -155,13 +180,12 @@ const assignUserToActivityController = async (req, res) => {
       activity.participatingPromotions !== null
       && !activity.participatingPromotions.includes(user.promotion)
       && !activity.participatingPromotions.includes(userPromotionGroup)
-
     ) {
       throw new CustomError('La actividad no está disponible para la promoción del usuario.');
     }
 
     // verificar que hayan espacios disponibles
-    if (!(activity.availableSpaces > 0)) {
+    if (activity.participantsNumber >= activity.maxParticipants) {
       throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
     }
 
@@ -172,8 +196,8 @@ const assignUserToActivityController = async (req, res) => {
       session,
     });
 
-    // restar 1 en espacios disponibles de actividad
-    await addActivityAvailableSpaces({ idActivity, value: -1, session });
+    // Añadir un participante
+    await addActivityParticipants({ idActivity, value: 1, session });
 
     const {
       serviceHours,
@@ -221,8 +245,13 @@ const assignManyUsersToActivityController = async (req, res) => {
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
-    // Validar que la actividad esté habilitada
-    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    // Validar que la actividad y eje estén habilitados
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+    if (activity.blocked) {
+      throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    }
 
     const users = await getUsersInList({ idUsersList, showSensitiveData: true });
 
@@ -239,15 +268,21 @@ const assignManyUsersToActivityController = async (req, res) => {
         // validar que la promoción esté incluida
         if (
           activity.participatingPromotions !== null
-        && !activity.participatingPromotions.includes(user.promotion)
-        && !activity.participatingPromotions.includes(userPromotionGroup)
+          && !activity.participatingPromotions.includes(user.promotion)
+          && !activity.participatingPromotions.includes(userPromotionGroup)
         ) {
-          throw new CustomError(`La actividad no está disponible para la promoción del usuario ${user.name} ${user.lastname}.`);
+          throw new CustomError(
+            `La actividad no está disponible para la promoción del usuario ${user.name} ${user.lastname}.`,
+          );
         }
 
+        const availableSpaces = activity.maxParticipants - activity.participantsNumber;
         // verificar que hayan espacios disponibles
-        if (!(activity.availableSpaces >= users.length)) {
-          throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
+        if (availableSpaces < users.length) {
+          throw new CustomError(
+            'La actividad no cuenta con suficientes espacios disponibles.',
+            403,
+          );
         }
 
         assignmentsList.push({ user, activity, completed });
@@ -256,8 +291,8 @@ const assignManyUsersToActivityController = async (req, res) => {
 
     await assignManyUsersToActivity({ assignmentsList, session });
 
-    // restar espacios disponibles de actividad
-    await addActivityAvailableSpaces({ idActivity, value: users.length, session });
+    // Añadir x cantidad de participantes
+    await addActivityParticipants({ idActivity, value: users.length, session });
 
     await session.commitTransaction();
 
@@ -288,11 +323,19 @@ const unassignUserFromActivityController = async (req, res) => {
 
     // Validar acceso
     await validateActivityResponsibleAccess({
-      role, idUser: sessionIdUser, idActivity, idArea: activity.asigboArea.id,
+      role,
+      idUser: sessionIdUser,
+      idActivity,
+      idArea: activity.asigboArea.id,
     });
 
-    // Validar que la actividad esté habilitada
-    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    // Validar que la actividad y eje estén habilitados
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+    if (activity.blocked) {
+      throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    }
 
     const result = await unassignUserFromActivity({ idActivity, idUser, session });
     const {
@@ -303,8 +346,8 @@ const unassignUserFromActivityController = async (req, res) => {
       completed,
     } = result;
 
-    // habilitar espacios en al actividad
-    await addActivityAvailableSpaces({ idActivity, value: 1, session });
+    // Remover participantes en la actividad
+    await addActivityParticipants({ idActivity, value: -1, session });
 
     // si es una actividad completada, modificar total de horas de servicio
     if (completed === true && serviceHours > 0) {
@@ -352,11 +395,19 @@ const updateActivityAssignmentController = async (req, res) => {
 
     // Validar acceso
     await validateActivityResponsibleAccess({
-      role, idUser: sessionIdUser, idActivity, idArea: activity.asigboArea.id,
+      role,
+      idUser: sessionIdUser,
+      idActivity,
+      idArea: activity.asigboArea.id,
     });
 
-    // Validar que la actividad esté habilitada
-    if (activity.blocked) throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    // Validar que la actividad y eje estén habilitados
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+    if (activity.blocked) {
+      throw new CustomError('La actividad se encuentra deshabilitada.', 409);
+    }
 
     const result = await updateActivityAssignment({
       idUser,
@@ -376,12 +427,15 @@ const updateActivityAssignmentController = async (req, res) => {
       aditionalServiceHours: prevAditionalServiceHours,
     } = result;
 
-    const parsedAditionalServiceHours = exists(aditionalServiceHours) ? parseInt(aditionalServiceHours, 10) : null;
+    const parsedAditionalServiceHours = exists(aditionalServiceHours)
+      ? parseInt(aditionalServiceHours, 10)
+      : null;
 
     if (exists(aditionalServiceHours) && !exists(completed) && prevCompletedResultValue) {
       // Realizar unicamente ajuste de horas adicionales para actividad completada
       const hoursToAdd = parsedAditionalServiceHours - (prevAditionalServiceHours ?? 0);
-      if (hoursToAdd !== 0) { // Valores negativos restan al total
+      if (hoursToAdd !== 0) {
+        // Valores negativos restan al total
         await updateServiceHours({
           userId: idUser,
           asigboAreaId,

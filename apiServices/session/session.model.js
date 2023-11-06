@@ -70,7 +70,7 @@ const deleteAccessTokens = async ({ idUser, session }) => SessionSchema.deleteMa
  * @param {sessionObject} session Objeto de sesión de la transacción en la bd.
  */
 const forceSessionTokenToUpdate = async ({ idUser, session }) => {
-  await SessionSchema.updateOne({ idUser, tokenType: consts.token.refresh }, { needUpdate: true }, { session });
+  await SessionSchema.updateMany({ idUser, tokenType: consts.token.refresh }, { needUpdate: true }, { session });
   await deleteAccessTokens({ idUser, session }); // Eliminar tokens viejos
 };
 

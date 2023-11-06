@@ -1,21 +1,29 @@
+/* eslint-disable no-await-in-loop */
 import fs from 'node:fs';
+import helper from 'csvtojson';
+import path from 'node:path';
 import { connection } from '../../db/connection.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import {
+  assignManyUsersToActivity,
+  getActivityAssignment,
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
 } from '../activityAssignment/activityAssignment.model.js';
 import {
+  getAreas,
   getAreasWhereUserIsResponsible,
   validateResponsible as validateAreaResponsible,
 } from '../asigboArea/asigboArea.model.js';
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import {
   addRoleToUser,
+  getUsersList,
   removeRoleFromUser,
+  updateActivitiesCompletedNumber,
   updateServiceHours,
 } from '../user/user.model.js';
 import { multiple, single } from './activity.dto.js';
@@ -29,8 +37,10 @@ import {
   updateActivity,
   updateActivityBlockedStatus,
   updateActivityInAllAssignments,
+  uploadActivities,
 } from './activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+import Promotion from '../promotion/promotion.model.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -123,6 +133,11 @@ const createActivityController = async (req, res) => {
       session,
     });
 
+    // Verificar si el área está bloqueada
+    if (activityResult.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
+    }
+
     // añadir roles de responsables de actividad
     await addActivityResponsibleRole({ responsible, session });
 
@@ -162,6 +177,7 @@ const updateActivityController = async (req, res) => {
     participatingPromotions,
     participantsNumber,
     removeBanner,
+    description,
   } = req.body;
 
   const session = await connection.startSession();
@@ -190,13 +206,19 @@ const updateActivityController = async (req, res) => {
       registrationStartDate,
       registrationEndDate,
       participatingPromotions,
-      participantsNumber,
+      maxParticipantsNumber: participantsNumber,
       hasBanner,
+      description,
     });
 
     // Verificar que el usuario es admin o encargado del área de la actividad
     if (!role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser, idArea: dataBeforeChange.asigboArea.id });
+    }
+
+    // Verificar si el eje está bloqueado
+    if (updatedData.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     // actualizar actividad en asignaciones
@@ -276,6 +298,7 @@ const updateActivityController = async (req, res) => {
     res.send(single(updatedData));
   } catch (ex) {
     await session.abortTransaction();
+
     let err = 'Ocurrio un error al actualizar actividad.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -296,13 +319,21 @@ const deleteActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    const { responsible, asigboArea: { id: idArea } } = await getActivity({
+    const {
+      responsible,
+      asigboArea: { id: idArea, blocked },
+    } = await getActivity({
       idActivity,
       showSensitiveData: true,
     });
 
     if (!role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser, idArea });
+    }
+
+    // Verificar que el eje no se encuentre bloqueado
+    if (blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     // Verificar que la actividad no tenga asignaciones
@@ -373,12 +404,19 @@ const getActivitiesController = async (req, res) => {
     if (exists(page)) {
       // Obtener número total de resultados si se selecciona página
       completeResult = await getActivities({
-        idAsigboArea: asigboArea, search, lowerDate, upperDate,
+        idAsigboArea: asigboArea,
+        search,
+        lowerDate,
+        upperDate,
       });
     }
 
     const result = await getActivities({
-      idAsigboArea: asigboArea, search, lowerDate, upperDate, page,
+      idAsigboArea: asigboArea,
+      search,
+      lowerDate,
+      upperDate,
+      page,
     });
 
     // Si es admin, retornar lista completa
@@ -427,7 +465,9 @@ const getActivitiesController = async (req, res) => {
     if (filteredResult.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
     res.send({
-      pages: Math.ceil((filteredCompleteResult?.length ?? filteredResult.length) / consts.resultsNumberPerPage),
+      pages: Math.ceil(
+        (filteredCompleteResult?.length ?? filteredResult.length) / consts.resultsNumberPerPage,
+      ),
       resultsPerPage: consts.resultsNumberPerPage,
       result: filteredResult,
     });
@@ -469,6 +509,15 @@ const getActivityController = async (req, res) => {
       // error no critico (404)
     }
 
+    // Añadir grupo de promoción de responsables
+    const promotionObj = new Promotion();
+    result.responsible = await Promise.all(
+      result.responsible.map(async (user) => ({
+        ...user,
+        promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
+      })),
+    );
+
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener información de la actividad.';
@@ -494,6 +543,11 @@ const disableActivityController = async (req, res) => {
     // Si no es admin, verificar si es encargado de área
     if (!req.session.role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
+    }
+
+    // Verificar que el eje no se encuentre bloqueado
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     const updatedActivity = await updateActivityBlockedStatus({
@@ -532,6 +586,11 @@ const enableActivityController = async (req, res) => {
     // Si no es admin, verificar si es encargado de área
     if (!req.session.role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser: req.session.id, idArea: activity.asigboArea });
+    }
+
+    // Verificar que el eje no se encuentre bloqueado
+    if (activity.asigboArea.blocked) {
+      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
     }
 
     const updatedActivity = await updateActivityBlockedStatus({
@@ -577,13 +636,20 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
     if (exists(page)) {
       // Obtener número total de resultados si se selecciona página
       const completeResult = await getActivitiesWhereUserIsResponsible({
-        idUser, search, lowerDate, upperDate,
+        idUser,
+        search,
+        lowerDate,
+        upperDate,
       });
       pagesNumber = completeResult.length;
     }
 
     const result = await getActivitiesWhereUserIsResponsible({
-      idUser, search, lowerDate, upperDate, page,
+      idUser,
+      search,
+      lowerDate,
+      upperDate,
+      page,
     });
 
     res.send({
@@ -593,6 +659,175 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
     });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las actividades en las que el usuario es encargado.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const uploadActivitiesDataController = async (req, res) => {
+  const { path: filePath } = req.body;
+  const session = await connection.startSession();
+
+  try {
+    session.startTransaction();
+
+    const fileExtension = path.extname(filePath);
+    if (fileExtension !== '.csv') { throw new CustomError('El archivo de importación debe estar en formato .csv'); }
+
+    const problems = [];
+    const assignments = [];
+    const activities = [];
+    const usersToUpdate = [];
+    const { result: admins } = await getUsersList({ role: consts.roles.admin });
+    const { result: users } = await getUsersList({
+      promotion: null,
+      university: null,
+      search: null,
+      role: null,
+      promotionMin: null,
+      promotionMax: null,
+      priority: null,
+    });
+    const areas = await getAreas();
+
+    const rows = await helper().fromFile(filePath, { encoding: 'binary' });
+    const headers = Object.keys(rows[0]);
+    if (!consts.activityFileHeaders.every((header) => headers.includes(header))) {
+      throw new CustomError(
+        `Las cabeceras del archivo deben ser '${consts.activityFileHeaders.join(', ')}'`,
+      );
+    }
+
+    const currentActivities = await getActivities(session);
+
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      const {
+        Actividad: activityName,
+        Area: area,
+        Fecha: activityDate,
+        Participante: attendantCode,
+        Horas,
+      } = row;
+      const serviceHours = Horas.trim() !== '' ? parseInt(Horas.trim(), 10) : undefined;
+      // eslint-disable-next-line no-continue
+      if (!serviceHours) continue;
+      const existsActivity = currentActivities && currentActivities.length > 0
+        ? currentActivities.find(
+          (current) => current.name === activityName && current.asigboArea._id.toString() === area,
+        )
+        : undefined;
+
+      const existsArea = areas && areas.length > 0 ? areas.find((a) => a._id === area) : undefined;
+      const existsUser = users && users.length > 0
+        ? users.find((u) => u.code.toString() === attendantCode)
+        : undefined;
+      if (!existsArea || !existsUser) {
+        const reason = !existsArea ? 'El área indicada no existe' : 'El usuario indicado no existe';
+        problems.push({ row, index: i + 1, reason });
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      if (existsActivity) {
+        const existsAssignment = await getActivityAssignment({
+          idUser: existsUser._id,
+          idActivity: existsActivity._id,
+          session,
+        });
+
+        if (existsAssignment && existsAssignment.length > 0) {
+          problems.push({
+            row,
+            index: i + 1,
+            reason: `El usuario con el código ${attendantCode} ya está asignado a la actividad '${activityName}'`,
+          });
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+      }
+
+      const foundAssignment = assignments.find(
+        (a) => a.activity.name === activityName && a.activity.asigboArea._id === area,
+      );
+
+      const activity = existsActivity || (foundAssignment ? foundAssignment.activity : undefined);
+
+      const attendant = {
+        user: existsUser,
+        completed: true,
+        aditionalServiceHours: serviceHours,
+        session,
+      };
+
+      const formatedDate = new Date(activityDate.trim());
+
+      if (activity) {
+        assignments.push({ ...attendant, activity });
+        activity.participantsNumber += 1;
+        activity.maxParticipants += 1;
+      } else {
+        const newActivity = {
+          name: activityName.trim(),
+          date: formatedDate,
+          serviceHours: 0,
+          responsible: admins.map((admin) => ({ ...admin, hasImage: false })),
+          asigboArea: existsArea,
+          payment: null,
+          registrationStartDate: formatedDate,
+          registrationEndDate: formatedDate,
+          participatingPromotions: null,
+          participantsNumber: 1,
+          maxParticipants: 1,
+          description: 'Sin descripción',
+          hasBanner: false,
+        };
+        assignments.push({ ...attendant, activity: newActivity });
+        activities.push(newActivity);
+      }
+      usersToUpdate.push({
+        userId: existsUser._id,
+        asigboAreaId: area,
+        hoursToAdd: serviceHours,
+      });
+    }
+    const savedActivities = activities.length > 0 ? await uploadActivities({ activities, session }) : undefined;
+    assignments.forEach((assignment) => {
+      if (assignment.activity._id) return;
+
+      const savedActivity = savedActivities.find(
+        (act) => act.name === assignment.activity.name
+          && act.asigboArea._id.toString() === assignment.activity.asigboArea._id,
+      );
+      // eslint-disable-next-line no-param-reassign
+      assignment.activity = savedActivity;
+    });
+    if (assignments.length > 0) {
+      await assignManyUsersToActivity({ assignmentsList: assignments.flat(), session });
+    }
+
+    for (const user of usersToUpdate) {
+      const { userId, asigboAreaId, hoursToAdd } = user;
+      await updateServiceHours({
+        userId,
+        asigboAreaId,
+        hoursToAdd,
+        session,
+      });
+      await updateActivitiesCompletedNumber({ idUser: userId, add: 1, session });
+    }
+
+    await session.commitTransaction();
+    // await session.abortTransaction();
+    res.send({ success: true, problems });
+  } catch (ex) {
+    await session.abortTransaction();
+    let err = 'Ocurrio un error al insertar la información.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -613,4 +848,5 @@ export {
   disableActivityController,
   enableActivityController,
   getActivitiesWhereUserIsResponsibleController,
+  uploadActivitiesDataController,
 };
