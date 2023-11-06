@@ -191,6 +191,7 @@ const getActivities = async ({
   lowerDate = null,
   upperDate = null,
   page = null,
+  throwNotFoundError = true,
   session,
 }) => {
   const query = {};
@@ -214,7 +215,10 @@ const getActivities = async ({
   try {
     const result = await ActivitySchema.find(query, null, options).session(session);
 
-    if (result.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+    if (result.length === 0) {
+      if (!throwNotFoundError) return null;
+      throw new CustomError('No se encontraron resultados.', 404);
+    }
 
     return multiple(result);
   } catch (ex) {

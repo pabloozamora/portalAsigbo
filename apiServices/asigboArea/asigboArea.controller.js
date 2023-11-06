@@ -200,9 +200,9 @@ const deleteAsigboAreaController = async (req, res) => {
   try {
     session.startTransaction();
 
-    const activities = await getActivities({ idAsigboArea: idArea });
+    const activities = await getActivities({ idAsigboArea: idArea, throwNotFoundError: false });
 
-    if (activities.length > 0) { throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400); }
+    if (activities?.length > 0) { throw new CustomError('No se puede eliminar el eje, pues este contiene actividades.', 400); }
 
     const area = await deleteAsigboArea({ idArea, session });
 
