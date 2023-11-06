@@ -40,6 +40,7 @@ import {
   uploadActivities,
 } from './activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+import Promotion from '../promotion/promotion.model.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -79,7 +80,7 @@ const saveBannerPicture = async ({ file, idActivity }) => {
   }
 
   // eliminar archivos temporales
-  fs.unlink(filePath, () => { });
+  fs.unlink(filePath, () => {});
 };
 
 const createActivityController = async (req, res) => {
@@ -318,7 +319,10 @@ const deleteActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    const { responsible, asigboArea: { id: idArea, blocked } } = await getActivity({
+    const {
+      responsible,
+      asigboArea: { id: idArea, blocked },
+    } = await getActivity({
       idActivity,
       showSensitiveData: true,
     });
@@ -400,12 +404,19 @@ const getActivitiesController = async (req, res) => {
     if (exists(page)) {
       // Obtener número total de resultados si se selecciona página
       completeResult = await getActivities({
-        idAsigboArea: asigboArea, search, lowerDate, upperDate,
+        idAsigboArea: asigboArea,
+        search,
+        lowerDate,
+        upperDate,
       });
     }
 
     const result = await getActivities({
-      idAsigboArea: asigboArea, search, lowerDate, upperDate, page,
+      idAsigboArea: asigboArea,
+      search,
+      lowerDate,
+      upperDate,
+      page,
     });
 
     // Si es admin, retornar lista completa
@@ -454,7 +465,9 @@ const getActivitiesController = async (req, res) => {
     if (filteredResult.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
     res.send({
-      pages: Math.ceil((filteredCompleteResult?.length ?? filteredResult.length) / consts.resultsNumberPerPage),
+      pages: Math.ceil(
+        (filteredCompleteResult?.length ?? filteredResult.length) / consts.resultsNumberPerPage,
+      ),
       resultsPerPage: consts.resultsNumberPerPage,
       result: filteredResult,
     });
@@ -495,6 +508,15 @@ const getActivityController = async (req, res) => {
     } catch (err) {
       // error no critico (404)
     }
+
+    // Añadir grupo de promoción de responsables
+    const promotionObj = new Promotion();
+    result.responsible = await Promise.all(
+      result.responsible.map(async (user) => ({
+        ...user,
+        promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
+      })),
+    );
 
     res.send(result);
   } catch (ex) {
@@ -614,13 +636,20 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
     if (exists(page)) {
       // Obtener número total de resultados si se selecciona página
       const completeResult = await getActivitiesWhereUserIsResponsible({
-        idUser, search, lowerDate, upperDate,
+        idUser,
+        search,
+        lowerDate,
+        upperDate,
       });
       pagesNumber = completeResult.length;
     }
 
     const result = await getActivitiesWhereUserIsResponsible({
-      idUser, search, lowerDate, upperDate, page,
+      idUser,
+      search,
+      lowerDate,
+      upperDate,
+      page,
     });
 
     res.send({
@@ -648,7 +677,7 @@ const uploadActivitiesDataController = async (req, res) => {
     session.startTransaction();
 
     const fileExtension = path.extname(filePath);
-    if (fileExtension !== '.csv') throw new CustomError('El archivo de importación debe estar en formato .csv');
+    if (fileExtension !== '.csv') { throw new CustomError('El archivo de importación debe estar en formato .csv'); }
 
     const problems = [];
     const assignments = [];
@@ -656,14 +685,22 @@ const uploadActivitiesDataController = async (req, res) => {
     const usersToUpdate = [];
     const { result: admins } = await getUsersList({ role: consts.roles.admin });
     const { result: users } = await getUsersList({
-      promotion: null, university: null, search: null, role: null, promotionMin: null, promotionMax: null, priority: null,
+      promotion: null,
+      university: null,
+      search: null,
+      role: null,
+      promotionMin: null,
+      promotionMax: null,
+      priority: null,
     });
     const areas = await getAreas();
 
     const rows = await helper().fromFile(filePath, { encoding: 'binary' });
     const headers = Object.keys(rows[0]);
     if (!consts.activityFileHeaders.every((header) => headers.includes(header))) {
-      throw new CustomError(`Las cabeceras del archivo deben ser '${consts.activityFileHeaders.join(', ')}'`);
+      throw new CustomError(
+        `Las cabeceras del archivo deben ser '${consts.activityFileHeaders.join(', ')}'`,
+      );
     }
 
     const currentActivities = await getActivities(session);
@@ -671,19 +708,25 @@ const uploadActivitiesDataController = async (req, res) => {
     for (let i = 0; i < rows.length; i += 1) {
       const row = rows[i];
       const {
-        Actividad: activityName, Area: area, Fecha: activityDate, Participante: attendantCode, Horas,
+        Actividad: activityName,
+        Area: area,
+        Fecha: activityDate,
+        Participante: attendantCode,
+        Horas,
       } = row;
       const serviceHours = Horas.trim() !== '' ? parseInt(Horas.trim(), 10) : undefined;
       // eslint-disable-next-line no-continue
       if (!serviceHours) continue;
       const existsActivity = currentActivities && currentActivities.length > 0
-        ? currentActivities.find((current) => current.name === activityName && current.asigboArea._id.toString() === area)
+        ? currentActivities.find(
+          (current) => current.name === activityName && current.asigboArea._id.toString() === area,
+        )
         : undefined;
 
-      const existsArea = areas && areas.length > 0
-        ? areas.find((a) => a._id === area) : undefined;
+      const existsArea = areas && areas.length > 0 ? areas.find((a) => a._id === area) : undefined;
       const existsUser = users && users.length > 0
-        ? users.find((u) => u.code.toString() === attendantCode) : undefined;
+        ? users.find((u) => u.code.toString() === attendantCode)
+        : undefined;
       if (!existsArea || !existsUser) {
         const reason = !existsArea ? 'El área indicada no existe' : 'El usuario indicado no existe';
         problems.push({ row, index: i + 1, reason });
@@ -692,18 +735,26 @@ const uploadActivitiesDataController = async (req, res) => {
       }
 
       if (existsActivity) {
-        const existsAssignment = await getActivityAssignment({ idUser: existsUser._id, idActivity: existsActivity._id, session });
+        const existsAssignment = await getActivityAssignment({
+          idUser: existsUser._id,
+          idActivity: existsActivity._id,
+          session,
+        });
 
         if (existsAssignment && existsAssignment.length > 0) {
-          problems.push({ row, index: i + 1, reason: `El usuario con el código ${attendantCode} ya está asignado a la actividad '${activityName}'` });
+          problems.push({
+            row,
+            index: i + 1,
+            reason: `El usuario con el código ${attendantCode} ya está asignado a la actividad '${activityName}'`,
+          });
           // eslint-disable-next-line no-continue
           continue;
         }
       }
 
-      const foundAssignment = assignments.find((a) => (
-        a.activity.name === activityName && a.activity.asigboArea._id === area
-      ));
+      const foundAssignment = assignments.find(
+        (a) => a.activity.name === activityName && a.activity.asigboArea._id === area,
+      );
 
       const activity = existsActivity || (foundAssignment ? foundAssignment.activity : undefined);
 
@@ -745,15 +796,14 @@ const uploadActivitiesDataController = async (req, res) => {
         hoursToAdd: serviceHours,
       });
     }
-    const savedActivities = activities.length > 0
-      ? await uploadActivities({ activities, session })
-      : undefined;
+    const savedActivities = activities.length > 0 ? await uploadActivities({ activities, session }) : undefined;
     assignments.forEach((assignment) => {
       if (assignment.activity._id) return;
 
-      const savedActivity = savedActivities.find((act) => (
-        act.name === assignment.activity.name && act.asigboArea._id.toString() === assignment.activity.asigboArea._id
-      ));
+      const savedActivity = savedActivities.find(
+        (act) => act.name === assignment.activity.name
+          && act.asigboArea._id.toString() === assignment.activity.asigboArea._id,
+      );
       // eslint-disable-next-line no-param-reassign
       assignment.activity = savedActivity;
     });
