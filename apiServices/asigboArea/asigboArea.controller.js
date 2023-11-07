@@ -19,6 +19,7 @@ import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.j
 import { addRoleToUser, removeRoleFromUser } from '../user/user.model.js';
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import { getActivities } from '../activity/activity.model.js';
+import errorSender from '../../utils/errorSender.js';
 
 /* const validateResponsibleController = async ({ idUser, idArea }) => {
   const result = await validateResponsible({ idUser, idArea });
@@ -97,15 +98,9 @@ const updateAsigboAreaController = async (req, res) => {
 
     res.send(dataAfterChange);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al actualizar el area.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al actualizar el area.', session,
+    });
   } finally {
     // Eliminar archivo provisional
     if (filePath) fs.unlink(filePath, () => { });
@@ -145,15 +140,9 @@ const createAsigboAreaController = async (req, res) => {
 
     res.send(area);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al crear nueva area.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al crear nueva area.', session,
+    });
   } finally {
     // Eliminar archivo provisional
     if (file) fs.unlink(filePath, () => { });
@@ -182,14 +171,9 @@ const getAsigboAreaController = async (req, res) => {
 
     res.send(areaData);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener area de asigbo.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener area de asigbo.',
+    });
   }
 };
 
@@ -223,16 +207,9 @@ const deleteAsigboAreaController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al eliminar el area.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al eliminar el area.', session,
+    });
   }
 };
 
@@ -244,14 +221,9 @@ const getAreasController = async (req, res) => {
 
     res.send(areas);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener areas activas.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener areas activas.',
+    });
   }
 };
 
@@ -268,15 +240,9 @@ const disableAsigboAreaController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al deshabilitar el eje de asigbo.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al deshabilitar el eje de asigbo.', session,
+    });
   }
 };
 
@@ -293,15 +259,9 @@ const enableAsigboAreaController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al habilitar el eje de asigbo.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al habilitar el eje de asigbo.', session,
+    });
   }
 };
 

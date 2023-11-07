@@ -1,4 +1,4 @@
-import CustomError from '../../utils/customError.js';
+import errorSender from '../../utils/errorSender.js';
 import Promotion, {
   saveCurrentStudentPromotions,
   /* validateResponsible */
@@ -17,14 +17,9 @@ const saveCurrentStudentPromotionsController = async (req, res) => {
     const result = await saveCurrentStudentPromotions({ firstYearPromotion, lastYearPromotion });
     res.send(result);
   } catch (ex) {
-    let err = 'Ocurrio un error al guardar las promociones de estudiantes actuales.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al guardar las promociones de estudiantes actuales.',
+    });
   }
 };
 
@@ -34,14 +29,9 @@ const getPromotionsGroupsController = async (req, res) => {
     const result = await promotion.getPromotionsGroups();
     res.send(result);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener los grupos de promociones.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener los grupos de promociones.',
+    });
   }
 };
 

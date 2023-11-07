@@ -12,6 +12,7 @@ import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
 import { connection } from '../../db/connection.js';
 import { getUser } from '../user/user.model.js';
 import consts from '../../utils/consts.js';
+import errorSender from '../../utils/errorSender.js';
 
 const allowInsecureConnections = config.get('allowInsecureConnections');
 
@@ -185,16 +186,9 @@ const refreshAccessTokenController = async (req, res) => {
 
     res.send({ accessToken });
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al refrescar access token.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al refrescar access token.', session,
+    });
   }
 };
 
@@ -211,14 +205,9 @@ const logoutController = async (req, res) => {
 
     res.sendStatus(200);
   } catch (ex) {
-    let err = 'Ocurrio un error al cerrar sesión.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al cerrar sesión.',
+    });
   }
 };
 
