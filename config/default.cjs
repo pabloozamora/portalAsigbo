@@ -18,6 +18,6 @@ module.exports = {
   awsSesSecret: process.env.AWS_SES_SECRET,
   smtpHost: process.env.SMTP_HOST,
   smtpPort: process.env.SMTP_PORT,
-
   sendErrorObj: true,
+  emailSendingRate: 14,
 };

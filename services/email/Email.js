@@ -8,6 +8,7 @@ const accessKeyId = config.get('awsSesAccess');
 const secretAccessKey = config.get('awsSesSecret');
 const host = config.get('smtpHost');
 const port = config.get('smtpPort');
+const sendingRate = config.get('emailSendingRate');
 
 export default class Email {
   constructor() {
@@ -23,6 +24,7 @@ export default class Email {
       SES: { ses, aws },
       host,
       port,
+      sendingRate,
     });
 
     moment.locale('es');

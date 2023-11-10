@@ -627,8 +627,6 @@ const uploadUsersController = async (req, res) => {
 
     const emailSender = new NewUserEmail();
 
-    const email = [];
-
     await Promise.all(
       savedUsers.map(async (user) => {
         const token = signRegisterToken({
@@ -641,16 +639,13 @@ const uploadUsersController = async (req, res) => {
         await saveAlterToken({ idUser: user.id, token, session });
 
         // enviar email de notificación
-        const emailRes = emailSender.sendEmail({
+        emailSender.sendEmail({
           addresseeEmail: user.email,
           name: user.name,
           registerToken: token,
         });
-        email.push(emailRes);
       }),
     );
-
-    await Promise.all(email);
 
     await session.commitTransaction();
     session.endSession();
