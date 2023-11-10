@@ -35,6 +35,7 @@ import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.j
 import parseBoolean from '../../utils/parseBoolean.js';
 import RecoverPasswordEmail from '../../services/email/RecoverPasswordEmail.js';
 import exists from '../../utils/exists.js';
+import errorSender from '../../utils/errorSender.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -58,14 +59,9 @@ const getLoggedUserController = async (req, res) => {
     const user = await getUser({ idUser: req.session.id, showSensitiveData: true });
     res.send(user);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener la información del usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener la información del usuario.',
+    });
   }
 };
 
@@ -82,14 +78,9 @@ const getUserController = async (req, res) => {
 
     res.send(single(user, { showSensitiveData }));
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener la información del usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener la información del usuario.',
+    });
   }
 };
 
@@ -116,6 +107,7 @@ const renewRegisterToken = async (req, res) => {
       name: user.name,
       lastname: user.lastname,
       email: user.email,
+      sex: user.sex,
     });
 
     await saveAlterToken({ idUser, token, session });
@@ -132,16 +124,9 @@ const renewRegisterToken = async (req, res) => {
 
     res.send('Token enviado con éxito.');
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al generar el token de registro.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al generar el token de registro.', session,
+    });
   }
 };
 
@@ -174,6 +159,7 @@ const createUserController = async (req, res) => {
       name: user.name,
       lastname: user.lastname,
       email: user.email,
+      sex: user.sex,
     });
     await saveAlterToken({ idUser: user.id, token, session });
 
@@ -186,15 +172,9 @@ const createUserController = async (req, res) => {
 
     res.send(single(user));
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al crear nuevo usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al crear nuevo usuario.', session,
+    });
   }
 };
 
@@ -263,16 +243,9 @@ const updateUserController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al actualizar usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al actualizar usuario.', session,
+    });
   }
 };
 
@@ -334,14 +307,9 @@ const getUsersListController = async (req, res) => {
       resultsPerPage: consts.resultsNumberPerPage,
     });
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener los usuarios activos.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener los usuarios activos.',
+    });
   }
 };
 
@@ -355,14 +323,9 @@ const getAdminUsersController = async (req, res) => {
     });
     res.send(multiple(result));
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener los usuarios administradores.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener los usuarios administradores.',
+    });
   }
 };
 
@@ -374,14 +337,9 @@ const validateRegisterTokenController = async (req, res) => {
     await validateAlterUserToken({ idUser, token });
     res.sendStatus(204);
   } catch (ex) {
-    let err = 'Ocurrio un error al validar token de registro.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al validar token de registro.',
+    });
   }
 };
 
@@ -393,14 +351,9 @@ const validateRecoverTokenController = async (req, res) => {
     await validateAlterUserToken({ idUser, token });
     res.sendStatus(204);
   } catch (ex) {
-    let err = 'Ocurrio un error al validar token para recuperación de contraseña.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al validar token para recuperación de contraseña.',
+    });
   }
 };
 
@@ -429,15 +382,9 @@ const finishRegistrationController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al crear nuevo usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al finalizar registro de nuevo usuario.', session,
+    });
   }
 };
 
@@ -456,15 +403,9 @@ const assignAdminRoleController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al asignar privilegios de administrador al usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al asignar privilegios de administrador al usuario.', session,
+    });
   }
 };
 
@@ -498,15 +439,9 @@ const removeAdminRoleController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al remover privilegios de administrador al usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al remover privilegios de administrador al usuario.', session,
+    });
   }
 };
 
@@ -525,15 +460,9 @@ const assignPromotionResponsibleRoleController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al asignar privilegios de encargado de promoción al usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al asignar privilegios de encargado de promoción al usuario.', session,
+    });
   }
 };
 
@@ -553,15 +482,9 @@ const removePromotionResponsibleRoleController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al remover privilegios de encargado de promoción al usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al remover privilegios de encargado de promoción al usuario.', session,
+    });
   }
 };
 
@@ -575,14 +498,9 @@ const getPromotionResponsibleUsersController = async (req, res) => {
     });
     res.send(multiple(result));
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener los usuarios encargados de promoción.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener los usuarios encargados de promoción.',
+    });
   }
 };
 
@@ -605,15 +523,9 @@ const disableUserController = async (req, res) => {
     session.commitTransaction();
     res.sendStatus(204);
   } catch (ex) {
-    session.abortTransaction();
-    let err = 'Ocurrio un error deshabilitar usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error deshabilitar usuario.', session,
+    });
   }
 };
 
@@ -625,14 +537,9 @@ const enableUserController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    let err = 'Ocurrio un error deshabilitar usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error deshabilitar usuario.',
+    });
   }
 };
 
@@ -705,15 +612,9 @@ const deleteUserController = async (req, res) => {
     session.commitTransaction();
     res.sendStatus(204);
   } catch (ex) {
-    session.abortTransaction();
-    let err = 'Ocurrio un error al eliminar usuario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al eliminar usuario.', session,
+    });
   }
 };
 
@@ -735,6 +636,7 @@ const uploadUsersController = async (req, res) => {
           name: user.name,
           lastname: user.lastname,
           email: user.email,
+          sex: user.sex,
         });
         await saveAlterToken({ idUser: user.id, token, session });
 
@@ -750,23 +652,13 @@ const uploadUsersController = async (req, res) => {
 
     await Promise.all(email);
 
-    throw new CustomError('El envio fue exitoso');
-
     await session.commitTransaction();
     session.endSession();
     res.send(savedUsers);
   } catch (ex) {
-    await session.abortTransaction();
-    session.endSession();
-    // console.log(ex);
-    let err = 'Ocurrio un error al insertar la información.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al insertar la información de usuarios en lista.', session,
+    });
   }
 };
 
@@ -800,17 +692,9 @@ const recoverPasswordController = async (req, res) => {
     session.endSession();
     res.send({ result: `Correo de recuperación enviado a ${email}` });
   } catch (ex) {
-    await session.abortTransaction();
-    session.endSession();
-    console.log(ex);
-    let err = 'Ocurrio un error en proceso de recuperación de contraseña.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error en proceso de recuperación de contraseña.', session,
+    });
   }
 };
 
@@ -832,16 +716,9 @@ const updateUserPasswordController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    session.endSession();
-    let err = 'Ocurrio un error al actualizar contraseña.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al actualizar contraseña.', session,
+    });
   }
 };
 

@@ -20,7 +20,7 @@ import { multiple, single, single as singleActivityDto } from './activity.dto.js
 const validateResponsible = async ({ idUser, idActivity, preventError = false }) => {
   const { responsible } = await ActivitySchema.findById(idActivity);
   const isResponsible = responsible.some((user) => user._id.toString() === idUser);
-  if (!isResponsible && !preventError) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  if (!isResponsible && !preventError) { throw new CustomError('El usuario no es encargado de la actividad.', 403); }
   return isResponsible;
 };
 
@@ -73,7 +73,7 @@ const createActivity = async ({
   activity.registrationStartDate = registrationStartDate;
   activity.registrationEndDate = registrationEndDate;
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
-  activity.availableSpaces = participantsNumber;
+  activity.maxParticipants = participantsNumber;
   activity.description = description;
   activity.hasBanner = hasBanner;
 
@@ -97,7 +97,7 @@ const updateActivity = async ({
   registrationStartDate,
   registrationEndDate,
   participatingPromotions,
-  participantsNumber,
+  maxParticipantsNumber,
   hasBanner,
   description,
 }) => {
@@ -114,22 +114,8 @@ const updateActivity = async ({
     if (responsible !== undefined && (responsiblesData === null || responsiblesData.length === 0)) {
       throw new CustomError('No se encontraron usuarios válidos como encargados.', 400);
     }
-    if (responsible !== undefined && (responsiblesData.length !== responsible.length)) {
+    if (responsible !== undefined && responsiblesData.length !== responsible.length) {
       throw new CustomError('Alguno de los encargados seleccionados no existen.', 400);
-    }
-
-    // realizar el cálculo de espacios disponibles
-    if (participantsNumber !== undefined) {
-      const registeredUsers = await ActivityAssignmentSchema.find({ 'activity._id': activity._id });
-
-      if (registeredUsers.length > participantsNumber) {
-        throw new CustomError(
-          'El nuevo número de participantes en menor al número de becados que se encuentran ya inscritos.',
-          400,
-        );
-      }
-
-      activity.availableSpaces = participantsNumber - registeredUsers.length;
     }
 
     // actualizar actividad
@@ -146,6 +132,18 @@ const updateActivity = async ({
     }
     if (exists(hasBanner)) activity.hasBanner = hasBanner;
     if (exists(description)) activity.description = description;
+    if (exists(maxParticipantsNumber)) {
+      if (maxParticipantsNumber >= activity.participantsNumber) {
+        activity.maxParticipants = maxParticipantsNumber;
+      } else {
+        throw new CustomError(
+          `El nuevo número máximo de participantes es menor al número de becados que se encuentran ya inscritos (${
+            activity.participantsNumber
+          } ${activity.participantsNumber > 1 ? 'inscripciones' : 'inscripción'}).`,
+          400,
+        );
+      }
+    }
 
     const result = await activity.save({ session });
     return {
@@ -173,20 +171,28 @@ const deleteActivity = async ({ idActivity, session }) => {
 
 const getUserActivities = async (idUser) => {
   const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
-  if (assignments.length === 0) throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404);
+  if (assignments.length === 0) { throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404); }
 
   const activities = [];
 
-  await Promise.all(assignments.map(async (assignment) => {
-    const activity = await ActivitySchema.findById(assignment.activity._id);
-    activities.push(activity);
-  }));
+  await Promise.all(
+    assignments.map(async (assignment) => {
+      const activity = await ActivitySchema.findById(assignment.activity._id);
+      activities.push(activity);
+    }),
+  );
 
   return activities;
 };
 
 const getActivities = async ({
-  idAsigboArea = null, search = null, lowerDate = null, upperDate = null, page = null, session,
+  idAsigboArea = null,
+  search = null,
+  lowerDate = null,
+  upperDate = null,
+  page = null,
+  throwNotFoundError = true,
+  session,
 }) => {
   const query = {};
 
@@ -209,7 +215,10 @@ const getActivities = async ({
   try {
     const result = await ActivitySchema.find(query, null, options).session(session);
 
-    if (result.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+    if (result.length === 0) {
+      if (!throwNotFoundError) return null;
+      throw new CustomError('No se encontraron resultados.', 404);
+    }
 
     return multiple(result);
   } catch (ex) {
@@ -245,7 +254,12 @@ const getActivityByNameAndArea = async ({ name, idArea, session }) => {
 };
 
 const getActivitiesWhereUserIsResponsible = async ({
-  idUser, search = null, lowerDate = null, upperDate = null, page = null, session,
+  idUser,
+  search = null,
+  lowerDate = null,
+  upperDate = null,
+  page = null,
+  session,
 }) => {
   const query = { responsible: { $elemMatch: { _id: idUser } } };
 
@@ -272,18 +286,22 @@ const getActivitiesWhereUserIsResponsible = async ({
 };
 
 /**
- * Permite sumar una cantidad al valor de espacios disponibles de una actividad. Para disminuir,
+ * Permite sumar una cantidad al valor de número de participantes de una actividad. Para disminuir,
  * simplemente utilizar con valores negativos.
  * @param idActivity Id de la actividad.
- * @param value Number. Valor numérico a incrementar.
+ * @param value Number. Valor numérico a incrementar. Un valor negativo decrementa.
  * @param session Object. Objecto de la sesión mongodb.
  */
-const addActivityAvailableSpaces = async ({ idActivity, value, session }) => {
+const addActivityParticipants = async ({ idActivity, value, session }) => {
   try {
-    const { acknowledged, matchedCount, modifiedCount } = await ActivitySchema.updateOne({ _id: idActivity }, { $inc: { availableSpaces: value } }, { session });
+    const { acknowledged, matchedCount, modifiedCount } = await ActivitySchema.updateOne(
+      { _id: idActivity },
+      { $inc: { participantsNumber: value } },
+      { session },
+    );
 
     if (matchedCount === 0) throw new CustomError('No se encontró la actividad.', 404);
-    if (!acknowledged || !modifiedCount) throw new CustomError('No fue posible actualizar el número de espacios disponibles.', 500);
+    if (!acknowledged || !modifiedCount) { throw new CustomError('No fue posible actualizar el número de participantes.', 500); }
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.', 400);
     throw ex;
@@ -323,7 +341,7 @@ export {
   getActivitiesWhereUserIsResponsible,
   getUserActivities,
   validateResponsible,
-  addActivityAvailableSpaces,
+  addActivityParticipants,
   updateActivityBlockedStatus,
   getActivityByNameAndArea,
   uploadActivities,
