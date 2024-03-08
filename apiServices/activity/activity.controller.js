@@ -41,6 +41,7 @@ import {
 } from './activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import Promotion from '../promotion/promotion.model.js';
+import errorSender from '../../utils/errorSender.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -150,16 +151,9 @@ const createActivityController = async (req, res) => {
 
     res.send(activityResult);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al crear nueva actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al crear nueva actividad.', session,
+    });
   }
 };
 
@@ -297,16 +291,9 @@ const updateActivityController = async (req, res) => {
 
     res.send(single(updatedData));
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al actualizar actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al actualizar actividad.', session,
+    });
   }
 };
 
@@ -364,16 +351,9 @@ const deleteActivityController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al eliminar actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al eliminar actividad.', session,
+    });
   }
 };
 
@@ -382,15 +362,9 @@ const getLoggedActivitiesController = async (req, res) => {
     const activities = await getUserActivities(req.session.id);
     res.send(multiple(activities));
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades del usuario.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener las actividades del usuario.',
+    });
   }
 };
 
@@ -472,14 +446,9 @@ const getActivitiesController = async (req, res) => {
       result: filteredResult,
     });
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener lista de actividades.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener lista de actividades.',
+    });
   }
   return null;
 };
@@ -520,14 +489,9 @@ const getActivityController = async (req, res) => {
 
     res.send(result);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener información de la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener información de la actividad.',
+    });
   }
 };
 
@@ -561,16 +525,9 @@ const disableActivityController = async (req, res) => {
     await session.commitTransaction();
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al deshabilitar la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al deshabilitar la actividad.', session,
+    });
   }
 };
 
@@ -605,16 +562,9 @@ const enableActivityController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al habilitar la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al habilitar la actividad.', session,
+    });
   }
 };
 
@@ -658,14 +608,9 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
       result,
     });
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades en las que el usuario es encargado.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener las actividades en las que el usuario es encargado.',
+    });
   }
 };
 
@@ -826,15 +771,9 @@ const uploadActivitiesDataController = async (req, res) => {
     // await session.abortTransaction();
     res.send({ success: true, problems });
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al insertar la información.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al insertar la información.', session,
+    });
   }
 };
 

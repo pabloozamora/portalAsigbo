@@ -26,6 +26,7 @@
   "homepage": "https://github.com/Aq202/portalAsigbo#readme",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.388.0",
+    "@aws-sdk/client-ses": "^3.441.0",
     "config": "^3.3.9",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

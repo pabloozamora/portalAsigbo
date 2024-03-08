@@ -2,38 +2,35 @@ import nodemailer from 'nodemailer';
 import moment from 'moment';
 import 'moment/locale/es.js';
 import config from 'config';
+import aws from '@aws-sdk/client-ses';
 
-const clientId = config.get('googleClientId');
-const clientSecret = config.get('googleClientSecret');
-const refreshToken = config.get('googleRefreshToken');
+const accessKeyId = config.get('awsSesAccess');
+const secretAccessKey = config.get('awsSesSecret');
+const host = config.get('smtpHost');
+const port = config.get('smtpPort');
+const sendingRate = config.get('emailSendingRate');
 
 export default class Email {
-  constructor({
-    addresseeEmail, subject, name, message, attachments,
-  }) {
-    this._transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        type: 'OAuth2',
-        user: 'soporte.asigbo@gmail.com',
-        clientId,
-        clientSecret,
-        refreshToken,
+  constructor() {
+    const ses = new aws.SES({
+      region: 'us-west-1',
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
       },
     });
 
-    this.addresseeEmail = addresseeEmail || '';
-    this.subject = subject || 'Asigbo';
-    this.name = name || 'Usuario';
-    this._message = message || '';
-    this.attachments = attachments;
-
-    this.emailBody = this.getMessageBody();
+    this._transporter = nodemailer.createTransport({
+      SES: { ses, aws },
+      host,
+      port,
+      sendingRate,
+    });
 
     moment.locale('es');
   }
 
-  getMessageBody() {
+  static getMessageBody({ subject, name, message }) {
     return `
         <main>
             <div style='background:#0c4271; color:white; font-family:helvetica; font-size:30px;  width:100%;  text-align: center; padding: 15px 5px 15px 5px; box-sizing: border-box;'>
@@ -52,15 +49,15 @@ export default class Email {
             >
 
                 <center>
-                    <h2 style="text-decoration: underline;">${this.subject}</h2>
+                    <h2 style="text-decoration: underline;">${subject}</h2>
                     
                 </center>
 
                 <div style="text-align: justify; font-size:16px;">
-                    Estimado ${this.name},
+                    Estimado ${name},
                     <br>
                     <br>
-                    ${this._message}
+                    ${message}
                     <br>
                     <br>
                     Gracias.
@@ -77,21 +74,16 @@ export default class Email {
         `;
   }
 
-  set message(message) {
-    this._message = message;
-    this.emailBody = this.getMessageBody();
-  }
-
-  sendEmail() {
+  sendEmail({
+    addresseeEmail, subject, name, message,
+  }) {
     return new Promise((resolve, reject) => {
       const mailOptions = {
-        from: 'Soporte Asibo',
-        to: this.addresseeEmail,
-        subject: this.subject,
-        html: this.emailBody,
+        from: 'soporte.asigbo@gmail.com',
+        to: addresseeEmail,
+        subject,
+        html: Email.getMessageBody({ subject, name, message }),
       };
-
-      if (this.attachments) mailOptions.attachments = this.attachments;
 
       this._transporter.sendMail(mailOptions, (error, info) => {
         // enviar respuesta a promesa

@@ -14,4 +14,10 @@ module.exports = {
   awsBucketAccess: process.env.AWS_BUCKET_ACCESS,
   awsBucketSecret: process.env.AWS_BUCKET_SECRET,
   bucketName: process.env.BUCKET_NAME,
+  awsSesAccess: process.env.AWS_SES_ACCESS,
+  awsSesSecret: process.env.AWS_SES_SECRET,
+  smtpHost: process.env.SMTP_HOST,
+  smtpPort: process.env.SMTP_PORT,
+  sendErrorObj: true,
+  emailSendingRate: 14,
 };

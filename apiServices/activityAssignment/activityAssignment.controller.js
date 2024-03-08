@@ -1,6 +1,7 @@
 import { connection } from '../../db/connection.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import errorSender from '../../utils/errorSender.js';
 import exists from '../../utils/exists.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import {
@@ -78,15 +79,9 @@ const getActivitiesAssigmentsController = async (req, res) => {
       result,
     });
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener las asignaciones a actividades.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener las asignaciones a actividades.',
+    });
   }
 };
 
@@ -96,15 +91,9 @@ const getActivitiesAssigmentsByActivityController = async (req, res) => {
     const activities = await getActivityAssignments({ idActivity });
     res.send(activities);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener las asignaciones de la actividad.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener las asignaciones de la actividad.',
+    });
   }
 };
 
@@ -114,15 +103,9 @@ const getActivityAssigmentController = async (req, res) => {
     const activities = await getActivityAssignments({ idActivity, idUser });
     res.send(activities[0]);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener la asignación de la actividad.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener la asignación de la actividad.',
+    });
   }
 };
 
@@ -131,15 +114,9 @@ const getLoggedActivitiesController = async (req, res) => {
     const activities = await getActivityAssignments({ idUser: req.session.id });
     res.send(activities);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener las actividades del usuario.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al obtener las actividades del usuario.',
+    });
   }
 };
 
@@ -223,17 +200,9 @@ const assignUserToActivityController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al asignar usuarios a una actividad.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al asignar usuarios a una actividad.', session,
+    });
   }
 };
 
@@ -298,15 +267,9 @@ const assignManyUsersToActivityController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    let err = 'Ocurrio un error al asignar lista de usuarios a una actividad.';
-    let status = 500;
-
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al asignar lista de usuarios a una actividad.', session,
+    });
   }
 };
 
@@ -368,16 +331,9 @@ const unassignUserFromActivityController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-
-    let err = 'Ocurrio un error al desasignar al usuario de la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al desasignar al usuario de la actividad.', session,
+    });
   }
 };
 
@@ -480,15 +436,9 @@ const updateActivityAssignmentController = async (req, res) => {
 
     res.sendStatus(204);
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al cambiar estado de completado en la asignación de la actividad.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status ?? 500;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al actualizar la asignación de la actividad.', session,
+    });
   }
 };
 
