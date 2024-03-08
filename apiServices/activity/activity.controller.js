@@ -248,7 +248,7 @@ const updateActivityController = async (req, res) => {
         );
       });
 
-      Promise.all(promises);
+      await Promise.all(promises);
     }
 
     // modificar el monto del pago o eliminarlo (pendiente)
