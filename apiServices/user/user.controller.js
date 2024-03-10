@@ -54,6 +54,28 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   fs.unlink(filePath, () => {});
 };
 
+const sendUserRegisterEmail = async ({
+  userId, name, lastname, email, sex, emailSender = new NewUserEmail(), session, ensureEmailSending = true,
+}) => {
+  const token = signRegisterToken({
+    id: userId,
+    name,
+    lastname,
+    email,
+    sex,
+  });
+  await saveAlterToken({ idUser: userId, token, session });
+
+  // enviar email de notificación
+  const emailPromise = emailSender.sendEmail({
+    addresseeEmail: email,
+    name,
+    registerToken: token,
+  });
+
+  if (ensureEmailSending) await emailPromise;
+};
+
 const getLoggedUserController = async (req, res) => {
   try {
     const user = await getUser({ idUser: req.session.id, showSensitiveData: true });
@@ -102,22 +124,13 @@ const renewRegisterToken = async (req, res) => {
       throw new CustomError('El usuario indicado ya ha sido activado.', 400);
     }
 
-    const token = signRegisterToken({
-      id: user.id,
+    await sendUserRegisterEmail({
+      userId: user.id,
       name: user.name,
       lastname: user.lastname,
       email: user.email,
       sex: user.sex,
-    });
-
-    await saveAlterToken({ idUser, token, session });
-
-    // enviar email de notificación
-    const emailSender = new NewUserEmail();
-    await emailSender.sendEmail({
-      addresseeEmail: user.email,
-      name: user.name,
-      registerToken: token,
+      session,
     });
 
     await session.commitTransaction();
@@ -153,20 +166,14 @@ const createUserController = async (req, res) => {
       session,
     });
 
-    // guardar token para completar registro
-    const token = signRegisterToken({
-      id: user.id,
+    await sendUserRegisterEmail({
+      userId: user.id,
       name: user.name,
       lastname: user.lastname,
       email: user.email,
       sex: user.sex,
+      session,
     });
-    await saveAlterToken({ idUser: user.id, token, session });
-
-    // enviar email de notificación
-    const emailSender = new NewUserEmail();
-    emailSender.sendEmail({ addresseeEmail: email, name, registerToken: token })
-      .catch(() => {});
 
     await session.commitTransaction();
 
@@ -619,34 +626,30 @@ const deleteUserController = async (req, res) => {
 };
 
 const uploadUsersController = async (req, res) => {
-  const { data: users } = req.body;
+  const { data: users, sendEmail } = req.body;
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
     const savedUsers = await uploadUsers({ users, session });
 
-    const emailSender = new NewUserEmail();
+    if (!exists(sendEmail) || parseBoolean(sendEmail) === true) {
+      const emailSender = new NewUserEmail();
 
-    await Promise.all(
-      savedUsers.map(async (user) => {
-        const token = signRegisterToken({
-          id: user.id,
-          name: user.name,
-          lastname: user.lastname,
-          email: user.email,
-          sex: user.sex,
-        });
-        await saveAlterToken({ idUser: user.id, token, session });
-
-        // enviar email de notificación
-        emailSender.sendEmail({
-          addresseeEmail: user.email,
-          name: user.name,
-          registerToken: token,
-        });
-      }),
-    );
-
+      await Promise.all(
+        savedUsers.map(async (user) => {
+          await sendUserRegisterEmail({
+            userId: user.id,
+            name: user.name,
+            lastname: user.lastname,
+            email: user.email,
+            sex: user.sex,
+            session,
+            emailSender,
+            ensureEmailSending: false, // No importa si un correo falla, seguir
+          });
+        }),
+      );
+    }
     await session.commitTransaction();
     session.endSession();
     res.send(savedUsers);

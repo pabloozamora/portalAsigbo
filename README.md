@@ -508,7 +508,7 @@
 
   - idUser: id del usuario.
 
-  * **/user/:idUser**
+- **/user/:idUser**
 
   Método: Delete
   Acceso: Admin.
@@ -520,7 +520,7 @@
 
   - idUser: id del usuario.
 
-  * **/user/renewRegisterToken**
+- **/user/renewRegisterToken**
 
   Método: Post
   Acceso: Admin.
@@ -531,7 +531,7 @@
 
   - idUser: id del usuario.
 
-  * **/user/finishRegistration**
+- **/user/finishRegistration**
 
   Método: Post
   Acceso: token de registro requerido.
@@ -544,7 +544,7 @@
   Parámetro opcional:
   - photo: archivo png, jpg, gif o svg.
 
-  * **/user/updatePassword**
+- **/user/updatePassword**
 
   Método: Post
   Acceso: token para modificar contraseña.
@@ -554,14 +554,14 @@
   Parámetros obligatorios (body):
   - password: contraseña de la cuenta.
 
-  * **/user/promotionResponsible**
+- **/user/promotionResponsible**
 
   Método Get
   Acceso: Admin.
 
   Obtiene el listado de usuarios que poseen el rol de encargado de promoción.
 
-  * **/user/:idUser/role/promotionResponsible**
+- **/user/:idUser/role/promotionResponsible**
 
   Método Patch
   Acceso: Admin.
@@ -572,7 +572,7 @@
 
   - idUser: id del usuario.
 
-  * **/user/:idUser/role/promotionResponsible**
+- **/user/:idUser/role/promotionResponsible**
 
   Método Delete
   Acceso: Admin.
@@ -583,21 +583,21 @@
 
   - idUser: id del usuario.
 
-  * **/user/validateRegisterToken**
+- **/user/validateRegisterToken**
 
   Método: get
   Acceso: token de registro requerido.
 
   Permite verificar si un token de registro es válido.
 
-  * **/user/validateRecoverToken**
+- **/user/validateRecoverToken**
 
   Método: get
   Acceso: token de recuperación requerido.
 
   Permite verificar si un token de recuperación de contraseña es válido.
 
-  * **/user/recoverPassword**
+- **/user/recoverPassword**
 
   Método: post
   Acceso: todos los usuarios. Auth no requerida.
@@ -608,7 +608,7 @@
 
   - email: email del usuario.
   
-  * **/user/uploadUsers**
+- **/user/uploadUsers**
 
   Método: post
   Acceso: Admin
@@ -627,6 +627,9 @@
     - career: string
     - promotion: number
     - sex: string
+
+  Parámetros opcionales:
+  - sendEmail: boolean (por default es true). Indica si se debe de mandar el correo a los usuarios creados con el token de registro al finalizar la carga de datos.
 
   La forma en la que llegue la información (archivo csv, txt, etcétera) quedará a discresión del frontend, siempre y cuando cumpla con los atributos y tipos de dato anteriores.
 
