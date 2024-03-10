@@ -21,6 +21,7 @@ import {
   assignPromotionResponsibleRoleController,
   removePromotionResponsibleRoleController,
   getPromotionResponsibleUsersController,
+  renewManyRegisterTokensController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
@@ -105,5 +106,5 @@ userRouter.post(
   uploadUsersController,
 );
 userRouter.post('/recoverPassword', validateBody(recoverPasswordSchema), recoverPasswordController);
-
+userRouter.post('/renewManyRegisterTokens', ensureAdminAuth, renewManyRegisterTokensController);
 export default userRouter;
