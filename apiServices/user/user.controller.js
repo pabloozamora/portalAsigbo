@@ -18,6 +18,7 @@ import {
   updateUser,
   uploadUsers,
   getUserByMail,
+  getUnregisteredUsers,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRecoverPasswordToken, signRegisterToken } from '../../services/jwt.js';
@@ -635,19 +636,17 @@ const uploadUsersController = async (req, res) => {
     if (!exists(sendEmail) || parseBoolean(sendEmail) === true) {
       const emailSender = new NewUserEmail();
 
-      await Promise.all(
-        savedUsers.map(async (user) => {
-          await sendUserRegisterEmail({
-            userId: user.id,
-            name: user.name,
-            lastname: user.lastname,
-            email: user.email,
-            sex: user.sex,
-            session,
-            emailSender,
-            ensureEmailSending: false, // No importa si un correo falla, seguir
-          });
-        }),
+      // Enviar todos los correos posibles
+      await Promise.allSettled(
+        savedUsers.map(async (user) => sendUserRegisterEmail({
+          userId: user.id,
+          name: user.name,
+          lastname: user.lastname,
+          email: user.email,
+          sex: user.sex,
+          session,
+          emailSender,
+        })),
       );
     }
     await session.commitTransaction();
@@ -720,6 +719,50 @@ const updateUserPasswordController = async (req, res) => {
   }
 };
 
+const renewManyRegisterTokensController = async (req, res) => {
+  const session = await connection.startSession();
+  const { promotion } = req.body;
+
+  try {
+    session.startTransaction();
+
+    const promotionObj = new Promotion();
+
+    let promotionMin = null;
+    let promotionMax = null;
+    // si se da un grupo de usuarios, definir rango de promociones
+    if (promotion && Number.isNaN(parseInt(promotion, 10))) {
+      const result = await promotionObj.getPromotionRange({ promotionGroup: promotion });
+      promotionMin = result.promotionMin;
+      promotionMax = result.promotionMax;
+    }
+
+    const users = await getUnregisteredUsers({ promotion, promotionMin, promotionMax });
+
+    const emailSender = new NewUserEmail();
+
+    // Enviar todos los correos posibles
+    await Promise.allSettled(
+      users.map(async (user) => sendUserRegisterEmail({
+        userId: user.id,
+        name: user.name,
+        lastname: user.lastname,
+        email: user.email,
+        sex: user.sex,
+        session,
+        emailSender,
+      })),
+    );
+
+    await session.commitTransaction();
+    res.sendStatus(204);
+  } catch (ex) {
+    await errorSender({
+      res, ex, defaultError: 'Ocurrio un error al reenviar correos de registro.', session,
+    });
+  }
+};
+
 export {
   createUserController,
   getUsersListController,
@@ -742,4 +785,5 @@ export {
   assignPromotionResponsibleRoleController,
   removePromotionResponsibleRoleController,
   getPromotionResponsibleUsersController,
+  renewManyRegisterTokensController,
 };

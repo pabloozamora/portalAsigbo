@@ -522,6 +522,19 @@ const uploadUsers = async ({ users, session }) => {
   }
 };
 
+const getUnregisteredUsers = async ({ promotion, promotionMin, promotionMax }) => {
+  const query = { passwordHash: { $exists: false } };
+
+  if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
+  if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
+  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+
+  const users = await UserSchema.find(query);
+
+  return multiple(users, { showSensitiveData: true });
+};
+
 export {
   createUser,
   getUsersList,
@@ -545,4 +558,5 @@ export {
   updateUserInAllDependencies,
   updateActivitiesCompletedNumber,
   getUserByCode,
+  getUnregisteredUsers,
 };
