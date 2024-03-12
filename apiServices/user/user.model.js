@@ -438,14 +438,17 @@ const saveAlterToken = async ({ idUser, token, session }) => {
   }
 };
 
-const saveManyRegisterToken = async (data) => {
+/**
+ * @param data Array de objetos {idUser, token}
+ */
+const saveManyRegisterToken = async ({ data, session }) => {
   try {
     // eliminar tokens previos
     const usersList = data.map((objectData) => objectData.idUser);
     await AlterUserTokenSchema.deleteMany({ idUser: { $in: usersList } });
 
     // guardar nuevos tokens
-    await AlterUserTokenSchema.insertMany(data);
+    await AlterUserTokenSchema.insertMany(data, { session });
   } catch (ex) {
     if (ex.code === 11000 && ex.keyValue?.idUser !== undefined) {
       throw new CustomError('El usuario ya posee un token de modificación previo.', 400);
@@ -453,6 +456,8 @@ const saveManyRegisterToken = async (data) => {
     throw ex;
   }
 };
+
+const deleteAllAlterTokensFromManyUsers = async ({ idUsersList, session }) => AlterUserTokenSchema.deleteMany({ idUser: { $in: idUsersList } }, { session });
 
 const validateAlterUserToken = async ({ idUser, token }) => {
   const result = await AlterUserTokenSchema.findOne({ idUser, token });
@@ -559,4 +564,5 @@ export {
   updateActivitiesCompletedNumber,
   getUserByCode,
   getUnregisteredUsers,
+  deleteAllAlterTokensFromManyUsers,
 };

@@ -19,6 +19,8 @@ import {
   uploadUsers,
   getUserByMail,
   getUnregisteredUsers,
+  saveManyRegisterToken,
+  deleteAllAlterTokensFromManyUsers,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRecoverPasswordToken, signRegisterToken } from '../../services/jwt.js';
@@ -55,8 +57,13 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   fs.unlink(filePath, () => {});
 };
 
-const sendUserRegisterEmail = async ({
-  userId, name, lastname, email, sex, emailSender = new NewUserEmail(), session, ensureEmailSending = true,
+/**
+ * Envía un correo para un solo usuario
+ * @param emailSender Clase NewUserEmail (Por default se crea un nuevo objeto)
+ * @returns Register token generado y enviado
+ */
+const sendSingleUserRegisterEmail = async ({
+  userId, name, lastname, email, sex, emailSender = new NewUserEmail(), session,
 }) => {
   const token = signRegisterToken({
     id: userId,
@@ -65,16 +72,63 @@ const sendUserRegisterEmail = async ({
     email,
     sex,
   });
+
   await saveAlterToken({ idUser: userId, token, session });
 
   // enviar email de notificación
-  const emailPromise = emailSender.sendEmail({
+  await emailSender.sendEmail({
     addresseeEmail: email,
     name,
     registerToken: token,
   });
 
-  if (ensureEmailSending) await emailPromise;
+  return token;
+};
+
+/**
+ * Envía un correo para muchos usuarios
+ * @param users Array de objetos con forma {id, name, lastname, email, sex}
+ * @returns Register token generado y enviado
+ */
+const sendManyUserRegisterEmail = async ({
+  users, session,
+}) => {
+  // Generar arreglo de {idUser, email, name, token}
+  const usersWithToken = users.map((user) => {
+    const token = signRegisterToken({
+      id: user.id,
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
+      sex: user.sex,
+    });
+
+    return {
+      idUser: user.id, email: user.email, name: user.name, token,
+    };
+  });
+
+  await saveManyRegisterToken({ data: usersWithToken, session }); // Guardar tokens de forma masiva
+
+  // enviar emails de notificación
+  const emailSender = new NewUserEmail();
+
+  const promiseRes = await Promise.allSettled(
+    usersWithToken.map(async (user) => {
+      await emailSender.sendEmail({
+        addresseeEmail: user.email,
+        name: user.name,
+        registerToken: user.token,
+      });
+      return user.idUser;
+    }),
+  );
+
+  // Filtrar usuarios de emails que no se hayan enviado
+  const usersRejected = promiseRes.filter((val) => val?.status !== 'fulfilled');
+
+  // Eliminar masivamente token de usuarios rechazados async (Error insignificante)
+  deleteAllAlterTokensFromManyUsers({ idUsersList: usersRejected }).catch(() => {});
 };
 
 const getLoggedUserController = async (req, res) => {
@@ -125,7 +179,7 @@ const renewRegisterToken = async (req, res) => {
       throw new CustomError('El usuario indicado ya ha sido activado.', 400);
     }
 
-    await sendUserRegisterEmail({
+    const registerToken = await sendSingleUserRegisterEmail({
       userId: user.id,
       name: user.name,
       lastname: user.lastname,
@@ -133,6 +187,8 @@ const renewRegisterToken = async (req, res) => {
       sex: user.sex,
       session,
     });
+
+    await saveAlterToken({ idUser: user.id, token: registerToken, session });
 
     await session.commitTransaction();
 
@@ -167,7 +223,7 @@ const createUserController = async (req, res) => {
       session,
     });
 
-    await sendUserRegisterEmail({
+    const registerToken = await sendSingleUserRegisterEmail({
       userId: user.id,
       name: user.name,
       lastname: user.lastname,
@@ -175,6 +231,8 @@ const createUserController = async (req, res) => {
       sex: user.sex,
       session,
     });
+
+    await saveAlterToken({ idUser: user.id, token: registerToken, session });
 
     await session.commitTransaction();
 
@@ -634,21 +692,9 @@ const uploadUsersController = async (req, res) => {
     const savedUsers = await uploadUsers({ users, session });
 
     if (!exists(sendEmail) || parseBoolean(sendEmail) === true) {
-      const emailSender = new NewUserEmail();
-
-      // Enviar todos los correos posibles
-      await Promise.allSettled(
-        savedUsers.map(async (user) => sendUserRegisterEmail({
-          userId: user.id,
-          name: user.name,
-          lastname: user.lastname,
-          email: user.email,
-          sex: user.sex,
-          session,
-          emailSender,
-        })),
-      );
+      await sendManyUserRegisterEmail({ users: savedUsers, session });
     }
+
     await session.commitTransaction();
     session.endSession();
     res.send(savedUsers);
@@ -739,20 +785,7 @@ const renewManyRegisterTokensController = async (req, res) => {
 
     const users = await getUnregisteredUsers({ promotion, promotionMin, promotionMax });
 
-    const emailSender = new NewUserEmail();
-
-    // Enviar todos los correos posibles
-    await Promise.allSettled(
-      users.map(async (user) => sendUserRegisterEmail({
-        userId: user.id,
-        name: user.name,
-        lastname: user.lastname,
-        email: user.email,
-        sex: user.sex,
-        session,
-        emailSender,
-      })),
-    );
+    await sendManyUserRegisterEmail({ users, session });
 
     await session.commitTransaction();
     res.sendStatus(204);
