@@ -39,16 +39,10 @@ const validateSessionToken = async (idUser, token) => {
 
 const authenticate = async (user, passwordHash) => {
   const query = {
-    $or: [{ code: user }, { email: user }],
+    email: user,
     passwordHash,
     blocked: false,
   };
-
-  // Si el usuario no es numerico, eliminar busqueda por código
-  if (Number.isNaN(parseInt(user, 10))) {
-    delete query.$or;
-    query.email = user;
-  }
 
   const result = await UserSchema.findOne(query);
 
