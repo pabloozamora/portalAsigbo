@@ -124,15 +124,9 @@ const loginController = async (req, res) => {
 
     res.send({ accessToken });
   } catch (ex) {
-    await session.abortTransaction();
-    let err = 'Ocurrio un error al intentar loggearse.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
+    await errorSender({
+      res, ex, defaultError: 'Ocurrió un error al intentar loggearse.', session,
+    });
   }
 };
 
