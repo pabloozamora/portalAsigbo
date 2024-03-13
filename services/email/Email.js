@@ -54,7 +54,7 @@ export default class Email {
                 </center>
 
                 <div style="text-align: justify; font-size:16px;">
-                    Estimado ${name},
+                    Hola ${name},
                     <br>
                     <br>
                     ${message}
