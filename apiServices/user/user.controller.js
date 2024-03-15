@@ -164,16 +164,15 @@ const getUserController = async (req, res) => {
 const renewRegisterToken = async (req, res) => {
   const { idUser } = req.body;
   const session = await connection.startSession();
-  const { role, promotion } = req.session;
+  const { role } = req.session;
 
   try {
     session.startTransaction();
 
-    const user = await getUser({ idUser, showSensitiveData: true, session });
-
-    if (!role.includes(consts.roles.admin) && promotion !== user.promotion) {
+    if (!role.includes(consts.roles.admin)) {
       throw new CustomError('El usuario no tiene acceso para realizar esta acción.', 403);
     }
+    const user = await getUser({ idUser, showSensitiveData: true, session });
 
     if (user.completeRegistration) {
       throw new CustomError('El usuario indicado ya ha sido activado.', 400);
