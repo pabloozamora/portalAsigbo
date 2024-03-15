@@ -178,6 +178,10 @@ const renewRegisterToken = async (req, res) => {
       throw new CustomError('El usuario indicado ya ha sido activado.', 400);
     }
 
+    if (user.blocked) {
+      throw new CustomError('El usuario se encuentra bloqueado.', 403);
+    }
+
     const registerToken = await sendSingleUserRegisterEmail({
       userId: user.id,
       name: user.name,
