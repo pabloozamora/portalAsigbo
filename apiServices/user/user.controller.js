@@ -200,6 +200,8 @@ const renewRegisterToken = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al generar el token de registro.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -244,6 +246,8 @@ const createUserController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al crear nuevo usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -315,6 +319,8 @@ const updateUserController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -454,6 +460,8 @@ const finishRegistrationController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al finalizar registro de nuevo usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -475,6 +483,8 @@ const assignAdminRoleController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al asignar privilegios de administrador al usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -511,6 +521,8 @@ const removeAdminRoleController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al remover privilegios de administrador al usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -532,6 +544,8 @@ const assignPromotionResponsibleRoleController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al asignar privilegios de encargado de promoción al usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -554,6 +568,8 @@ const removePromotionResponsibleRoleController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al remover privilegios de encargado de promoción al usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -595,6 +611,8 @@ const disableUserController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error deshabilitar usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -684,12 +702,14 @@ const deleteUserController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al eliminar usuario.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
 const uploadUsersController = async (req, res) => {
   const { data: users, sendEmail } = req.body;
-  const session = await mongoose.startSession();
+  const session = await connection.startSession();
   try {
     session.startTransaction();
     const savedUsers = await uploadUsers({ users, session });
@@ -699,12 +719,14 @@ const uploadUsersController = async (req, res) => {
     }
 
     await session.commitTransaction();
-    session.endSession();
+
     res.send(savedUsers);
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al insertar la información de usuarios en lista.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -735,12 +757,13 @@ const recoverPasswordController = async (req, res) => {
     });
 
     await session.commitTransaction();
-    session.endSession();
     res.send({ result: `Correo de recuperación enviado a ${email}` });
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error en proceso de recuperación de contraseña.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -765,6 +788,8 @@ const updateUserPasswordController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar contraseña.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -796,6 +821,8 @@ const renewManyRegisterTokensController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al reenviar correos de registro.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 

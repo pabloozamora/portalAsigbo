@@ -203,6 +203,8 @@ const assignUserToActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al asignar usuarios a una actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -270,6 +272,8 @@ const assignManyUsersToActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al asignar lista de usuarios a una actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -334,6 +338,8 @@ const unassignUserFromActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al desasignar al usuario de la actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -439,6 +445,8 @@ const updateActivityAssignmentController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar la asignación de la actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
