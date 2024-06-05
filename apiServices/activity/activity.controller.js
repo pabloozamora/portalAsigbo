@@ -154,6 +154,8 @@ const createActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al crear nueva actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -294,6 +296,8 @@ const updateActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -354,6 +358,8 @@ const deleteActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al eliminar actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -528,6 +534,8 @@ const disableActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al deshabilitar la actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -565,6 +573,8 @@ const enableActivityController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al habilitar la actividad.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -774,6 +784,8 @@ const uploadActivitiesDataController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al insertar la información.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 

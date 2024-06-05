@@ -102,6 +102,7 @@ const updateAsigboAreaController = async (req, res) => {
       res, ex, defaultError: 'Ocurrio un error al actualizar el area.', session,
     });
   } finally {
+    session.endSession();
     // Eliminar archivo provisional
     if (filePath) fs.unlink(filePath, () => { });
   }
@@ -144,6 +145,7 @@ const createAsigboAreaController = async (req, res) => {
       res, ex, defaultError: 'Ocurrio un error al crear nueva area.', session,
     });
   } finally {
+    session.endSession();
     // Eliminar archivo provisional
     if (file) fs.unlink(filePath, () => { });
   }
@@ -210,6 +212,8 @@ const deleteAsigboAreaController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al eliminar el area.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -243,6 +247,8 @@ const disableAsigboAreaController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al deshabilitar el eje de asigbo.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -262,6 +268,8 @@ const enableAsigboAreaController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al habilitar el eje de asigbo.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 

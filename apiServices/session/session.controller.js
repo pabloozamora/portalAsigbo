@@ -1,7 +1,6 @@
 import sha256 from 'js-sha256';
 import moment from 'moment';
 import config from 'config';
-import CustomError from '../../utils/customError.js';
 import {
   authenticate,
   deleteLinkedTokens,
@@ -127,6 +126,8 @@ const loginController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrió un error al intentar loggearse.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -183,6 +184,8 @@ const refreshAccessTokenController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al refrescar access token.', session,
     });
+  } finally {
+    session.endSession();
   }
 };
 
