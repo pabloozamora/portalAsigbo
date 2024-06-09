@@ -6,6 +6,7 @@ const consts = {
     promotionResponsible: 'promotionResponsible',
     asigboAreaResponsible: 'asigboAreaResponsible',
     activityResponsible: 'activityResponsible',
+    treasurer: 'treasurer',
   },
   token: {
     refresh: 'REFRESH',

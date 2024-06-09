@@ -63,7 +63,7 @@ class Promotion {
 
     const promotionGroups = Object.values(consts.promotionsGroups);
     if (!promotionGroups.includes(promotionGroup)) {
-      throw new CustomError('No se han encontrado usuarios.', 404);
+      throw new CustomError('El grupo de promociones no existe.', 404);
     } // No es un grupo de usuarios
 
     if (promotionGroup === consts.promotionsGroups.chick) {

@@ -44,10 +44,12 @@ const getUserByMail = async ({ email }) => {
   return user;
 };
 
-const getUsersInList = async ({ idUsersList, showSensitiveData = false, session }) => {
+const getUsersInList = async ({
+  idUsersList, showSensitiveData = false, session, missingUserError = 'Algunos de los usuarios no existen.',
+}) => {
   try {
     const user = await UserSchema.find({ _id: { $in: idUsersList } }).session(session);
-    if (user?.length !== idUsersList.length) throw new CustomError('Algunos de los usuarios no existen.', 404);
+    if (user?.length !== idUsersList.length) throw new CustomError(missingUserError, 404);
 
     return multiple(user, showSensitiveData);
   } catch (ex) {
@@ -56,6 +58,22 @@ const getUsersInList = async ({ idUsersList, showSensitiveData = false, session 
     }
     throw ex;
   }
+};
+
+const getUsersByPromotion = async ({
+  promotion, promotionMin, promotionMax, includeBlocked = false, showSensitiveData = false, session,
+}) => {
+  const query = {};
+
+  if (!includeBlocked) query.blocked = false;
+  if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
+  if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
+  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+
+  const user = await UserSchema.find(query).session(session);
+
+  return multiple(user, showSensitiveData);
 };
 
 const createUser = async ({
@@ -202,7 +220,16 @@ const updateUser = async ({
  * @returns User dto Array. Se muestran todos los datos sensibles.
  */
 const getUsersList = async ({
-  promotion, university, search, role, promotionMin, promotionMax, priority, page = 0, includeBlocked = false,
+  promotion,
+  university,
+  search,
+  role,
+  promotionMin,
+  promotionMax,
+  priority,
+  page = 0,
+  includeBlocked = false,
+  emptyResultError = 'No se han encontrado usuarios.',
 }) => {
   const query = {};
 
@@ -269,7 +296,7 @@ const getUsersList = async ({
 
   const users = await UserSchema.aggregate(queryPipeline);
 
-  if (users.length === 0) throw new CustomError('No se han encontrado usuarios.', 404);
+  if (users.length === 0) throw new CustomError(emptyResultError, 404);
 
   return { pages, result: multiple(users, { showSensitiveData: true }) };
 };
@@ -568,4 +595,5 @@ export {
   getUserByCode,
   getUnregisteredUsers,
   deleteAllAlterTokensFromManyUsers,
+  getUsersByPromotion,
 };
