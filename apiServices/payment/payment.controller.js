@@ -1,18 +1,12 @@
 import { connection } from '../../db/connection.js';
-import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import errorSender from '../../utils/errorSender.js';
 import Promotion from '../promotion/promotion.model.js';
-import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import {
-  addRoleToUser, getUsersByPromotion, getUsersInList,
+  getUsersByPromotion,
 } from '../user/user.model.js';
-import { assignPaymentToUsers, createPayment } from './payment.model.js';
-
-const addTreasurerRole = async ({ idUser, session }) => {
-  const roleAdded = await addRoleToUser({ idUser, role: consts.roles.treasurer, session });
-  if (roleAdded) await forceSessionTokenToUpdate({ idUser, session });
-};
+import { createPayment } from './payment.mediator.js';
+import { assignPaymentToUsers } from './payment.model.js';
 
 const createGeneralPaymentController = async (req, res) => {
   const {
@@ -41,19 +35,13 @@ const createGeneralPaymentController = async (req, res) => {
 
     if (!usersList || usersList.length === 0) throw new CustomError('No se encontraron usuarios para la promoción o grupo de promociones especificado.', 404);
 
-    // Obtener objetos de usuarios tesoreros
-    const treasurerUsers = await getUsersInList({ idUsersList: treasurer, session, missingUserError: 'Uno de los usuarios especificados como tesoreros no existe.' });
-
     // Crear pago
     const payment = await createPayment({
-      name, limitDate, amount, description, treasurer: treasurerUsers, targetUsers: promotion, session,
+      name, limitDate, amount, description, treasurerUsersId: treasurer, targetUsers: promotion, session,
     });
 
     // Generar asignaciones de pagos a usuarios
     await assignPaymentToUsers({ users: usersList, payment, session });
-
-    // Asignar role de tesorero
-    await Promise.all(treasurer.map((idUser) => addTreasurerRole({ idUser, session })));
 
     await session.commitTransaction();
 
