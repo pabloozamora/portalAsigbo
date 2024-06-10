@@ -9,6 +9,8 @@ import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
 import compareObjectId from '../../utils/compareObjectId.js';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
+import PaymentSchema from '../../db/schemas/payment.schema.js';
+import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
@@ -141,6 +143,27 @@ const updateUserInAllDependencies = async ({ user, session }) => {
 
   // asignaciones
   await ActivityAssignmentSchema.updateMany(
+    { 'user._id': user._id },
+    { user },
+    { session },
+  );
+
+  // Tesorero en pago
+  await PaymentSchema.updateMany(
+    { 'treasurer._id': user._id },
+    { $set: { 'treasurer.$': user } },
+    { session, multi: true },
+  );
+
+  // Tesorero en asignación de pago
+  await PaymentAssignmentSchema.updateMany(
+    { 'treasurer._id': user._id },
+    { user },
+    { session },
+  );
+
+  // Usuario en asignación de pago
+  await PaymentAssignmentSchema.updateMany(
     { 'user._id': user._id },
     { user },
     { session },
