@@ -2,7 +2,6 @@ import { ObjectId } from 'mongodb';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import AsigboAreaSchema from '../../db/schemas/asigboArea.schema.js';
-import PaymentSchema from '../../db/schemas/payment.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
@@ -30,7 +29,7 @@ const createActivity = async ({
   serviceHours,
   responsible,
   idAsigboArea,
-  idPayment,
+  payment,
   registrationStartDate,
   registrationEndDate,
   participatingPromotions,
@@ -43,14 +42,6 @@ const createActivity = async ({
   const asigboAreaData = await AsigboAreaSchema.findOne({ _id: idAsigboArea });
 
   if (asigboAreaData === null) throw new CustomError('No existe el área de asigbo.', 400);
-
-  // obtener datos del pago (si existe)
-  let paymentData = null;
-  if (idPayment) {
-    paymentData = await PaymentSchema.findOne({ _id: idPayment });
-
-    if (paymentData === null) throw new CustomError('No existe el pago indicado.', 400);
-  }
 
   // obtener datos de encargados
   const responsiblesData = await UserSchema.find({ _id: { $in: responsible } });
@@ -69,7 +60,7 @@ const createActivity = async ({
   activity.serviceHours = serviceHours;
   activity.responsible = responsiblesData;
   activity.asigboArea = asigboAreaData;
-  activity.payment = paymentData;
+  activity.payment = payment;
   activity.registrationStartDate = registrationStartDate;
   activity.registrationEndDate = registrationEndDate;
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;

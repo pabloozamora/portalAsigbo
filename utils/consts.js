@@ -27,6 +27,9 @@ const consts = {
   resultsNumberPerPage: 7,
   imagePath: {
   },
+  strings: {
+    activityPaymentTargetUsers: 'Actividad',
+  },
   activityFileHeaders: ['Actividad', 'Area', 'Fecha', 'Participante', 'Horas'],
 };
 

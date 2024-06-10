@@ -42,6 +42,7 @@ import {
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import Promotion from '../promotion/promotion.model.js';
 import errorSender from '../../utils/errorSender.js';
+import { createPayment } from '../payment/payment.mediator.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -91,7 +92,7 @@ const createActivityController = async (req, res) => {
     serviceHours,
     responsible,
     idAsigboArea,
-    paymentAmount,
+    payment,
     registrationStartDate,
     registrationEndDate,
     participatingPromotions,
@@ -110,9 +111,21 @@ const createActivityController = async (req, res) => {
       await validateAreaResponsible({ idUser, idArea: idAsigboArea });
     }
 
-    const idPayment = null;
-    if (paymentAmount !== undefined && paymentAmount !== null) {
-      // lógica para generar pago
+    let paymentObject = null;
+    if (payment !== undefined && payment !== null) {
+      const {
+        name: paymentName, amount, description: paymentDescription, limitDate, treasurer,
+      } = payment;
+
+      paymentObject = await createPayment({
+        name: paymentName,
+        limitDate,
+        amount,
+        description: paymentDescription,
+        treasurerUsersId: treasurer,
+        targetUsers: consts.strings.activityPaymentTargetUsers,
+        session,
+      });
     }
 
     // Verificar si hay una imagen subida
@@ -124,7 +137,7 @@ const createActivityController = async (req, res) => {
       serviceHours,
       responsible,
       idAsigboArea,
-      idPayment,
+      payment: paymentObject,
       registrationStartDate,
       registrationEndDate,
       participatingPromotions,
