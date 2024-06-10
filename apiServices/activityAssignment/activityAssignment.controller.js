@@ -10,6 +10,7 @@ import {
   validateResponsible as validateActivityResponsible,
 } from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
+import { assignPaymentToUser } from '../payment/payment.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import {
   getUser,
@@ -125,19 +126,22 @@ const assignUserToActivityController = async (req, res) => {
   const { completed } = req.body;
   const { role, id: sessionIdUser } = req.session;
 
+  const isCurrentUser = idUser === sessionIdUser;
   const session = await connection.startSession();
   try {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
-    // Validar acceso
-    await validateActivityResponsibleAccess({
-      role,
-      idUser: sessionIdUser,
-      idActivity,
-      idArea: activity.asigboArea.id,
-    });
+    // Validar acceso si no se desea asignar a si mismo
+    if (!isCurrentUser) {
+      await validateActivityResponsibleAccess({
+        role,
+        idUser: sessionIdUser,
+        idActivity,
+        idArea: activity.asigboArea.id,
+      });
+    }
 
     // Validar que la actividad y eje estén habilitados
     if (activity.asigboArea.blocked) {
@@ -166,10 +170,17 @@ const assignUserToActivityController = async (req, res) => {
       throw new CustomError('La actividad no cuenta con suficientes espacios disponibles.', 403);
     }
 
+    // Asignar pago a usuario (si corresponde)
+    let paymentAssignment = null;
+    if (activity.payment) {
+      paymentAssignment = await assignPaymentToUser({ user, payment: activity.payment, session });
+    }
+
     await assignUserToActivity({
       user,
       completed,
       activity,
+      paymentAssignment,
       session,
     });
 

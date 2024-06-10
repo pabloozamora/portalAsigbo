@@ -1,6 +1,7 @@
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 import { multiplePaymentDto, singlePaymentDto } from './payment.dto.js';
+import { singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
 
 /**
  *
@@ -34,4 +35,27 @@ const assignPaymentToUsers = async ({ users, payment, session }) => {
   return multiplePaymentDto(result);
 };
 
-export { createPayment, assignPaymentToUsers };
+/**
+ * Se encarga de realizar una asignación de pago individual a un usuario.
+ * Si esta asignación ya existe no la duplica, solo retorna la existente
+ * @param user Objeto con datos de subschema de usuario.
+ * @param payment Objeto con datos de subschema de payment.
+ * @param session Session de mongo
+ * @returns PaymentAssignment dto.
+ */
+const assignPaymentToUser = async ({ user, payment, session }) => {
+  // Retorna la asignación de pago existente (si la hay)
+  const paymentAssignmentRes = await PaymentAssignmentSchema.findOne({ 'payment._id': payment._id }).session(session);
+  if (paymentAssignmentRes) return paymentAssignmentRes;
+
+  // Crear nueva asignación de pago
+  const paymentAssignment = new PaymentAssignmentSchema();
+  paymentAssignment.user = user;
+  paymentAssignment.payment = payment;
+
+  await paymentAssignment.save({ session });
+
+  return singlePaymentAssignmentDto(paymentAssignment);
+};
+
+export { createPayment, assignPaymentToUsers, assignPaymentToUser };

@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { ObjectId } from 'mongodb';
 import userSubSchema from './subUser.schema.js';
 import { paymentSubSchema } from './payment.schema.js';
 
@@ -13,5 +14,14 @@ const paymentAssignmentSchema = Schema({
   treasurer: { type: userSubSchema },
 });
 
+const paymentAssignmentSubSchema = Schema({
+  _id: { type: ObjectId, ref: 'paymentAssignment', required: true },
+  completed: { type: Boolean, default: false },
+  confirmed: { type: Boolean, default: false },
+  completedDate: { type: Date },
+  confirmedDate: { type: Date },
+});
+
 const PaymentAssignmentSchema = model('paymentAssignment', paymentAssignmentSchema);
 export default PaymentAssignmentSchema;
+export { paymentAssignmentSubSchema };

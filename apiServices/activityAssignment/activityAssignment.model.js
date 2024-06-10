@@ -43,7 +43,8 @@ const getActivityAssignments = async ({
     const assignments = await ActivityAssignmentSchema.find(query, null, options).sort({
       'activity._id': 1,
       completed: -1,
-      pendingPayment: 1,
+      'paymentAssignment.confirmed': -1,
+      'paymentAssignment.completed': -1,
     });
     if (assignments.length === 0) {
       throw new CustomError('No se encontraron resultados.', 404);
@@ -71,14 +72,14 @@ const getActivityAssignments = async ({
 };
 
 const assignUserToActivity = async ({
-  user, completed, activity, session, aditionalServiceHours = 0,
+  user, completed, activity, paymentAssignment, session, aditionalServiceHours = 0,
 }) => {
   try {
     const activityAssignment = new ActivityAssignmentSchema();
 
     activityAssignment.user = user;
     activityAssignment.activity = activity;
-    activityAssignment.pendingPayment = activity.payment !== null;
+    activityAssignment.paymentAssignment = paymentAssignment;
     activityAssignment.completed = completed ?? false;
     activityAssignment.aditionalServiceHours = aditionalServiceHours;
 

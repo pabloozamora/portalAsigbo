@@ -1,5 +1,6 @@
-import { parseMultipleObjects, parseSingleObject } from '../../utils/parseMongoObject.js';
+import { parseMultipleObjects } from '../../utils/parseMongoObject.js';
 import { single as asigboAreaSingle } from '../asigboArea/asigboArea.dto.js';
+import { singlePaymentDto } from '../payment/payment.dto.js';
 
 /**
  * Genera el dto para una actividad.
@@ -38,7 +39,7 @@ const single = (
     serviceHours,
     responsible: showSensitiveData ? parseMultipleObjects(responsible) : undefined,
     asigboArea: asigboAreaSingle(asigboArea),
-    payment: parseSingleObject(payment),
+    payment: singlePaymentDto(payment),
     registrationStartDate,
     registrationEndDate,
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,
