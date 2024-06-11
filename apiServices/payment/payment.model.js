@@ -1,5 +1,6 @@
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
+import CustomError from '../../utils/customError.js';
 import { multiplePaymentDto, singlePaymentDto } from './payment.dto.js';
 import { singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
 
@@ -14,7 +15,13 @@ import { singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
   @returns singlePaymentDto
  */
 const createPayment = async ({
-  name, limitDate, amount, description, treasurer, targetUsers, session,
+  name,
+  limitDate,
+  amount,
+  description,
+  treasurer,
+  targetUsers,
+  session,
 }) => {
   const payment = new PaymentSchema();
 
@@ -45,7 +52,10 @@ const assignPaymentToUsers = async ({ users, payment, session }) => {
  */
 const assignPaymentToUser = async ({ user, payment, session }) => {
   // Retorna la asignación de pago existente (si la hay)
-  const paymentAssignmentRes = await PaymentAssignmentSchema.findOne({ 'payment._id': payment._id, 'user._id': user._id }).session(session);
+  const paymentAssignmentRes = await PaymentAssignmentSchema.findOne({
+    'payment._id': payment._id,
+    'user._id': user._id,
+  }).session(session);
   if (paymentAssignmentRes) return paymentAssignmentRes;
 
   // Crear nueva asignación de pago
@@ -66,12 +76,38 @@ const assignPaymentToUser = async ({ user, payment, session }) => {
  * @returns Boolean. Indica si se eliminó la asignación
  */
 const deletePaymentAssignment = async ({ idUser, idPayment, session }) => {
-  const { deletedCount } = await PaymentAssignmentSchema.deleteOne({
-    'user._id': idUser, 'payment._id': idPayment, completed: false,
-  }, { session });
+  const { deletedCount } = await PaymentAssignmentSchema.deleteOne(
+    {
+      'user._id': idUser,
+      'payment._id': idPayment,
+      completed: false,
+    },
+    { session },
+  );
   return deletedCount > 0;
 };
 
+const getPaymentAssignmetById = async ({ idPaymentAssignment, session }) => {
+  const result = await PaymentAssignmentSchema.findById(idPaymentAssignment).session(session);
+  return result != null ? singlePaymentAssignmentDto(result) : null;
+};
+
+const completePayment = async ({ idPaymentAssignment, voucherKeys, session }) => {
+  const { acknowledged, matchedCount } = await PaymentAssignmentSchema.updateOne(
+    { _id: idPaymentAssignment },
+    { $push: { hobbies: { $each: voucherKeys } }, completed: true },
+    { session },
+  );
+
+  if (matchedCount === 0) throw new CustomError('No se encontró la asignación de pago.', 404);
+  if (!acknowledged) throw new CustomError('No se pudo actualizar el status de completado de la asignación de pago.', 500);
+};
+
 export {
-  createPayment, assignPaymentToUsers, assignPaymentToUser, deletePaymentAssignment,
+  createPayment,
+  assignPaymentToUsers,
+  assignPaymentToUser,
+  deletePaymentAssignment,
+  getPaymentAssignmetById,
+  completePayment,
 };

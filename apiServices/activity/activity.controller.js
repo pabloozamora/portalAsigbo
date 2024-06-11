@@ -78,6 +78,8 @@ const saveBannerPicture = async ({ file, idActivity }) => {
   try {
     await uploadFileToBucket(fileKey, filePath, file.type);
   } catch (ex) {
+    fs.unlink(filePath, () => {}); // eliminar archivos temporales
+
     throw new CustomError('No se pudo cargar el banner de la actividad.', 500);
   }
 

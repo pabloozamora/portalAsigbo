@@ -23,6 +23,7 @@ const consts = {
     user: 'user',
     area: 'area',
     activity: 'activity',
+    paymentVoucher: 'payment-voucher',
   },
   resultsNumberPerPage: 7,
   imagePath: {

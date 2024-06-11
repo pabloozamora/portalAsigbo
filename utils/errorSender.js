@@ -14,12 +14,12 @@ const sendErrorObj = config.get('sendErrorObj');
  * la sesión.
  */
 const errorSender = async ({
-  res, ex, defaultError = 'Ocurrió un error.', session,
+  res, ex, defaultError = 'Ocurrió un error.', defaultStatus = 500, session,
 }) => {
   if (session) await session.abortTransaction();
 
   let err = defaultError;
-  let status = 500;
+  let status = defaultStatus;
   if (ex instanceof CustomError) {
     err = ex.message;
     status = ex.status ?? 500;
