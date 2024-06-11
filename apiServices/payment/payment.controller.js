@@ -123,6 +123,7 @@ const completePaymentController = async (req, res) => {
 
     if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
     if (!compareObjectId(idUser, paymentAssignment.user.id)) throw new CustomError('No estas autorizado para completar el pago.', 403);
+    if (paymentAssignment.completed === true) throw new CustomError('El pago ya fue completado.', 400);
 
     // Subir archivos de vouchers
     voucherKeys = await Promise.all(
