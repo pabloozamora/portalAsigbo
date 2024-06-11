@@ -8,7 +8,7 @@ import Promotion from '../promotion/promotion.model.js';
 import { getUsersByPromotion } from '../user/user.model.js';
 import { createPayment } from './payment.mediator.js';
 import {
-  assignPaymentToUsers, completePayment, getPaymentAssignmetById, resetPaymentCompletedStatus,
+  assignPaymentToUsers, completePayment, confirmPayment, getPaymentAssignmetById, resetPaymentCompletedStatus,
 } from './payment.model.js';
 import exists from '../../utils/exists.js';
 import compareObjectId from '../../utils/compareObjectId.js';
@@ -144,7 +144,6 @@ const completePaymentController = async (req, res) => {
         idUser: paymentAssignment.user.id,
       })),
     );
-
     await completePayment({ idPaymentAssignment, voucherKeys, session });
 
     await session.commitTransaction();
@@ -190,8 +189,33 @@ const resetPaymentCompletedStatusController = async (req, res) => {
   }
 };
 
+const confirmPaymentController = async (req, res) => {
+  const { idPaymentAssignment } = req.params;
+  const { id: idUser } = req.session;
+
+  try {
+    const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
+
+    if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
+    if (!paymentAssignment.completed) throw new CustomError('El pago aún no ha sido completado.', 400);
+
+    await validateTreasurerRole({ idPayment: paymentAssignment.payment._id, idUser });
+
+    await confirmPayment({ idPaymentAssignment });
+
+    res.status(204).send({ ok: true });
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al resetear status de pago completado.',
+    });
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
   resetPaymentCompletedStatusController,
+  confirmPaymentController,
 };

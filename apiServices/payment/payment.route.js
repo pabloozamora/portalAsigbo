@@ -3,7 +3,9 @@ import express from 'express';
 import validateBody from '../../middlewares/validateBody.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import createPaymentSchema from './validationSchemas/createPaymentSchema.js';
-import { completePaymentController, createGeneralPaymentController, resetPaymentCompletedStatusController } from './payment.controller.js';
+import {
+  completePaymentController, confirmPaymentController, createGeneralPaymentController, resetPaymentCompletedStatusController,
+} from './payment.controller.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
@@ -32,6 +34,13 @@ paymentRouter.patch(
   ensureTreasurerAuth,
   validateParams(paymentAssignmentParamSchema),
   resetPaymentCompletedStatusController,
+);
+
+paymentRouter.patch(
+  '/assignment/:idPaymentAssignment/confirm',
+  ensureTreasurerAuth,
+  validateParams(paymentAssignmentParamSchema),
+  confirmPaymentController,
 );
 
 export default paymentRouter;

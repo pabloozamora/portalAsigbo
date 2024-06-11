@@ -95,7 +95,7 @@ const getPaymentAssignmetById = async ({ idPaymentAssignment, session }) => {
 const completePayment = async ({ idPaymentAssignment, voucherKeys, session }) => {
   const { acknowledged, matchedCount } = await PaymentAssignmentSchema.updateOne(
     { _id: idPaymentAssignment },
-    { $push: { hobbies: { $each: voucherKeys } }, completed: true },
+    { $push: { vouchersKey: { $each: voucherKeys } }, completed: true },
     { session },
   );
 
@@ -114,6 +114,17 @@ const resetPaymentCompletedStatus = async ({ idPaymentAssignment, session }) => 
   if (!acknowledged) throw new CustomError('No se pudo actualizar el status de completado de la asignación de pago.', 500);
 };
 
+const confirmPayment = async ({ idPaymentAssignment, session }) => {
+  const { acknowledged, matchedCount } = await PaymentAssignmentSchema.updateOne(
+    { _id: idPaymentAssignment, completed: true },
+    { confirmed: true },
+    { session },
+  );
+
+  if (matchedCount === 0) throw new CustomError('No se encontró la asignación de pago.', 404);
+  if (!acknowledged) throw new CustomError('No se pudo actualizar el status de confirmado de la asignación de pago.', 500);
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -122,4 +133,5 @@ export {
   getPaymentAssignmetById,
   completePayment,
   resetPaymentCompletedStatus,
+  confirmPayment,
 };
