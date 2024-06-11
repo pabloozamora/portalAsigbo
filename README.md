@@ -659,6 +659,41 @@
   - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
   - promotion: Promoción (año) o grupo de promociones student, graduate, chick (revisar constantes)
 
+- **/assignment/:idPaymentAssignment/complete**
+
+  Método: Patch
+  Acceso: Usuario asignado al pago.
+
+  Completar pago subiendo comprobantes. El body debe proporcionarse como un formdata, por lo que se debe eliminar el header "Content-Type: application/json".
+
+  Parámetro obligatorio en la ruta:
+
+  - idPaymentAssignment: id de la asignación de pago a completar.
+
+  Parámetros obligatorios en el body:
+  - voucher: array de files (formdata)
+
+- **/assignment/:idPaymentAssignment/reset**
+
+  Método: Patch
+  Acceso: Tesorero del pago.
+
+  Resetear el status de completado del pago. Permite que se vuelvan a subir comprobantes de pago.
+
+  Parámetro obligatorio en la ruta:
+  - idPaymentAssignment: id de la asignación a resetear.
+
+
+- **/assignment/:idPaymentAssignment/confirm**
+
+  Método: Patch
+  Acceso: Tesorero del pago.
+
+  Marcar como confirmado un pago determinado.
+
+  Parámetro obligatorio en la ruta:
+  - idPaymentAssignment: id de la asignación de pago a confirmar.
+
 ## Notas
 
 ### Consideraciones para la bd
