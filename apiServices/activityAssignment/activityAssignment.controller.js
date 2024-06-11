@@ -10,7 +10,7 @@ import {
   validateResponsible as validateActivityResponsible,
 } from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
-import { assignPaymentToUser } from '../payment/payment.model.js';
+import { assignPaymentToUser, deletePaymentAssignment } from '../payment/payment.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import {
   getUser,
@@ -340,6 +340,11 @@ const unassignUserFromActivityController = async (req, res) => {
     // Reducir en 1 la cantidad de activ. completadas
     if (parseBoolean(completed)) {
       await updateActivitiesCompletedNumber({ idUser, remove: 1, session });
+    }
+
+    // Si existe un pago en la actividad, eliminar asignación (si no fue completado el pago aún)
+    if (activity.payment) {
+      await deletePaymentAssignment({ idUser, idPayment: activity.payment.id, session });
     }
 
     await session.commitTransaction();

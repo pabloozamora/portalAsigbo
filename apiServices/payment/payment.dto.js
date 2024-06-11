@@ -3,10 +3,10 @@ import { multiple as multipleUser } from '../user/user.dto.js';
 const singlePaymentDto = (resource) => {
   const {
     _id, id, name, limitDate, amount, description, treasurer, targetUsers,
-  } = resource._doc ?? resource;
+  } = resource?._doc ?? resource ?? {};
   return {
-    id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
-    _id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
+    id: _id?.valueOf() ?? id,
+    _id: _id?.valueOf() ?? id,
     name,
     limitDate,
     amount,

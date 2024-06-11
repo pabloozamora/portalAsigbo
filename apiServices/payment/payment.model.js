@@ -45,7 +45,7 @@ const assignPaymentToUsers = async ({ users, payment, session }) => {
  */
 const assignPaymentToUser = async ({ user, payment, session }) => {
   // Retorna la asignación de pago existente (si la hay)
-  const paymentAssignmentRes = await PaymentAssignmentSchema.findOne({ 'payment._id': payment._id }).session(session);
+  const paymentAssignmentRes = await PaymentAssignmentSchema.findOne({ 'payment._id': payment._id, 'user._id': user._id }).session(session);
   if (paymentAssignmentRes) return paymentAssignmentRes;
 
   // Crear nueva asignación de pago
@@ -58,4 +58,20 @@ const assignPaymentToUser = async ({ user, payment, session }) => {
   return singlePaymentAssignmentDto(paymentAssignment);
 };
 
-export { createPayment, assignPaymentToUsers, assignPaymentToUser };
+/**
+ * Elimina la asignación de un pago para un usuario. Tomar en cuenta que no se pueden eliminar
+ * pagos que ya han sido completados.
+ * @param {objectId} idUser Id del usuario
+ * @param {objectId} idPayment Id del pago
+ * @returns Boolean. Indica si se eliminó la asignación
+ */
+const deletePaymentAssignment = async ({ idUser, idPayment, session }) => {
+  const { deletedCount } = await PaymentAssignmentSchema.deleteOne({
+    'user._id': idUser, 'payment._id': idPayment, completed: false,
+  }, { session });
+  return deletedCount > 0;
+};
+
+export {
+  createPayment, assignPaymentToUsers, assignPaymentToUser, deletePaymentAssignment,
+};
