@@ -18,6 +18,7 @@ const paymentSchema = Schema({
     },
   },
   targetUsers: { type: String, required: true },
+  activityPayment: { type: Boolean, default: false },
 });
 
 const paymentSubSchema = Schema({

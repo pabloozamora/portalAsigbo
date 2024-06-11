@@ -1,5 +1,6 @@
 import config from 'config';
 import CustomError from './customError.js';
+import writeLog from './writeLog.js';
 
 const sendErrorObj = config.get('sendErrorObj');
 
@@ -18,6 +19,7 @@ const errorSender = async ({
 }) => {
   if (session) await session.abortTransaction();
 
+  writeLog(2, ex);
   let err = defaultError;
   let status = defaultStatus;
   if (ex instanceof CustomError) {

@@ -6,7 +6,7 @@ import CustomError from '../../utils/customError.js';
 import errorSender from '../../utils/errorSender.js';
 import Promotion from '../promotion/promotion.model.js';
 import { getUsersByPromotion } from '../user/user.model.js';
-import { createPayment } from './payment.mediator.js';
+import { createPayment, updatePayment } from './payment.mediator.js';
 import {
   assignPaymentToUsers, completePayment, confirmPayment, getPaymentAssignmetById, resetPaymentCompletedStatus,
 } from './payment.model.js';
@@ -96,7 +96,7 @@ const createGeneralPaymentController = async (req, res) => {
 
     await session.commitTransaction();
 
-    res.status(204).send({ ok: true });
+    res.status(204).send(payment);
   } catch (ex) {
     await errorSender({
       res,
@@ -213,9 +213,47 @@ const confirmPaymentController = async (req, res) => {
   }
 };
 
+const updateGeneralPaymentController = async (req, res) => {
+  const {
+    name, amount, description, limitDate, treasurer,
+  } = req.body;
+
+  const { idPayment } = req.params;
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    // actualizar pago
+    const payment = await updatePayment({
+      idPayment,
+      name,
+      limitDate,
+      amount,
+      description,
+      treasurerUsersId: treasurer,
+      includeActivityPayments: false,
+      session,
+    });
+
+    await session.commitTransaction();
+
+    res.status(200).send(payment);
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al actualizar pago general.',
+      session,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
   resetPaymentCompletedStatusController,
   confirmPaymentController,
+  updateGeneralPaymentController,
 };

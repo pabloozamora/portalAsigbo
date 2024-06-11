@@ -1,6 +1,7 @@
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 import CustomError from '../../utils/customError.js';
+import exists from '../../utils/exists.js';
 import { multiplePaymentDto, singlePaymentDto } from './payment.dto.js';
 import { singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
 
@@ -11,6 +12,7 @@ import { singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
  * @param {String} description Descripción del pago
  * @param {userSubSchema} treasurer Array de objetos de usuario de tesoreros del pago.
  * @param {string} targetUsers Descripción de grupo de usuarios al que se aplicó pago.
+ * @param {boolean} activityPayment Indica si un pago está vinculado a una actividad.
 
   @returns singlePaymentDto
  */
@@ -21,6 +23,7 @@ const createPayment = async ({
   description,
   treasurer,
   targetUsers,
+  activityPayment,
   session,
 }) => {
   const payment = new PaymentSchema();
@@ -31,6 +34,7 @@ const createPayment = async ({
   payment.description = description;
   payment.treasurer = treasurer;
   payment.targetUsers = targetUsers;
+  payment.activityPayment = activityPayment;
 
   await payment.save({ session });
   return singlePaymentDto(payment);
@@ -125,6 +129,39 @@ const confirmPayment = async ({ idPaymentAssignment, session }) => {
   if (!acknowledged) throw new CustomError('No se pudo actualizar el status de confirmado de la asignación de pago.', 500);
 };
 
+const updatePayment = async ({
+  idPayment, name, amount, description, limitDate, treasurer, includeActivityPayments = true, session,
+}) => {
+  const payment = await PaymentSchema.findById(idPayment);
+
+  if (!payment) throw new CustomError('No se encontró el pago.', 404);
+
+  if (!includeActivityPayments && payment.activityPayment) throw new CustomError('No se puede actualizar pagos vinculados a actividades.', 400);
+
+  const dataBeforeChange = singlePaymentDto(payment);
+
+  if (exists(name)) payment.name = name.trim();
+  if (exists(amount)) payment.amount = amount;
+  if (exists(description)) payment.description = description.trim();
+  if (exists(limitDate)) payment.limitDate = new Date(limitDate);
+  if (exists(treasurer)) payment.treasurer = treasurer;
+
+  await payment.save({ session });
+
+  const updatedData = singlePaymentDto(payment);
+  return { dataBeforeChange, updatedData };
+};
+
+/**
+ * Retorna los pagos en lo que un usuario figura como un tesorero.
+ * @returns Devuelve un array de PaymentsDto con los resultados.
+ */
+const getPaymentsWhereUserIsTreasurer = async ({ idUser, session }) => {
+  const payments = await PaymentSchema.find({ treasurer: { $elemMatch: { _id: idUser } } }).session(session);
+
+  return multiplePaymentDto(payments);
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -134,4 +171,6 @@ export {
   completePayment,
   resetPaymentCompletedStatus,
   confirmPayment,
+  updatePayment,
+  getPaymentsWhereUserIsTreasurer,
 };
