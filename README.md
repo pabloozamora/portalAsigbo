@@ -82,9 +82,17 @@
 
   Parámetros opcionales (formData):
 
-  - paymentAmount: monto del pago requerido para la actividad.
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
   - banner: objeto file con imagenes .png, jpg o gif a colocar como banner.
+  - payment: Objeto. si se especifíca un pago, este se asigna a cada uno de los usuarios inscritos en la actividad.
+
+    El pago debe incluir los siguientes parámetros:
+      - name: nombre o "concepto de" del pago.
+      - amount: cantidad en quetzales del pago.
+      - description: descripción del pago. Se recomienda agregar información como el número de cuenta, banco, propietario, etc.
+      - limitDate: fecha límite del pago. El pago no se bloquea en ningún momento, pero si no se realiza antes de esta fecha, se mostrará como pago atrasado.
+      - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
+
 
 - **/activity/:idActivity**
 
@@ -633,6 +641,23 @@
 
   La forma en la que llegue la información (archivo csv, txt, etcétera) quedará a discresión del frontend, siempre y cuando cumpla con los atributos y tipos de dato anteriores.
 
+### Pagos
+
+- **/payment**
+
+  Método: post
+  Acceso: Admin
+
+  Permite crear un pago general para un grupo de promociones dado.
+
+  Parámetros obligatorios:
+
+  - name: nombre o "concepto de" del pago.
+  - amount: cantidad en quetzales del pago.
+  - description: descripción del pago. Se recomienda agregar información como el número de cuenta, banco, propietario, etc.
+  - limitDate: fecha límite del pago. El pago no se bloquea en ningún momento, pero si no se realiza antes de esta fecha, se mostrará como pago atrasado.
+  - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
+  - promotion: Promoción (año) o grupo de promociones student, graduate, chick (revisar constantes)
 
 ## Notas
 
