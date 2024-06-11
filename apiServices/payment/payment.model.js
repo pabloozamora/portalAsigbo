@@ -103,6 +103,17 @@ const completePayment = async ({ idPaymentAssignment, voucherKeys, session }) =>
   if (!acknowledged) throw new CustomError('No se pudo actualizar el status de completado de la asignación de pago.', 500);
 };
 
+const resetPaymentCompletedStatus = async ({ idPaymentAssignment, session }) => {
+  const { acknowledged, matchedCount } = await PaymentAssignmentSchema.updateOne(
+    { _id: idPaymentAssignment },
+    { completed: false },
+    { session },
+  );
+
+  if (matchedCount === 0) throw new CustomError('No se encontró la asignación de pago.', 404);
+  if (!acknowledged) throw new CustomError('No se pudo actualizar el status de completado de la asignación de pago.', 500);
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -110,4 +121,5 @@ export {
   deletePaymentAssignment,
   getPaymentAssignmetById,
   completePayment,
+  resetPaymentCompletedStatus,
 };

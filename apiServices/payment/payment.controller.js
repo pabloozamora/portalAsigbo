@@ -7,11 +7,14 @@ import errorSender from '../../utils/errorSender.js';
 import Promotion from '../promotion/promotion.model.js';
 import { getUsersByPromotion } from '../user/user.model.js';
 import { createPayment } from './payment.mediator.js';
-import { assignPaymentToUsers, completePayment, getPaymentAssignmetById } from './payment.model.js';
+import {
+  assignPaymentToUsers, completePayment, getPaymentAssignmetById, resetPaymentCompletedStatus,
+} from './payment.model.js';
 import exists from '../../utils/exists.js';
 import compareObjectId from '../../utils/compareObjectId.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import writeLog from '../../utils/writeLog.js';
+import PaymentSchema from '../../db/schemas/payment.schema.js';
 
 const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -31,6 +34,14 @@ const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
   // eliminar archivos temporales
   fs.unlink(filePath, () => {});
   return fileKey;
+};
+
+const validateTreasurerRole = async ({ idPayment, idUser }) => {
+  const payment = await PaymentSchema.findById(idPayment);
+  if (!Array.isArray(payment?.treasurer)
+  || !payment.treasurer.some((user) => compareObjectId(user.id, idUser))) {
+    throw new CustomError('No tienes los privilegios para relizar esta acción.', 403);
+  }
 };
 
 const createGeneralPaymentController = async (req, res) => {
@@ -153,4 +164,34 @@ const completePaymentController = async (req, res) => {
   }
 };
 
-export { createGeneralPaymentController, completePaymentController };
+const resetPaymentCompletedStatusController = async (req, res) => {
+  const { idPaymentAssignment } = req.params;
+  const { id: idUser } = req.session;
+
+  try {
+    const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
+
+    if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
+    if (paymentAssignment.confirmed) throw new CustomError('No se puede resetear el status de completado a un pago ya confirmado.', 400);
+
+    await validateTreasurerRole({ idPayment: paymentAssignment.payment._id, idUser });
+
+    if (paymentAssignment.completed) {
+      await resetPaymentCompletedStatus({ idPaymentAssignment });
+    }
+
+    res.status(204).send({ ok: true });
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al resetear status de pago completado.',
+    });
+  }
+};
+
+export {
+  createGeneralPaymentController,
+  completePaymentController,
+  resetPaymentCompletedStatusController,
+};
