@@ -10,6 +10,7 @@ import { createPayment } from './payment.mediator.js';
 import {
   assignPaymentToUsers, completePayment, confirmPayment, getPaymentAssignmetById, getPaymentsWhereUserIsTreasurer, resetPaymentCompletedStatus,
   updatePayment,
+  updatePaymentInAllDependencies,
 } from './payment.model.js';
 import exists from '../../utils/exists.js';
 import compareObjectId from '../../utils/compareObjectId.js';
@@ -269,8 +270,11 @@ const updatePaymentController = async (req, res) => {
       )
       .map((user) => user._id);
 
-    // Asignar role de tesorero
+    // retirar role de tesorero
     await Promise.all(usersRemovedId.map((idUser) => removeTreasurerRole({ idUser, session })));
+
+    // Actualizar pago en subdocumentos
+    await updatePaymentInAllDependencies({ payment: updatedData, session });
 
     await session.commitTransaction();
 

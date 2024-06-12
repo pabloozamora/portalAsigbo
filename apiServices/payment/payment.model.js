@@ -1,3 +1,4 @@
+import ActivitySchema from '../../db/schemas/activity.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 import CustomError from '../../utils/customError.js';
@@ -171,6 +172,21 @@ const getPaymentById = async ({ idPayment, session }) => {
   return result != null ? singlePaymentDto(result) : null;
 };
 
+const updatePaymentInAllDependencies = async ({ payment, session }) => {
+  // actualizar pago en documentos de actividad
+  await ActivitySchema.updateMany(
+    { 'payment._id': payment._id },
+    { payment },
+    { session },
+  );
+  // actualizar pago en documentos de actividad
+  await PaymentAssignmentSchema.updateMany(
+    { 'payment._id': payment._id },
+    { payment },
+    { session },
+  );
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -183,4 +199,5 @@ export {
   updatePayment,
   getPaymentsWhereUserIsTreasurer,
   getPaymentById,
+  updatePaymentInAllDependencies,
 };
