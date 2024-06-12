@@ -322,6 +322,12 @@ const uploadActivities = async ({ activities, session }) => {
   return savedActivities;
 };
 
+const getActivityByPaymentId = async ({ idPayment, session }) => {
+  const activity = await ActivitySchema.findOne({ 'payment._id': idPayment }).session(session);
+
+  return activity ? singleActivityDto(activity) : null;
+};
+
 export {
   createActivity,
   updateActivity,
@@ -336,4 +342,5 @@ export {
   updateActivityBlockedStatus,
   getActivityByNameAndArea,
   uploadActivities,
+  getActivityByPaymentId,
 };

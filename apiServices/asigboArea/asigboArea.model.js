@@ -13,10 +13,12 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
  * Por defecto, Lanza un CustomError si el usuario no posee dicho privilegio.
  * @return Boolean. Indica si el usuario es encargado del eje.
  */
-const validateResponsible = async ({ idUser, idArea, preventError = false }) => {
+const validateResponsible = async ({
+  idUser, idArea, preventError = false, defaultError = 'El usuario no es encargado de la actividad.',
+}) => {
   const { responsible } = await AsigboAreaSchema.findById(idArea);
   const isResponsible = responsible.some((user) => user._id.toString() === idUser);
-  if (!isResponsible && !preventError) throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  if (!isResponsible && !preventError) throw new CustomError(defaultError, 403);
   return isResponsible;
 };
 

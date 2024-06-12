@@ -5,16 +5,20 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import errorSender from '../../utils/errorSender.js';
 import Promotion from '../promotion/promotion.model.js';
-import { getUsersByPromotion } from '../user/user.model.js';
-import { createPayment, updatePayment } from './payment.mediator.js';
+import { getUsersByPromotion, getUsersInList, removeRoleFromUser } from '../user/user.model.js';
+import { createPayment } from './payment.mediator.js';
 import {
-  assignPaymentToUsers, completePayment, confirmPayment, getPaymentAssignmetById, resetPaymentCompletedStatus,
+  assignPaymentToUsers, completePayment, confirmPayment, getPaymentAssignmetById, getPaymentsWhereUserIsTreasurer, resetPaymentCompletedStatus,
+  updatePayment,
 } from './payment.model.js';
 import exists from '../../utils/exists.js';
 import compareObjectId from '../../utils/compareObjectId.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import writeLog from '../../utils/writeLog.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
+import { forceSessionTokenToUpdate } from '../session/session.model.js';
+import { getActivityByPaymentId } from '../activity/activity.model.js';
+import { validateResponsible as validateAsigboAreaResponsible } from '../asigboArea/asigboArea.model.js';
 
 const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -42,6 +46,25 @@ const validateTreasurerRole = async ({ idPayment, idUser }) => {
   || !payment.treasurer.some((user) => compareObjectId(user.id, idUser))) {
     throw new CustomError('No tienes los privilegios para relizar esta acción.', 403);
   }
+};
+
+const removeTreasurerRole = async ({ idUser, session }) => {
+  // Remover rol solo si ya no tiene más pagos a cargo
+  const paymentsWhereIsTreasurer = await getPaymentsWhereUserIsTreasurer({ idUser, session });
+  if (paymentsWhereIsTreasurer.length === 0) {
+    await removeRoleFromUser({ idUser, role: consts.roles.treasurer, session });
+    // Forzar actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
+  }
+};
+
+const validateEditPaymentAccess = async ({ idUser, idPayment, session }) => {
+  const activity = await getActivityByPaymentId({ idPayment, session });
+  if (activity) {
+    const isResponsible = await validateAsigboAreaResponsible({ idUser, idArea: activity.asigboArea._id, preventError: true });
+    if (isResponsible) return;
+  }
+  throw new CustomError('No estás autorizado de realizar esta acción.', 403);
 };
 
 const createGeneralPaymentController = async (req, res) => {
@@ -213,31 +236,45 @@ const confirmPaymentController = async (req, res) => {
   }
 };
 
-const updateGeneralPaymentController = async (req, res) => {
+const updatePaymentController = async (req, res) => {
   const {
-    name, amount, description, limitDate, treasurer,
+    name, amount, description, limitDate, treasurer: treasurerUsersId,
   } = req.body;
 
   const { idPayment } = req.params;
+  const { id: sessionIdUser, role } = req.session;
+
   const session = await connection.startSession();
   try {
     session.startTransaction();
 
-    // actualizar pago
-    const payment = await updatePayment({
-      idPayment,
-      name,
-      limitDate,
-      amount,
-      description,
-      treasurerUsersId: treasurer,
-      includeActivityPayments: false,
-      session,
+    // Validar privilegios para editar pago
+    // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
+    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser: sessionIdUser, idPayment });
+
+    // Obtener objetos de usuarios tesoreros
+    const treasurerUsers = exists(treasurerUsersId)
+      ? await getUsersInList({ idUsersList: treasurerUsersId, session, missingUserError: 'Uno de los usuarios especificados como tesoreros no existe.' })
+      : null;
+
+    // Actualizar datos de pago
+    const { dataBeforeChange, updatedData } = await updatePayment({
+      idPayment, name, limitDate, amount, description, treasurer: treasurerUsers, session,
     });
+
+    // Retirar permisos a tesoreros eliminados (si corresponde)
+    const usersRemovedId = dataBeforeChange.treasurer
+      .filter(
+        (beforeUser) => !updatedData.treasurer.some((updatedUser) => beforeUser._id === updatedUser._id),
+      )
+      .map((user) => user._id);
+
+    // Asignar role de tesorero
+    await Promise.all(usersRemovedId.map((idUser) => removeTreasurerRole({ idUser, session })));
 
     await session.commitTransaction();
 
-    res.status(200).send(payment);
+    res.status(200).send(updatedData);
   } catch (ex) {
     await errorSender({
       res,
@@ -255,5 +292,5 @@ export {
   completePaymentController,
   resetPaymentCompletedStatusController,
   confirmPaymentController,
-  updateGeneralPaymentController,
+  updatePaymentController,
 };

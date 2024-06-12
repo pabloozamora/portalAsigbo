@@ -162,6 +162,15 @@ const getPaymentsWhereUserIsTreasurer = async ({ idUser, session }) => {
   return multiplePaymentDto(payments);
 };
 
+/**
+ * Obtiene pago por medio de id.
+ * @returns Payment Dto o null si no hay resultados.
+ */
+const getPaymentById = async ({ idPayment, session }) => {
+  const result = await PaymentSchema.findById(idPayment).session(session);
+  return result != null ? singlePaymentDto(result) : null;
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -173,4 +182,5 @@ export {
   confirmPayment,
   updatePayment,
   getPaymentsWhereUserIsTreasurer,
+  getPaymentById,
 };

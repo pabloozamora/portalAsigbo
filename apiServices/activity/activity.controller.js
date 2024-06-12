@@ -126,7 +126,6 @@ const createActivityController = async (req, res) => {
         description: paymentDescription,
         treasurerUsersId: treasurer,
         targetUsers: consts.strings.activityPaymentTargetUsers,
-        activityPayment: true,
         session,
       });
     }
