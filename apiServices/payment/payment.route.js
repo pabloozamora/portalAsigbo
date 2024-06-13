@@ -4,7 +4,7 @@ import validateBody from '../../middlewares/validateBody.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import createPaymentSchema from './validationSchemas/createPaymentSchema.js';
 import {
-  completePaymentController, confirmPaymentController, createGeneralPaymentController, resetPaymentCompletedStatusController,
+  completePaymentController, confirmPaymentController, createGeneralPaymentController, deletePaymentController, resetPaymentCompletedStatusController,
   updatePaymentController,
 } from './payment.controller.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
@@ -54,6 +54,12 @@ paymentRouter.patch(
   validateParams(paymentParamSchema),
   validateBody(updatePaymentSchema),
   updatePaymentController,
+);
+paymentRouter.delete(
+  '/:idPayment',
+  ensureAreaResponsibleAuth,
+  validateParams(paymentParamSchema),
+  deletePaymentController,
 );
 
 export default paymentRouter;

@@ -1,4 +1,5 @@
 import ActivitySchema from '../../db/schemas/activity.schema.js';
+import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 import CustomError from '../../utils/customError.js';
@@ -187,6 +188,41 @@ const updatePaymentInAllDependencies = async ({ payment, session }) => {
   );
 };
 
+/**
+ * Elimina un pago.
+ * @returns Payment Dto del pago eliminado.
+ */
+const deletePayment = async ({ idPayment, session }) => {
+  const payment = await PaymentSchema.findOneAndDelete({ _id: idPayment }, { session });
+
+  if (!payment) throw new CustomError('No se pudo eliminar el pago.', 500);
+
+  return singlePaymentDto(payment);
+};
+
+/**
+ * Se eliminan todas las asignaciones de un pago, siempre y cuando no hayan sido eliminadas.
+ */
+const deleteAllPaymentAssignments = async ({ idPayment, session }) => {
+  const { acknowledged } = await PaymentAssignmentSchema.deleteMany({ 'payment._id': idPayment, completed: false, vouchersKey: { $size: 0 } }, { session });
+
+  if (!acknowledged) throw new CustomError('No se pudo eliminar las asignaciones de pago.', 500);
+};
+
+/**
+ * Remueve subdocumentos de pago o asignaciones de pago en actividades y asignaciones de actividades respectivamente.
+ * @param {*} param0
+ */
+const removePaymentDependencies = async ({ idPayment, preventError = false, session }) => {
+  const activity = await ActivitySchema.findOneAndUpdate({ 'payment._id': idPayment }, { payment: null }, { session });
+
+  if (!activity && !preventError) throw new CustomError('No se encontró la actividad vinculada al pago.', 404);
+
+  // actualizar asignaciones de esa actividad
+  const { acknowledged } = await ActivityAssignmentSchema.updateMany({ 'activity._id': activity._id }, { paymentAssignment: null }, { session });
+  if (!acknowledged) throw new CustomError('No se pudo eliminar el pago de las asignaciones a actividades.', 500);
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -200,4 +236,7 @@ export {
   getPaymentsWhereUserIsTreasurer,
   getPaymentById,
   updatePaymentInAllDependencies,
+  deletePayment,
+  deleteAllPaymentAssignments,
+  removePaymentDependencies,
 };

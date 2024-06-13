@@ -2,7 +2,7 @@ import { multiple as multipleUser } from '../user/user.dto.js';
 
 const singlePaymentDto = (resource) => {
   const {
-    _id, id, name, limitDate, amount, description, treasurer, targetUsers,
+    _id, id, name, limitDate, amount, description, treasurer, targetUsers, activityPayment,
   } = resource?._doc ?? resource ?? {};
   return {
     id: _id?.valueOf() ?? id,
@@ -13,6 +13,7 @@ const singlePaymentDto = (resource) => {
     description,
     treasurer: multipleUser(treasurer),
     targetUsers,
+    activityPayment,
   };
 };
 

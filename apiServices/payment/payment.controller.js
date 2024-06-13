@@ -8,7 +8,15 @@ import Promotion from '../promotion/promotion.model.js';
 import { getUsersByPromotion, getUsersInList, removeRoleFromUser } from '../user/user.model.js';
 import { createPayment } from './payment.mediator.js';
 import {
-  assignPaymentToUsers, completePayment, confirmPayment, getPaymentAssignmetById, getPaymentsWhereUserIsTreasurer, resetPaymentCompletedStatus,
+  assignPaymentToUsers,
+  completePayment,
+  confirmPayment,
+  deleteAllPaymentAssignments,
+  deletePayment,
+  getPaymentAssignmetById,
+  getPaymentsWhereUserIsTreasurer,
+  removePaymentDependencies,
+  resetPaymentCompletedStatus,
   updatePayment,
   updatePaymentInAllDependencies,
 } from './payment.model.js';
@@ -291,10 +299,47 @@ const updatePaymentController = async (req, res) => {
   }
 };
 
+const deletePaymentController = async (req, res) => {
+  const { idPayment } = req.params;
+  const { id: sessionIdUser, role } = req.session;
+
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    // Validar privilegios para eliminar pago
+    // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
+    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser: sessionIdUser, idPayment });
+
+    // Eliminar pago y asignaciones de pago
+    const payment = await deletePayment({ idPayment, session });
+    await deleteAllPaymentAssignments({ idPayment, session });
+
+    // Si el pago está vinculado a una actividad, removerlo de los respectivos documentos
+    if (payment.activityPayment) {
+      await removePaymentDependencies({ idPayment, preventError: true, session });
+    }
+
+    await session.commitTransaction();
+
+    res.status(204).send({ ok: true });
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al actualizar pago general.',
+      session,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
   resetPaymentCompletedStatusController,
   confirmPaymentController,
   updatePaymentController,
+  deletePaymentController,
 };
