@@ -84,14 +84,6 @@
 
   - participatingPromotions: lista con el año de las promociones de becados que se pueden inscribir. También se puede incluir el nombre del grupo de promociones (chick, student y graduate). Un valor **null** implíca que todos los becados pueden inscribirse.
   - banner: objeto file con imagenes .png, jpg o gif a colocar como banner.
-  - payment: Objeto. si se especifíca un pago, este se asigna a cada uno de los usuarios inscritos en la actividad.
-
-    El pago debe incluir los siguientes parámetros:
-      - name: nombre o "concepto de" del pago.
-      - amount: cantidad en quetzales del pago.
-      - description: descripción del pago. Se recomienda agregar información como el número de cuenta, banco, propietario, etc.
-      - limitDate: fecha límite del pago. El pago no se bloquea en ningún momento, pero si no se realiza antes de esta fecha, se mostrará como pago atrasado.
-      - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
 
 
 - **/activity/:idActivity**
@@ -659,7 +651,24 @@
   - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
   - promotion: Promoción (año) o grupo de promociones student, graduate, chick (revisar constantes)
 
-- **/assignment/:idPaymentAssignment/complete**
+
+- **/payment/activity**
+
+  Método: post
+  Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área)
+
+  Permite crear un pago para una actividad.
+
+  Parámetros obligatorios:
+
+  - idActivity: id de la actividad en la que se va a vincular el pago.
+  - name: nombre o "concepto de" del pago.
+  - amount: cantidad en quetzales del pago.
+  - description: descripción del pago. Se recomienda agregar información como el número de cuenta, banco, propietario, etc.
+  - limitDate: fecha límite del pago. El pago no se bloquea en ningún momento, pero si no se realiza antes de esta fecha, se mostrará como pago atrasado.
+  - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
+
+- **/payment/assignment/:idPaymentAssignment/complete**
 
   Método: Patch
   Acceso: Usuario asignado al pago.
@@ -673,7 +682,7 @@
   Parámetros obligatorios en el body:
   - voucher: array de files (formdata)
 
-- **/assignment/:idPaymentAssignment/reset**
+- **/payment/assignment/:idPaymentAssignment/reset**
 
   Método: Patch
   Acceso: Tesorero del pago.
@@ -684,7 +693,7 @@
   - idPaymentAssignment: id de la asignación a resetear.
 
 
-- **/assignment/:idPaymentAssignment/confirm**
+- **/payment/assignment/:idPaymentAssignment/confirm**
 
   Método: Patch
   Acceso: Tesorero del pago.
@@ -693,6 +702,32 @@
 
   Parámetro obligatorio en la ruta:
   - idPaymentAssignment: id de la asignación de pago a confirmar.
+
+- **/payment**
+
+  Método: patch
+  Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área)
+
+  Permite editar un pago.
+
+  Parámetros opcionales:
+
+  - name: nombre o "concepto de" del pago.
+  - amount: cantidad en quetzales del pago.
+  - description: descripción del pago. Se recomienda agregar información como el número de cuenta, banco, propietario, etc.
+  - limitDate: fecha límite del pago. El pago no se bloquea en ningún momento, pero si no se realiza antes de esta fecha, se mostrará como pago atrasado.
+  - treasurer: Arreglo de ID's de usuarios que figurarán como tesoreros del pago. Son los únicos encargados de aprobar un pago determinado.
+
+- **/payment/:idPayment**
+
+  Método: Delete
+  Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área)
+
+  Permite eliminar un pago.
+
+  Parámetro obligatorio en la ruta:
+
+  - idPayment: id del pago a eliminar.
 
 ## Notas
 
