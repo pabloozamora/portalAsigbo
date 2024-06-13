@@ -5,6 +5,7 @@ import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
 import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
+import { single as singleUserDto } from '../user/user.dto.js';
 
 /**
  * Permite obtener las asignaciones de una actividad.
@@ -168,6 +169,43 @@ const getActivityAssignment = async ({
   }
 };
 
+/**
+ * Obtener el listado de usuario asignados a una actividad.
+ * @param idActivity
+ * @param session
+ * @returns UserDto array
+ */
+const getActivityAssignedUsers = async ({ idActivity, session }) => {
+  const assignments = await ActivityAssignmentSchema.find({ 'activity._id': idActivity }, { user: 1 }).session(session);
+  return assignments.map((result) => singleUserDto(result.user));
+};
+
+/**
+ * Añade el subdocumento de asignación de pago en la correspondiente asignación a la actividad
+ * para múltiples usuarios.
+ * @param idActivity
+ * @param paymentAssignmentsList Lista de paymentAssignments
+ * @param session
+ */
+const addPaymentsToActivityAssignments = async ({ idActivity, paymentAssignmentsList, session }) => {
+  const bulkOptions = [];
+
+  paymentAssignmentsList.forEach((paymentAssignment) => {
+    const updateOptions = {
+      updateOne: {
+        filter: { 'activity._id': idActivity, 'user._id': paymentAssignment.user._id },
+        update: { $set: { paymentAssignment } },
+        upsert: false,
+      },
+    };
+    bulkOptions.push(updateOptions);
+  });
+
+  const { matchedCount } = await ActivityAssignmentSchema.bulkWrite(bulkOptions, { session });
+
+  if (matchedCount !== paymentAssignmentsList.length) throw new CustomError('No se encontraron algunas asignaciones a actividades.', 404);
+};
+
 export {
   assignUserToActivity,
   getCompletedActivityAssignmentsById,
@@ -176,4 +214,6 @@ export {
   updateActivityAssignment,
   assignManyUsersToActivity,
   getActivityAssignment,
+  addPaymentsToActivityAssignments,
+  getActivityAssignedUsers,
 };

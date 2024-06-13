@@ -4,7 +4,7 @@ import validateBody from '../../middlewares/validateBody.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import createPaymentSchema from './validationSchemas/createPaymentSchema.js';
 import {
-  completePaymentController, confirmPaymentController, createGeneralPaymentController, deletePaymentController, resetPaymentCompletedStatusController,
+  completePaymentController, confirmPaymentController, createActivityPaymentController, createGeneralPaymentController, deletePaymentController, resetPaymentCompletedStatusController,
   updatePaymentController,
 } from './payment.controller.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
@@ -16,6 +16,7 @@ import ensureTreasurerAuth from '../../middlewares/ensureTreasurerAuth.js';
 import paymentParamSchema from './validationSchemas/paymentParamSchema.js';
 import updatePaymentSchema from './validationSchemas/updatePaymentSchema.js';
 import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
+import createActivityPaymentSchema from './validationSchemas/createActivityPaymentSchema.js';
 
 const paymentRouter = express.Router();
 
@@ -24,6 +25,12 @@ paymentRouter.post(
   ensureAdminAuth,
   validateBody(createPaymentSchema),
   createGeneralPaymentController,
+);
+paymentRouter.post(
+  '/activity',
+  ensureAreaResponsibleAuth,
+  validateBody(createActivityPaymentSchema),
+  createActivityPaymentController,
 );
 
 paymentRouter.patch(

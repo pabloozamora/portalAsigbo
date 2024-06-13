@@ -29,7 +29,6 @@ const createActivity = async ({
   serviceHours,
   responsible,
   idAsigboArea,
-  payment,
   registrationStartDate,
   registrationEndDate,
   participatingPromotions,
@@ -60,7 +59,6 @@ const createActivity = async ({
   activity.serviceHours = serviceHours;
   activity.responsible = responsiblesData;
   activity.asigboArea = asigboAreaData;
-  activity.payment = payment;
   activity.registrationStartDate = registrationStartDate;
   activity.registrationEndDate = registrationEndDate;
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
@@ -328,6 +326,18 @@ const getActivityByPaymentId = async ({ idPayment, session }) => {
   return activity ? singleActivityDto(activity) : null;
 };
 
+const assignPaymentToActivity = async ({ idActivity, payment, session }) => {
+  const activity = await ActivitySchema.findById(idActivity).session(session);
+
+  if (!activity) throw new CustomError('No se encontró la actividad.', 404);
+
+  if (exists(activity.payment)) throw new CustomError('La actividad ya cuenta con un pago asignado.', 400);
+
+  activity.payment = payment;
+
+  await activity.save();
+};
+
 export {
   createActivity,
   updateActivity,
@@ -343,4 +353,5 @@ export {
   getActivityByNameAndArea,
   uploadActivities,
   getActivityByPaymentId,
+  assignPaymentToActivity,
 };

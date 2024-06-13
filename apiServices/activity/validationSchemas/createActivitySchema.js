@@ -3,36 +3,6 @@ import validateId from '../../../utils/validateId.js';
 import consts from '../../../utils/consts.js';
 
 export default yup.object().shape({
-  payment: yup
-    .object()
-    .nullable()
-    .typeError("El campo 'payment' debe ser un objeto.")
-    .shape({
-      treasurer: yup
-        .array()
-        .of(
-          yup
-            .string()
-            .test('validate-id', "El campo 'payment.treasurer' debe contener id's válidos.", (id) => validateId(id)),
-        )
-        .typeError("El campo 'payment.treasurer' debe ser un arreglo.")
-        .min(1, "El campo 'payment.treasurer' debe contener al menos un responsable del área.")
-        .required("El campo 'payment.treasurer' es oblgatorio."),
-      limitDate: yup
-        .date()
-        .nullable()
-        .typeError("El campo 'payment.limitDate' debe ser una fecha válida.")
-        .required("El campo 'payment.limitDate' es obligatorio."),
-      description: yup.string().required("El campo 'payment.description' es obligatorio."),
-      amount: yup
-        .number()
-        .nullable()
-        .typeError("El campo 'payment.amount' debe ser una número.")
-        .min(0, "El campo 'payment.amount' debe ser mayor o igual a cero.")
-        .required("El campo 'payment.amount' es obligatorio."),
-      name: yup.string().required("El campo 'payment.name' es obligatorio."),
-    })
-    .default(null),
   participantsNumber: yup
     .number()
     .nullable()

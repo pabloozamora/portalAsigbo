@@ -5,7 +5,7 @@ import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.j
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import { multiplePaymentDto, singlePaymentDto } from './payment.dto.js';
-import { singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
+import { multiplePaymentAssignmentDto, singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
 
 /**
  *
@@ -42,10 +42,17 @@ const createPayment = async ({
   return singlePaymentDto(payment);
 };
 
+/**
+ * Crea la asignación de un pago para una lista de usuarios.
+ * @param users Listado de usuarios a asignar al pago
+ * @param payment Dto payment
+ * @param session
+ * @returns Listado de PaymentAssignments DTO
+ */
 const assignPaymentToUsers = async ({ users, payment, session }) => {
   const paymentAssignments = users.map((user) => ({ user, payment }));
   const result = await PaymentAssignmentSchema.insertMany(paymentAssignments, { session });
-  return multiplePaymentDto(result);
+  return multiplePaymentAssignmentDto(result);
 };
 
 /**

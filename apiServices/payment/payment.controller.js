@@ -26,8 +26,9 @@ import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.j
 import writeLog from '../../utils/writeLog.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
-import { getActivityByPaymentId } from '../activity/activity.model.js';
+import { assignPaymentToActivity, getActivity, getActivityByPaymentId } from '../activity/activity.model.js';
 import { validateResponsible as validateAsigboAreaResponsible } from '../asigboArea/asigboArea.model.js';
+import { addPaymentsToActivityAssignments, getActivityAssignedUsers } from '../activityAssignment/activityAssignment.model.js';
 
 const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -197,10 +198,14 @@ const completePaymentController = async (req, res) => {
 
 const resetPaymentCompletedStatusController = async (req, res) => {
   const { idPaymentAssignment } = req.params;
-  const { id: idUser } = req.session;
+  const { id: idUser, role } = req.session;
 
   try {
     const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
+
+    // Validar privilegios para editar pago
+    // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
+    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser, idPayment: paymentAssignment.payment._id });
 
     if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
     if (paymentAssignment.confirmed) throw new CustomError('No se puede resetear el status de completado a un pago ya confirmado.', 400);
@@ -223,10 +228,14 @@ const resetPaymentCompletedStatusController = async (req, res) => {
 
 const confirmPaymentController = async (req, res) => {
   const { idPaymentAssignment } = req.params;
-  const { id: idUser } = req.session;
+  const { id: idUser, role } = req.session;
 
   try {
     const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
+
+    // Validar privilegios para editar pago
+    // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
+    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser, idPayment: paymentAssignment.payment._id });
 
     if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
     if (!paymentAssignment.completed) throw new CustomError('El pago aún no ha sido completado.', 400);
@@ -335,6 +344,63 @@ const deletePaymentController = async (req, res) => {
   }
 };
 
+const createActivityPaymentController = async (req, res) => {
+  const {
+    idActivity, name, amount, description, limitDate, treasurer,
+  } = req.body;
+  const { id: idUser, role } = req.session;
+  const session = await connection.startSession();
+  try {
+    session.startTransaction();
+
+    // Retorna 404 si no encuentra actividad
+    const activity = await getActivity({ idActivity });
+
+    // Validar si es encargado del area de asigbo de la actividad
+    if (!role.includes(consts.roles.admin)) {
+      await validateAsigboAreaResponsible({ idUser, idArea: activity.asigboArea._id });
+    }
+
+    const assignedUsers = await getActivityAssignedUsers({ idActivity });
+
+    // Crear pago
+    const payment = await createPayment({
+      name,
+      limitDate,
+      amount,
+      description,
+      treasurerUsersId: treasurer,
+      targetUsers: consts.strings.activityPaymentTargetUsers,
+      activityPayment: true,
+      session,
+    });
+
+    // agregar pago a actividad
+    await assignPaymentToActivity({ idActivity, payment, session });
+
+    if (assignedUsers.length > 0) {
+      // Generar asignaciones de pagos a usuarios
+      const paymentAssignmentsList = await assignPaymentToUsers({ users: assignedUsers, payment, session });
+
+      // Agregar asignaciones de pagos en asignaciones de actividades
+      await addPaymentsToActivityAssignments({ idActivity, paymentAssignmentsList, session });
+    }
+
+    await session.commitTransaction();
+
+    res.status(200).send(payment);
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al crear nuevo pago general.',
+      session,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
@@ -342,4 +408,5 @@ export {
   confirmPaymentController,
   updatePaymentController,
   deletePaymentController,
+  createActivityPaymentController,
 };
