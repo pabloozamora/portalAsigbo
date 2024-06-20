@@ -42,6 +42,7 @@ import {
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import Promotion from '../promotion/promotion.model.js';
 import errorSender from '../../utils/errorSender.js';
+import { verifyIfUserIsTreasurer } from '../payment/payment.model.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -456,6 +457,7 @@ const getActivitiesController = async (req, res) => {
 
 const getActivityController = async (req, res) => {
   const { idActivity } = req.params;
+  const { id: sessionIdUser } = req.session;
 
   try {
     const result = await getActivity({ idActivity, showSensitiveData: true });
@@ -463,13 +465,21 @@ const getActivityController = async (req, res) => {
     // Para el área de asigbo, verificar si el usuario es encargado
     let isResponsible = false;
     try {
-      const areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+      const areas = await getAreasWhereUserIsResponsible({ idUser: sessionIdUser });
       isResponsible = areas?.some((area) => area.id === result.asigboArea.id);
     } catch (err) {
       // Error no critico
     }
 
     result.asigboArea.isResponsible = isResponsible;
+
+    // Especificar si el usuario es tesorero del pago de la actividad
+    if (result.payment) {
+      result.payment.isTreasurer = await verifyIfUserIsTreasurer({
+        idPayment: result.payment._id,
+        idUser: sessionIdUser,
+      });
+    }
 
     // Adjuntar asignación (si existe) del usuario en sesión
     try {

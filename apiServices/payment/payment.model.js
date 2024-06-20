@@ -230,6 +230,14 @@ const removePaymentDependencies = async ({ idPayment, preventError = false, sess
   if (!acknowledged) throw new CustomError('No se pudo eliminar el pago de las asignaciones a actividades.', 500);
 };
 
+/**
+ * Verfica si el usuario es tesorero de un pago en específico
+ */
+const verifyIfUserIsTreasurer = async ({ idPayment, idUser, session }) => {
+  const payment = await PaymentSchema.findOne({ _id: idPayment, treasurer: { $elemMatch: { _id: idUser } } }).session(session);
+  return payment !== null;
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -246,4 +254,5 @@ export {
   deletePayment,
   deleteAllPaymentAssignments,
   removePaymentDependencies,
+  verifyIfUserIsTreasurer,
 };
