@@ -703,12 +703,15 @@
   Parámetro obligatorio en la ruta:
   - idPaymentAssignment: id de la asignación de pago a confirmar.
 
-- **/payment**
+- **/payment/:idPayment**
 
   Método: patch
   Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área)
 
   Permite editar un pago.
+
+    Parámetro obligatorio en la ruta:
+  - idPayment: id del pago.
 
   Parámetros opcionales:
 
@@ -729,6 +732,24 @@
 
   - idPayment: id del pago a eliminar.
 
+- **/payment/assignment/user/:idUser**
+
+  Método: get
+  Acceso: Admin o cualquier usuario (solo puede acceder a su propia info)
+
+  Permite obtener el listado de asignaciones de pago de un usuario.
+
+  Parámetro obligatorio en la ruta:
+  - idUser: id del usuario a consultar.
+
+  Query Params (?params):
+  - state: Filtro para el estado del pago.
+      0: pagos no completados
+      1: pagos completados pero no confirmados
+      2: pagos confirmados
+      3: pagos atrasados. Cualquier otro valor muestra la lista completa.
+  - page: Página a consultar. Empieza por cero. Si no se proporciona devuelve toda la lista.
+  
 ## Notas
 
 ### Consideraciones para la bd
