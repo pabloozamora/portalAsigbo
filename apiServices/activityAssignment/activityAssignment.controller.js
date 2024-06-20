@@ -10,7 +10,10 @@ import {
   validateResponsible as validateActivityResponsible,
 } from '../activity/activity.model.js';
 import { validateResponsible as validateAreaResponsible } from '../asigboArea/asigboArea.model.js';
-import { assignPaymentToUser, deletePaymentAssignment } from '../payment/payment.model.js';
+import {
+  assignPaymentToUser, deletePaymentAssignment,
+  verifyIfUserIsTreasurer,
+} from '../payment/payment.model.js';
 import Promotion from '../promotion/promotion.model.js';
 import {
   getUser,
@@ -102,7 +105,18 @@ const getActivityAssigmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
   try {
     const activities = await getActivityAssignments({ idActivity, idUser });
-    res.send(activities[0]);
+    const activityAssignment = activities[0];
+
+    if (activityAssignment.paymentAssignment) {
+      // Verificar si el usuario actual es tesorero
+      const { idPayment } = activityAssignment.paymentAssignment;
+      activityAssignment.paymentAssignment.isTreasurer = await verifyIfUserIsTreasurer({
+        idPayment,
+        idUser: req.session.id,
+      });
+    }
+
+    res.send(activityAssignment);
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al obtener la asignación de la actividad.',

@@ -39,7 +39,7 @@ const single = (
     serviceHours,
     responsible: showSensitiveData ? parseMultipleObjects(responsible) : undefined,
     asigboArea: asigboAreaSingle(asigboArea),
-    payment: singlePaymentDto(payment),
+    payment: payment ? singlePaymentDto(payment) : undefined,
     registrationStartDate,
     registrationEndDate,
     participatingPromotions: showSensitiveData ? participatingPromotions : undefined,

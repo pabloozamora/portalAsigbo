@@ -4,10 +4,11 @@ import { single as userSingle } from '../user/user.dto.js';
 
 const single = (resource) => {
   const {
-    user, activity, paymentAssignment, completed, aditionalServiceHours,
-  } = resource._doc;
+    _id, id, user, activity, paymentAssignment, completed, aditionalServiceHours,
+  } = resource?._doc ?? resource;
   return {
-    id: resource._id?.valueOf(),
+    id: _id?.valueOf() ?? id,
+    _id: _id?.valueOf() ?? id,
     user: userSingle(user),
     activity: activitySingle(activity),
     paymentAssignment: singlePaymentAssignmentDto(paymentAssignment),

@@ -69,7 +69,7 @@ const assignPaymentToUser = async ({ user, payment, session }) => {
     'payment._id': payment._id,
     'user._id': user._id,
   }).session(session);
-  if (paymentAssignmentRes) return paymentAssignmentRes;
+  if (paymentAssignmentRes) return singlePaymentAssignmentDto(paymentAssignmentRes);
 
   // Crear nueva asignación de pago
   const paymentAssignment = new PaymentAssignmentSchema();

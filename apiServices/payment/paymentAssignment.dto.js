@@ -3,13 +3,14 @@ import { singlePaymentDto } from './payment.dto.js';
 
 const singlePaymentAssignmentDto = (resource) => {
   const {
-    _id, id, user, payment, vouchersKey, completed, confirmed, completedDate, confirmedDate, treasurer,
+    _id, id, user, payment, idPayment, vouchersKey, completed, confirmed, completedDate, confirmedDate, treasurer,
   } = resource?._doc ?? resource ?? {};
   return {
     id: _id?.valueOf() ?? id,
     _id: _id?.valueOf() ?? id,
     user: user ? singleUserDto(user) : undefined,
     payment: payment ? singlePaymentDto(payment) : undefined,
+    idPayment: idPayment || payment?._id,
     vouchersKey,
     completed,
     confirmed,

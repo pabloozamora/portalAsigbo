@@ -16,6 +16,7 @@ const paymentAssignmentSchema = Schema({
 
 const paymentAssignmentSubSchema = Schema({
   _id: { type: ObjectId, ref: 'paymentAssignment', required: true },
+  idPayment: { type: ObjectId, ref: 'payment', required: true },
   completed: { type: Boolean, default: false },
   confirmed: { type: Boolean, default: false },
   completedDate: { type: Date },
