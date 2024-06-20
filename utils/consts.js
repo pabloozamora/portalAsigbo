@@ -37,5 +37,6 @@ const consts = {
 consts.imagePath.user = `${consts.apiPath}/user`;
 consts.imagePath.area = `${consts.apiPath}/area`;
 consts.imagePath.activity = `${consts.apiPath}/activity`;
+consts.imagePath.paymentVoucher = `${consts.apiPath}/image/paymentVoucher`;
 
 export default consts;

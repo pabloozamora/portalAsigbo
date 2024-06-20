@@ -21,6 +21,7 @@ import {
   resetPaymentCompletedStatus,
   updatePayment,
   updatePaymentInAllDependencies,
+  verifyIfUserIsTreasurer,
 } from './payment.model.js';
 import exists from '../../utils/exists.js';
 import compareObjectId from '../../utils/compareObjectId.js';
@@ -37,7 +38,8 @@ const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
 
   // subir archivos
 
-  const fileKey = `${consts.bucketRoutes.paymentVoucher}/${idPayment}/${idUser}`;
+  const imageId = `${idPayment}/${idUser}`;
+  const fileKey = `${consts.bucketRoutes.paymentVoucher}/${imageId}`;
 
   try {
     await uploadFileToBucket(fileKey, filePath, file.type);
@@ -49,7 +51,7 @@ const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
 
   // eliminar archivos temporales
   fs.unlink(filePath, () => {});
-  return fileKey;
+  return imageId;
 };
 
 const validateTreasurerRole = async ({ idPayment, idUser }) => {
@@ -446,6 +448,32 @@ const getPaymentController = async (req, res) => {
   }
 };
 
+const getPaymentAssignmentController = async (req, res) => {
+  const { idPaymentAssignment } = req.params;
+  const { role, id: sessionIdUser } = req.session;
+  const isAdmin = role.includes(consts.roles.admin);
+  try {
+    const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
+    if (!paymentAssignment) throw new CustomError('No se encontró la asignación de pago.', 404);
+
+    const isTreasurer = await verifyIfUserIsTreasurer({ idPayment: paymentAssignment.payment._id, idUser: sessionIdUser });
+
+    if (!isAdmin && !isTreasurer && !compareObjectId(paymentAssignment.user._id, sessionIdUser)) {
+      throw new CustomError('No estás autorizado para acceder a esta información.', 403);
+    }
+
+    paymentAssignment.isTreasurer = isTreasurer;
+    paymentAssignment.vouchersKey = paymentAssignment.vouchersKey?.map((voucherKey) => `${consts.imagePath.paymentVoucher}/${voucherKey}`);
+    res.send(paymentAssignment);
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al obtener detalles de pago.',
+    });
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
@@ -456,4 +484,5 @@ export {
   createActivityPaymentController,
   getUserPaymentAssignmentsController,
   getPaymentController,
+  getPaymentAssignmentController,
 };

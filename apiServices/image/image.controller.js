@@ -35,4 +35,20 @@ const getActivityImageController = async (req, res) => {
   }
 };
 
-export { getUserImageController, getAreaImageController, getActivityImageController };
+const getPaymentVoucherImageController = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const fileResult = await getFileFromBucket(`${consts.bucketRoutes.paymentVoucher}/${id}`);
+    res.write(fileResult, 'binary');
+    res.end(null, 'binary');
+  } catch (ex) {
+    res.sendStatus(404);
+  }
+};
+
+export {
+  getUserImageController,
+  getAreaImageController,
+  getActivityImageController,
+  getPaymentVoucherImageController,
+};

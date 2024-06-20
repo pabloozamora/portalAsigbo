@@ -759,7 +759,17 @@
 
     Parámetro obligatorio en la ruta:
   - idPayment: id del pago.
-  
+
+- **/payment/assignment:idPaymentAssignment**
+
+  Método: Get
+  Acceso: Admin, tesorero del pago o el usuario de la asignación
+
+  Permite obtener datos completos de una asignación de pago
+
+    Parámetro obligatorio en la ruta:
+  - idPaymentAssignment: id de la asignación del pago (no confundir con el id del pago).
+
 ## Notas
 
 ### Consideraciones para la bd
