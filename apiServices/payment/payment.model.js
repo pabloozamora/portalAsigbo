@@ -2,6 +2,7 @@ import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import { multiplePaymentDto, singlePaymentDto } from './payment.dto.js';
@@ -238,6 +239,63 @@ const verifyIfUserIsTreasurer = async ({ idPayment, idUser, session }) => {
   return payment !== null;
 };
 
+/**
+ * Obtener asignaciones de pago de un usuario.
+ *
+ * @param  idUser Id del usuario
+ * @param  state 0: pagos no completados, 1: pagos completados pero no confirmados,
+ *  2: pagos confirmados, 3: pagos atrasados. Cualquier otro valor muestra la lista completa.
+ */
+const getUserPaymentAssignments = async ({
+  idUser, state, page, session,
+}) => {
+  const query = { 'user._id': idUser };
+
+  // Agregar filtros por estado
+  switch (parseInt(state, 10)) {
+    case 0:
+      query.completed = false;
+      query.confirmed = false;
+      break;
+    case 1:
+      query.completed = true;
+      query.confirmed = false;
+      break;
+    case 2:
+      query.confirmed = true;
+      break;
+    case 3:
+      query.completed = false;
+      query.confirmed = false;
+      query['payment.limitDate'] = { $lt: new Date() };
+      break;
+    default:
+      // Sin filtro adicionales
+      break;
+  }
+
+  // Obtener total de resultados (sin paginación)
+  const usersCount = await PaymentAssignmentSchema.countDocuments(query);
+  const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
+
+  // Agregar filtro de paginación
+  let skip = 0;
+  let limit = null;
+  if (exists(page)) {
+    skip = page * consts.resultsNumberPerPage;
+    limit = consts.resultsNumberPerPage;
+  }
+
+  const paymentAssignments = await PaymentAssignmentSchema
+    .find(query)
+    .skip(skip)
+    .limit(limit)
+    .session(session);
+
+  if (paymentAssignments.length === 0) return null;
+  return { pages, result: multiplePaymentAssignmentDto(paymentAssignments) };
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -255,4 +313,5 @@ export {
   deleteAllPaymentAssignments,
   removePaymentDependencies,
   verifyIfUserIsTreasurer,
+  getUserPaymentAssignments,
 };

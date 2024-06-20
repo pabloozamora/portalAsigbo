@@ -4,7 +4,13 @@ import validateBody from '../../middlewares/validateBody.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import createPaymentSchema from './validationSchemas/createPaymentSchema.js';
 import {
-  completePaymentController, confirmPaymentController, createActivityPaymentController, createGeneralPaymentController, deletePaymentController, resetPaymentCompletedStatusController,
+  completePaymentController,
+  confirmPaymentController,
+  createActivityPaymentController,
+  createGeneralPaymentController,
+  deletePaymentController,
+  getUserPaymentAssignmentsController,
+  resetPaymentCompletedStatusController,
   updatePaymentController,
 } from './payment.controller.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
@@ -17,6 +23,7 @@ import paymentParamSchema from './validationSchemas/paymentParamSchema.js';
 import updatePaymentSchema from './validationSchemas/updatePaymentSchema.js';
 import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 import createActivityPaymentSchema from './validationSchemas/createActivityPaymentSchema.js';
+import userParamSchemaCopy from './validationSchemas/userParamSchema copy.js';
 
 const paymentRouter = express.Router();
 
@@ -67,6 +74,13 @@ paymentRouter.delete(
   ensureAreaResponsibleAuth,
   validateParams(paymentParamSchema),
   deletePaymentController,
+);
+
+paymentRouter.get(
+  '/assignment/user/:idUser',
+  ensureRolesAuth(null),
+  validateParams(userParamSchemaCopy),
+  getUserPaymentAssignmentsController,
 );
 
 export default paymentRouter;
