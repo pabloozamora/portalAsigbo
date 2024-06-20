@@ -14,6 +14,7 @@ import {
   deleteAllPaymentAssignments,
   deletePayment,
   getPaymentAssignmetById,
+  getPaymentById,
   getPaymentsWhereUserIsTreasurer,
   getUserPaymentAssignments,
   removePaymentDependencies,
@@ -424,6 +425,27 @@ const getUserPaymentAssignmentsController = async (req, res) => {
   }
 };
 
+const getPaymentController = async (req, res) => {
+  const { idPayment } = req.params;
+  const { role, sessionIdUser } = req.session;
+  try {
+    // Validar privilegios para obtener datos completos de pago (mismos que para editar)
+    // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
+    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser: sessionIdUser, idPayment });
+    const payment = await getPaymentById({ idPayment });
+
+    if (!payment) throw new CustomError('No se encontró el pago.', 404);
+
+    res.send(payment);
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al obtener detalles de pago.',
+    });
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
@@ -433,4 +455,5 @@ export {
   deletePaymentController,
   createActivityPaymentController,
   getUserPaymentAssignmentsController,
+  getPaymentController,
 };

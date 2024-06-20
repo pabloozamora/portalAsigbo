@@ -9,6 +9,7 @@ import {
   createActivityPaymentController,
   createGeneralPaymentController,
   deletePaymentController,
+  getPaymentController,
   getUserPaymentAssignmentsController,
   resetPaymentCompletedStatusController,
   updatePaymentController,
@@ -81,6 +82,13 @@ paymentRouter.get(
   ensureRolesAuth(null),
   validateParams(userParamSchemaCopy),
   getUserPaymentAssignmentsController,
+);
+
+paymentRouter.get(
+  '/:idPayment',
+  ensureAreaResponsibleAuth,
+  validateParams(paymentParamSchema),
+  getPaymentController,
 );
 
 export default paymentRouter;

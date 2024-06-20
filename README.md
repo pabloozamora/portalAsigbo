@@ -749,6 +749,16 @@
       2: pagos confirmados
       3: pagos atrasados. Cualquier otro valor muestra la lista completa.
   - page: Página a consultar. Empieza por cero. Si no se proporciona devuelve toda la lista.
+
+- **/payment/:idPayment**
+
+  Método: Get
+  Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área)
+
+  Permite obtener datos completos de un pago (no asignaciones)
+
+    Parámetro obligatorio en la ruta:
+  - idPayment: id del pago.
   
 ## Notas
 
