@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
@@ -164,12 +165,86 @@ const updatePayment = async ({
 
 /**
  * Retorna los pagos en lo que un usuario figura como un tesorero.
- * @returns Devuelve un array de PaymentsDto con los resultados.
+ * @param idUser. Id del usuario.
+ * @param page Página a consultar (paginación). Inicia por cero. Si no se proporciona se devuelve la lista completa.
+ * @returns Devuelve un array de PaymentsDto con los resultados (incluye assignmentsToConfirm).
  */
-const getPaymentsWhereUserIsTreasurer = async ({ idUser, session }) => {
+const getPaymentsWhereUserIsTreasurer = async ({ idUser, page }) => {
+  // Filtrar pagos donde es tesorero
+
+  const query = {
+    treasurer: { $elemMatch: { _id: new ObjectId(idUser) } },
+  };
+
+  const paymentsCount = await PaymentSchema.countDocuments(query);
+  const pages = Math.ceil(paymentsCount / consts.resultsNumberPerPage);
+
+  const queryPipeline = [
+    {
+      $match: query,
+    },
+    {
+      // Hacer lookup de asignaciones de pago completadas pero no confirmadas
+      $lookup: {
+        from: 'paymentassignments',
+        let: { payment_id: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$payment._id', '$$payment_id'] },
+              completed: true,
+              confirmed: false,
+            },
+          },
+        ],
+        as: 'assignments',
+      },
+    },
+    // Contar asignaciones por confirmar
+    {
+      $addFields: {
+        assignmentsToConfirm: { $size: '$assignments' },
+      },
+    },
+    {
+      $project: {
+        assignments: 0,
+      },
+    },
+    // Ordenar pagos con mayor número de asignaciones por confirmar primero
+    {
+      $sort: {
+        assignmentsToConfirm: -1,
+        limitDate: 1,
+        _id: 1,
+      },
+    },
+  ];
+
+  if (page) {
+    queryPipeline.push({
+      $skip: page * consts.resultsNumberPerPage,
+    });
+    queryPipeline.push({
+      $limit: consts.resultsNumberPerPage,
+    });
+  }
+
+  const payments = await PaymentSchema.aggregate(queryPipeline);
+
+  if (payments.length === 0) return null;
+
+  return { pages, result: multiplePaymentDto(payments) };
+};
+
+/**
+ * Verifica si el usuario es tesorero en al menos un pago.
+ * @returns Boolean. True si encontró por lo menos un pago en donde figura como tesorero.
+ */
+const hasPaymentsAsTreasurer = async ({ idUser, session }) => {
   const payments = await PaymentSchema.find({ treasurer: { $elemMatch: { _id: idUser } } }).session(session);
 
-  return multiplePaymentDto(payments);
+  return payments.length > 0;
 };
 
 /**
@@ -321,4 +396,5 @@ export {
   removePaymentDependencies,
   verifyIfUserIsTreasurer,
   getPaymentAssignments,
+  hasPaymentsAsTreasurer,
 };

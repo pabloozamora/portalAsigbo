@@ -786,6 +786,19 @@
       3: pagos atrasados. Cualquier otro valor muestra la lista completa.
   - page: Página a consultar. Empieza por cero. Si no se proporciona devuelve toda la lista.
 
+
+- **/payment/treasurer**
+
+  Método: Get
+  Acceso: Tesorero.
+
+  Devuelve los pagos en los que el usuario en sesión figura como tesorero. En el resultado se incluye
+  el número de asignaciones pendientes de confirmar "assignmentsToConfirm" y vienen ordenadas de forma
+  descendente según este parámetro, así como en la fecha límite de pago (más próximos primero).
+  
+  Query Params (?params):
+  - page (opcional): Página a consultar. Empieza por cero. Si no se proporciona devuelve toda la lista.
+
 ## Notas
 
 ### Consideraciones para la bd

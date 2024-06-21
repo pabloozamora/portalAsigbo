@@ -12,6 +12,7 @@ import {
   getPaymentAssignmentController,
   getPaymentAssignmentsListController,
   getPaymentController,
+  getPaymentsWhereUserIsTreasurerController,
   getUserPaymentAssignmentsController,
   resetPaymentCompletedStatusController,
   updatePaymentController,
@@ -27,6 +28,7 @@ import updatePaymentSchema from './validationSchemas/updatePaymentSchema.js';
 import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 import createActivityPaymentSchema from './validationSchemas/createActivityPaymentSchema.js';
 import userParamSchemaCopy from './validationSchemas/userParamSchema copy.js';
+import consts from '../../utils/consts.js';
 
 const paymentRouter = express.Router();
 
@@ -92,6 +94,12 @@ paymentRouter.get(
   validateParams(paymentAssignmentParamSchema),
   getPaymentAssignmentController,
 );
+paymentRouter.get(
+  '/treasurer',
+  ensureRolesAuth(consts.roles.treasurer),
+  getPaymentsWhereUserIsTreasurerController,
+);
+
 paymentRouter.get(
   '/:idPayment',
   ensureAreaResponsibleAuth,

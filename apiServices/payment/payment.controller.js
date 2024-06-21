@@ -15,13 +15,14 @@ import {
   deletePayment,
   getPaymentAssignmetById,
   getPaymentById,
-  getPaymentsWhereUserIsTreasurer,
   getPaymentAssignments,
   removePaymentDependencies,
   resetPaymentCompletedStatus,
   updatePayment,
   updatePaymentInAllDependencies,
   verifyIfUserIsTreasurer,
+  hasPaymentsAsTreasurer,
+  getPaymentsWhereUserIsTreasurer,
 } from './payment.model.js';
 import exists from '../../utils/exists.js';
 import compareObjectId from '../../utils/compareObjectId.js';
@@ -64,8 +65,8 @@ const validateTreasurerRole = async ({ idPayment, idUser }) => {
 
 const removeTreasurerRole = async ({ idUser, session }) => {
   // Remover rol solo si ya no tiene más pagos a cargo
-  const paymentsWhereIsTreasurer = await getPaymentsWhereUserIsTreasurer({ idUser, session });
-  if (paymentsWhereIsTreasurer.length === 0) {
+  const userIsTreasurer = await hasPaymentsAsTreasurer({ idUser, session });
+  if (!userIsTreasurer) {
     await removeRoleFromUser({ idUser, role: consts.roles.treasurer, session });
     // Forzar actualizar sesión del usuario
     await forceSessionTokenToUpdate({ idUser, session });
@@ -551,6 +552,24 @@ const getPaymentAssignmentsListController = async (req, res) => {
   }
 };
 
+const getPaymentsWhereUserIsTreasurerController = async (req, res) => {
+  const { id: idUser } = req.session;
+  const { page } = req.query;
+  try {
+    const result = await getPaymentsWhereUserIsTreasurer({ idUser, page });
+
+    if (result === null) throw new CustomError('No se encontraron resultados.', 404);
+
+    res.send(result);
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al obtener pagos donde el usuario es tesorero.',
+    });
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
@@ -563,4 +582,5 @@ export {
   getPaymentController,
   getPaymentAssignmentController,
   getPaymentAssignmentsListController,
+  getPaymentsWhereUserIsTreasurerController,
 };
