@@ -242,14 +242,21 @@ const verifyIfUserIsTreasurer = async ({ idPayment, idUser, session }) => {
 /**
  * Obtener asignaciones de pago de un usuario.
  *
- * @param  idUser Id del usuario
+ * @param  idUser Filtrar solo las asignaciones de un usuario
+ * @param  idPayment Filtrar solo las asignaciones de un pago en específico
  * @param  state 0: pagos no completados, 1: pagos completados pero no confirmados,
  *  2: pagos confirmados, 3: pagos atrasados. Cualquier otro valor muestra la lista completa.
  */
-const getUserPaymentAssignments = async ({
-  idUser, state, page, session,
+const getPaymentAssignments = async ({
+  idUser, idPayment, state, page, session,
 }) => {
-  const query = { 'user._id': idUser };
+  const query = {};
+
+  // Agregar filtro por usuario
+  if (exists(idUser)) query['user._id'] = idUser;
+
+  // Agregar filtro por pago
+  if (exists(idPayment)) query['payment._id'] = idPayment;
 
   // Agregar filtros por estado
   switch (parseInt(state, 10)) {
@@ -313,5 +320,5 @@ export {
   deleteAllPaymentAssignments,
   removePaymentDependencies,
   verifyIfUserIsTreasurer,
-  getUserPaymentAssignments,
+  getPaymentAssignments,
 };

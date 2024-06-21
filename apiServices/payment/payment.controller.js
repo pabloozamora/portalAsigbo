@@ -16,7 +16,7 @@ import {
   getPaymentAssignmetById,
   getPaymentById,
   getPaymentsWhereUserIsTreasurer,
-  getUserPaymentAssignments,
+  getPaymentAssignments,
   removePaymentDependencies,
   resetPaymentCompletedStatus,
   updatePayment,
@@ -72,13 +72,17 @@ const removeTreasurerRole = async ({ idUser, session }) => {
   }
 };
 
-const validateEditPaymentAccess = async ({ idUser, idPayment, session }) => {
+/**
+ * Verifica si un usuario es encargado del area padre de la actividad a la que está asignada el pago.
+ * @returns Boolean. True si es encargado, false de lo contrario.
+ */
+const hasAreaResponsiblePermission = async ({ idUser, idPayment, session }) => {
   const activity = await getActivityByPaymentId({ idPayment, session });
   if (activity) {
     const isResponsible = await validateAsigboAreaResponsible({ idUser, idArea: activity.asigboArea._id, preventError: true });
-    if (isResponsible) return;
+    if (isResponsible) return true;
   }
-  throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+  return false;
 };
 
 const createGeneralPaymentController = async (req, res) => {
@@ -207,9 +211,14 @@ const resetPaymentCompletedStatusController = async (req, res) => {
   try {
     const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
 
+    const idPayment = paymentAssignment.payment._id;
     // Validar privilegios para editar pago
     // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
-    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser, idPayment: paymentAssignment.payment._id });
+    if (!role?.includes(consts.roles.admin)) {
+      if (!role?.includes(consts.roles.asigboAreaResponsible) || !(await hasAreaResponsiblePermission({ idUser, idPayment }))) {
+        throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+      }
+    }
 
     if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
     if (paymentAssignment.confirmed) throw new CustomError('No se puede resetear el status de completado a un pago ya confirmado.', 400);
@@ -237,9 +246,14 @@ const confirmPaymentController = async (req, res) => {
   try {
     const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
 
+    const idPayment = paymentAssignment.payment._id;
     // Validar privilegios para editar pago
     // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
-    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser, idPayment: paymentAssignment.payment._id });
+    if (!role?.includes(consts.roles.admin)) {
+      if (!role?.includes(consts.roles.asigboAreaResponsible) || !(await hasAreaResponsiblePermission({ idUser, idPayment }))) {
+        throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+      }
+    }
 
     if (!paymentAssignment) throw new CustomError('La asignación de pago no existe.', 404);
     if (!paymentAssignment.completed) throw new CustomError('El pago aún no ha sido completado.', 400);
@@ -272,8 +286,11 @@ const updatePaymentController = async (req, res) => {
 
     // Validar privilegios para editar pago
     // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
-    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser: sessionIdUser, idPayment });
-
+    if (!role?.includes(consts.roles.admin)) {
+      if (!role?.includes(consts.roles.asigboAreaResponsible) || !(await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }))) {
+        throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+      }
+    }
     // Obtener objetos de usuarios tesoreros
     const treasurerUsers = exists(treasurerUsersId)
       ? await getUsersInList({ idUsersList: treasurerUsersId, session, missingUserError: 'Uno de los usuarios especificados como tesoreros no existe.' })
@@ -320,9 +337,13 @@ const deletePaymentController = async (req, res) => {
   try {
     session.startTransaction();
 
-    // Validar privilegios para eliminar pago
+    // Validar privilegios para editar pago
     // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
-    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser: sessionIdUser, idPayment });
+    if (!role?.includes(consts.roles.admin)) {
+      if (!role?.includes(consts.roles.asigboAreaResponsible) || !(await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }))) {
+        throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+      }
+    }
 
     // Eliminar pago y asignaciones de pago
     const payment = await deletePayment({ idPayment, session });
@@ -415,7 +436,7 @@ const getUserPaymentAssignmentsController = async (req, res) => {
       throw new CustomError('No estás autorizado para obtener esta información.', 403);
     }
 
-    const result = await getUserPaymentAssignments({ idUser, state, page });
+    const result = await getPaymentAssignments({ idUser, state, page });
     if (result === null) throw new CustomError('No se encontraron resultados.', 404);
     res.send(result);
   } catch (ex) {
@@ -431,9 +452,14 @@ const getPaymentController = async (req, res) => {
   const { idPayment } = req.params;
   const { role, sessionIdUser } = req.session;
   try {
-    // Validar privilegios para obtener datos completos de pago (mismos que para editar)
+    // Validar privilegios para editar pago
     // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
-    if (!role?.includes(consts.roles.admin)) await validateEditPaymentAccess({ idUser: sessionIdUser, idPayment });
+    if (!role?.includes(consts.roles.admin)) {
+      if (!role?.includes(consts.roles.asigboAreaResponsible) || !(await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }))) {
+        throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+      }
+    }
+
     const payment = await getPaymentById({ idPayment });
 
     if (!payment) throw new CustomError('No se encontró el pago.', 404);
