@@ -770,6 +770,22 @@
     Parámetro obligatorio en la ruta:
   - idPaymentAssignment: id de la asignación del pago (no confundir con el id del pago).
 
+- **/payment/:idPayment/paymentAssignment**
+
+  Método: Get
+  Acceso: Admin, encargado del área asigbo padre de la actividad a la que está asignado el pago o tesorero del pago.
+
+  Parámetro obligatorio en la ruta:
+  - idPayment: id del usuario a consultar.
+
+  Query Params (?params):
+  - state: Filtro para el estado del pago.
+      0: pagos no completados
+      1: pagos completados pero no confirmados
+      2: pagos confirmados
+      3: pagos atrasados. Cualquier otro valor muestra la lista completa.
+  - page: Página a consultar. Empieza por cero. Si no se proporciona devuelve toda la lista.
+
 ## Notas
 
 ### Consideraciones para la bd

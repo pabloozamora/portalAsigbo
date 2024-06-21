@@ -500,6 +500,40 @@ const getPaymentAssignmentController = async (req, res) => {
   }
 };
 
+const getPaymentAssignmentsListController = async (req, res) => {
+  const { idPayment } = req.params;
+  const { role, id: sessionIdUser } = req.session;
+  const { state, page } = req.query;
+  try {
+    // Validar acceso a asignaciones de pago
+    const isAdmin = role?.includes(consts.roles.admin);
+    if (!isAdmin) {
+      const isTreasurer = role?.includes(consts.roles.treasurer)
+        && await verifyIfUserIsTreasurer({ idPayment, idUser: sessionIdUser });
+
+      if (!isTreasurer) {
+        const isAreaResponsible = role?.includes(consts.roles.asigboAreaResponsible) && (
+          await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }));
+
+        if (!isAreaResponsible) {
+          throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+        }
+      }
+    }
+
+    // Obtener asignaciones de pago
+    const result = await getPaymentAssignments({ idPayment, state, page });
+    if (result === null) throw new CustomError('No se encontraron resultados.', 404);
+    res.send(result);
+  } catch (ex) {
+    await errorSender({
+      res,
+      ex,
+      defaultError: 'Ocurrio un error al obtener asignaciones de pago.',
+    });
+  }
+};
+
 export {
   createGeneralPaymentController,
   completePaymentController,
@@ -511,4 +545,5 @@ export {
   getUserPaymentAssignmentsController,
   getPaymentController,
   getPaymentAssignmentController,
+  getPaymentAssignmentsListController,
 };
