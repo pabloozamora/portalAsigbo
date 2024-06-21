@@ -452,11 +452,19 @@ const getPaymentController = async (req, res) => {
   const { idPayment } = req.params;
   const { role, sessionIdUser } = req.session;
   try {
-    // Validar privilegios para editar pago
-    // Admin o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
-    if (!role?.includes(consts.roles.admin)) {
-      if (!role?.includes(consts.roles.asigboAreaResponsible) || !(await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }))) {
-        throw new CustomError('No estás autorizado de realizar esta acción.', 403);
+    // Validar privilegios para acceder a datos de pago
+    // Admin, tesorero o encargado del area de asigbo al que pertenece la actividad del pago (autorizados de editar actividad)
+    const isAdmin = role.includes(consts.roles.admin);
+    if (!isAdmin) {
+      const isTreasurer = role?.includes(consts.roles.treasurer) && await verifyIfUserIsTreasurer({ idPayment, idUser: sessionIdUser });
+
+      if (!isTreasurer) {
+        const isAreaResponsible = role?.includes(consts.roles.asigboAreaResponsible) && (
+          await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }));
+
+        if (!isAreaResponsible) {
+          throw new CustomError('No estás autorizado de obtener esta información.', 403);
+        }
       }
     }
 
@@ -482,10 +490,19 @@ const getPaymentAssignmentController = async (req, res) => {
     const paymentAssignment = await getPaymentAssignmetById({ idPaymentAssignment });
     if (!paymentAssignment) throw new CustomError('No se encontró la asignación de pago.', 404);
 
-    const isTreasurer = await verifyIfUserIsTreasurer({ idPayment: paymentAssignment.payment._id, idUser: sessionIdUser });
+    const idPayment = paymentAssignment.payment._id;
 
-    if (!isAdmin && !isTreasurer && !compareObjectId(paymentAssignment.user._id, sessionIdUser)) {
-      throw new CustomError('No estás autorizado para acceder a esta información.', 403);
+    const isTreasurer = await verifyIfUserIsTreasurer({ idPayment, idUser: sessionIdUser });
+    const isPaymentOwner = compareObjectId(paymentAssignment.user._id, sessionIdUser);
+
+    // Validar permisos para obtener información
+    if (!isAdmin && !isTreasurer && !isPaymentOwner) {
+      const isAreaResponsible = role?.includes(consts.roles.asigboAreaResponsible) && (
+        await hasAreaResponsiblePermission({ idUser: sessionIdUser, idPayment }));
+
+      if (!isAreaResponsible) {
+        throw new CustomError('No estás autorizado para acceder a esta información.', 403);
+      }
     }
 
     paymentAssignment.isTreasurer = isTreasurer;

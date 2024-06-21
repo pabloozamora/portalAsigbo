@@ -753,7 +753,7 @@
 - **/payment/:idPayment**
 
   Método: Get
-  Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área)
+  Acceso: Admin o encargado de área (solo si el pago pertenece a una actividad perteneciente a su área) o tesorero.
 
   Permite obtener datos completos de un pago (no asignaciones)
 
@@ -763,7 +763,7 @@
 - **/payment/assignment:idPaymentAssignment**
 
   Método: Get
-  Acceso: Admin, tesorero del pago o el usuario de la asignación
+  Acceso: Admin, tesorero del pago, encargado del área asigbo padre o el usuario dueño de la asignación
 
   Permite obtener datos completos de una asignación de pago
 
@@ -773,7 +773,7 @@
 - **/payment/:idPayment/paymentAssignment**
 
   Método: Get
-  Acceso: Admin, encargado del área asigbo padre de la actividad a la que está asignado el pago o tesorero del pago.
+  Acceso: Admin, encargado del área asigbo padre o tesorero del pago.
 
   Parámetro obligatorio en la ruta:
   - idPayment: id del usuario a consultar.
