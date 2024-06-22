@@ -338,6 +338,17 @@ const assignPaymentToActivity = async ({ idActivity, payment, session }) => {
   await activity.save();
 };
 
+/**
+ * Obtener las actividades en las que se puede asignar.
+ * @param promotionYear Number. Año de promoción del usuario.
+ * @param promotionGroup String. Grupo de promoción del usuario.
+ * @param activitiesToIgnore [ObjectId] Lista de actividades que se ignorarán. Idealmente es para
+ * omitir actividades en las que el usuario ya está inscrito.
+ * @param lowerDate Date. Limite inferior para filtrar fecha (opcional)
+ * @param upperDate Date. Limite superior para filtar por fecha (opcional)
+ * @param search subcadena a buscar en el nombre de la actividad.
+ * @returns Multiple Activity Dtos
+ */
 const getAvailableActivitiesToParticipate = async ({
   promotionYear, promotionGroup, activitiesToIgnore, lowerDate, upperDate, search,
 }) => {
@@ -356,7 +367,7 @@ const getAvailableActivitiesToParticipate = async ({
     query.name = { $regex: searchRegex };
   }
 
-  const activities = await ActivitySchema.find(query);
+  const activities = await ActivitySchema.find(query).sort({ date: 1 });
   if (activities.length === 0) return null;
   return multipleActivityDto(activities);
 };

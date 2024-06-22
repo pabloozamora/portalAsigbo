@@ -206,8 +206,38 @@ const addPaymentsToActivityAssignments = async ({ idActivity, paymentAssignments
   if (matchedCount !== paymentAssignmentsList.length) throw new CustomError('No se encontraron algunas asignaciones a actividades.', 404);
 };
 
-const getUserActivityAssignments = async ({ idUser }) => {
-  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
+/**
+ * Retorna las asignaciones de un usuario
+ * @param idUser ObjectId. Id del usuario a consultar
+ * @param lowerDate Date. Limite inferior para filtrar fecha (opcional)
+ * @param upperDate Date. Limite superior para filtar por fecha (opcional)
+ * @param search subcadena a buscar en el nombre de la actividad.
+ * @param notCompletedOnly Boolean. Devuelve solo las asignaciones que no han sido completadas aún.
+ */
+const getUserActivityAssignments = async ({
+  idUser, lowerDate, upperDate, search, notCompletedOnly = false,
+}) => {
+  const query = { 'user._id': idUser };
+
+  // Agregar filtros por fecha
+  if (someExists(lowerDate, upperDate)) {
+    query['activity.date'] = {};
+
+    if (exists(lowerDate)) query['activity.date'].$gte = lowerDate;
+    if (exists(upperDate)) query['activity.date'].$lte = upperDate;
+  }
+  if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+    const searchRegex = new RegExp(search, 'i');
+    query['activity.name'] = { $regex: searchRegex };
+  }
+
+  // Filtrar solo actividades no completadas (si corresponde)
+  if (notCompletedOnly) {
+    query.completed = false;
+  }
+
+  const assignments = await ActivityAssignmentSchema.find(query).sort({ 'activity.date': 1 });
   if (assignments.length === 0) return null;
   return multipleAssignmentActivityDto(assignments);
 };

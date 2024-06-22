@@ -25,6 +25,7 @@ import {
   assignManyUsersToActivity,
   assignUserToActivity,
   getActivityAssignments,
+  getUserActivityAssignments,
   unassignUserFromActivity,
   updateActivityAssignment,
 } from './activityAssignment.model.js';
@@ -480,6 +481,22 @@ const updateActivityAssignmentController = async (req, res) => {
   }
 };
 
+const getUserNotCompletedAssignmentsController = async (req, res) => {
+  const { id: idUser } = req.session;
+  const { lowerDate, upperDate, search } = req.query;
+  try {
+    const assignments = await getUserActivityAssignments({
+      idUser, lowerDate, upperDate, search, notCompletedOnly: true,
+    });
+    if (!assignments) throw new CustomError('No se encontraron resultados.', 404);
+    res.send(assignments);
+  } catch (ex) {
+    await errorSender({
+      res, ex, defaultError: 'Ocurrió un error al obtener actividades disponibles para el usuario.',
+    });
+  }
+};
+
 export {
   assignUserToActivityController,
   assignManyUsersToActivityController,
@@ -489,4 +506,5 @@ export {
   updateActivityAssignmentController,
   getActivitiesAssigmentsController,
   getActivityAssigmentController,
+  getUserNotCompletedAssignmentsController,
 };

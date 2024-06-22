@@ -8,6 +8,7 @@ import {
   getActivitiesAssigmentsController,
   getActivityAssigmentController,
   getLoggedActivitiesController,
+  getUserNotCompletedAssignmentsController,
   unassignUserFromActivityController,
   updateActivityAssignmentController,
 } from './activityAssignment.controller.js';
@@ -60,6 +61,11 @@ activityAssignmentRouter.get(
   '/assignment/logged',
   ensureRolesAuth(null),
   getLoggedActivitiesController,
+);
+activityAssignmentRouter.get(
+  '/assignment/notCompleted',
+  ensureRolesAuth(null),
+  getUserNotCompletedAssignmentsController,
 );
 
 activityAssignmentRouter.patch(
