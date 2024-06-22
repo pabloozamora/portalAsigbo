@@ -12,6 +12,7 @@ import {
   getActivityAssignment,
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
+  getUserActivityAssignments,
 } from '../activityAssignment/activityAssignment.model.js';
 import {
   getAreas,
@@ -33,6 +34,7 @@ import {
   getActivities,
   getActivitiesWhereUserIsResponsible,
   getActivity,
+  getAvailableActivitiesToParticipate,
   getUserActivities,
   updateActivity,
   updateActivityBlockedStatus,
@@ -794,6 +796,30 @@ const uploadActivitiesDataController = async (req, res) => {
   }
 };
 
+const getAvailableActivitiesToParticipateController = async (req, res) => {
+  const { id: idUser, promotion } = req.session;
+  const { lowerDate, upperDate, search } = req.query;
+  try {
+    const promotionObj = new Promotion();
+    const promotionGroup = await promotionObj.getPromotionGroup(promotion);
+
+    // Obtener asignaciones de usuario para ignorar actividades en las que ya fue inscrito
+    const assignments = await getUserActivityAssignments({ idUser });
+    const assignmentsId = assignments?.map((assignment) => assignment.activity._id);
+
+    const result = await getAvailableActivitiesToParticipate({
+      promotionYear: promotion, promotionGroup, lowerDate, upperDate, search, activitiesToIgnore: assignmentsId,
+    });
+
+    if (!result) throw new CustomError('No se encontraron resultados.', 404);
+    res.send(result);
+  } catch (ex) {
+    await errorSender({
+      res, ex, defaultError: 'Ocurrió un error al obtener actividades disponibles para el usuario.',
+    });
+  }
+};
+
 export {
   createActivityController,
   updateActivityController,
@@ -805,4 +831,5 @@ export {
   enableActivityController,
   getActivitiesWhereUserIsResponsibleController,
   uploadActivitiesDataController,
+  getAvailableActivitiesToParticipateController,
 };

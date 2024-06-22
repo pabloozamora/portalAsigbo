@@ -4,7 +4,7 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
-import { multiple, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
+import { multiple as multipleAssignmentActivityDto, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 import { single as singleUserDto } from '../user/user.dto.js';
 
 /**
@@ -51,7 +51,7 @@ const getActivityAssignments = async ({
       throw new CustomError('No se encontraron resultados.', 404);
     }
 
-    const parsedAssignments = multiple(assignments);
+    const parsedAssignments = multipleAssignmentActivityDto(assignments);
 
     if (!includeUserPromotionGroup) return parsedAssignments;
     const promotion = new Promotion();
@@ -206,6 +206,12 @@ const addPaymentsToActivityAssignments = async ({ idActivity, paymentAssignments
   if (matchedCount !== paymentAssignmentsList.length) throw new CustomError('No se encontraron algunas asignaciones a actividades.', 404);
 };
 
+const getUserActivityAssignments = async ({ idUser }) => {
+  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
+  if (assignments.length === 0) return null;
+  return multipleAssignmentActivityDto(assignments);
+};
+
 export {
   assignUserToActivity,
   getCompletedActivityAssignmentsById,
@@ -216,4 +222,5 @@ export {
   getActivityAssignment,
   addPaymentsToActivityAssignments,
   getActivityAssignedUsers,
+  getUserActivityAssignments,
 };

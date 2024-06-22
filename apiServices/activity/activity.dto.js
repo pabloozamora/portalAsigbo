@@ -29,6 +29,7 @@ const single = (
     maxParticipants,
     blocked,
     hasBanner,
+    registrationAvailable,
   } = resource._doc ?? resource;
   return {
     id: resource._id?.valueOf() ?? _id?.valueOf() ?? id,
@@ -48,6 +49,7 @@ const single = (
     availableSpaces: (maxParticipants ?? 0) - (participantsNumber ?? 0),
     blocked,
     hasBanner,
+    registrationAvailable,
   };
 };
 

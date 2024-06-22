@@ -6,7 +6,7 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
-import { multiple, single, single as singleActivityDto } from './activity.dto.js';
+import { multiple as multipleActivityDto, single as singleActivityDto } from './activity.dto.js';
 
 /**
  * Permite validar si un usuario es un encargado de un eje de asigbo.
@@ -209,7 +209,7 @@ const getActivities = async ({
       throw new CustomError('No se encontraron resultados.', 404);
     }
 
-    return multiple(result);
+    return multipleActivityDto(result);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id del área de asigbo no es válido.');
     if (ex?.kind === 'date') throw new CustomError('La fecha máxima no es una fecha válida.');
@@ -271,7 +271,7 @@ const getActivitiesWhereUserIsResponsible = async ({
 
   if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return multiple(results);
+  return multipleActivityDto(results);
 };
 
 /**
@@ -307,7 +307,7 @@ const updateActivityBlockedStatus = async ({ idActivity, blocked, session }) => 
     );
 
     if (!activity) throw new CustomError('No se encontró la actividad.', 404);
-    return single(activity, { showSensitiveData: true });
+    return singleActivityDto(activity, { showSensitiveData: true });
   } catch (ex) {
     if (ex?.kind === 'ObjectId') throw new CustomError('El id de la actividad no es válido.');
     throw ex;
@@ -338,6 +338,29 @@ const assignPaymentToActivity = async ({ idActivity, payment, session }) => {
   await activity.save();
 };
 
+const getAvailableActivitiesToParticipate = async ({
+  promotionYear, promotionGroup, activitiesToIgnore, lowerDate, upperDate, search,
+}) => {
+  const query = {
+    promotion: { $in: [null, promotionYear, promotionGroup] },
+    registrationAvailable: true,
+    blocked: false,
+    _id: { $nin: activitiesToIgnore },
+  };
+  if (someExists(lowerDate, upperDate)) query.date = {};
+  if (exists(lowerDate)) query.date.$gte = lowerDate;
+  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(search)) {
+    // buscar cadena en nombre de la actividad
+    const searchRegex = new RegExp(search, 'i');
+    query.name = { $regex: searchRegex };
+  }
+
+  const activities = await ActivitySchema.find(query);
+  if (activities.length === 0) return null;
+  return multipleActivityDto(activities);
+};
+
 export {
   createActivity,
   updateActivity,
@@ -354,4 +377,5 @@ export {
   uploadActivities,
   getActivityByPaymentId,
   assignPaymentToActivity,
+  getAvailableActivitiesToParticipate,
 };

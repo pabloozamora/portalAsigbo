@@ -1,5 +1,4 @@
 import express from 'express';
-import ensureRefreshTokenAuth from '../../middlewares/ensureRefreshTokenAuth.js';
 
 import {
   createActivityController,
@@ -12,6 +11,7 @@ import {
   disableActivityController,
   getActivitiesWhereUserIsResponsibleController,
   uploadActivitiesDataController,
+  getAvailableActivitiesToParticipateController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createActivitySchema from './validationSchemas/createActivitySchema.js';
@@ -30,9 +30,10 @@ activityRouter.get(
   ensureActivityResponsibleAuth,
   getActivitiesController,
 );
-activityRouter.get('/logged', ensureRefreshTokenAuth, getLoggedActivitiesController);
+activityRouter.get('/logged', ensureRolesAuth(null), getLoggedActivitiesController);
+activityRouter.get('/available', ensureRolesAuth(null), getAvailableActivitiesToParticipateController);
 
-activityRouter.get('/:idActivity', ensureRefreshTokenAuth, getActivityController);
+activityRouter.get('/:idActivity', ensureRolesAuth(null), getActivityController);
 
 activityRouter.post(
   '/',

@@ -130,6 +130,19 @@
 
   Devuelve el listado de actividades en las que ha participado el usuario actualmente loggeado.
 
+- **/activity/available**
+
+  Método: Get
+  Acceso: Todos los usuario loggeados.
+
+  Devuelve el listado de actividades las que el usuario loggeado podría inscribirse (pero no lo ha hecho).
+  
+  Parametros de búsqueda opcionales (?params):
+  
+  - lowerDate: limite inferior inclusivo para la fecha de la actividad.
+  - upperDate: limite superior inlusivo para la fecha de la actividad.
+  - search: cadena a buscar dentro del nombre de la actividad.
+
 - **/activity/responsible/:idUser**
 
   Método: Get
