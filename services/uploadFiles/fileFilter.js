@@ -1,4 +1,3 @@
-import multer from 'multer';
 import CustomError from '../../utils/customError.js';
 
 const fileFilter = (req, file, callback) => {
