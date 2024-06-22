@@ -353,7 +353,10 @@ const getAvailableActivitiesToParticipate = async ({
   promotionYear, promotionGroup, activitiesToIgnore, lowerDate, upperDate, search,
 }) => {
   const query = {
-    promotion: { $in: [null, promotionYear, promotionGroup] },
+    $or: [
+      { participatingPromotions: null },
+      { participatingPromotions: { $in: [promotionYear, promotionGroup] } },
+    ],
     registrationAvailable: true,
     blocked: false,
     _id: { $nin: activitiesToIgnore },
