@@ -188,6 +188,7 @@ const assignUserToActivityController = async (req, res) => {
     }
 
     const user = await getUser({ idUser, showSensitiveData: true });
+    if (!user) throw new CustomError('El usuario indicado no existe.', 404);
 
     // validar que la promoción esté incluida
     // Si es "engargado" puede asignar usuarios fuera de los grupos asignados

@@ -12,6 +12,7 @@ import { connection } from '../../db/connection.js';
 import { getUser } from '../user/user.model.js';
 import consts from '../../utils/consts.js';
 import errorSender from '../../utils/errorSender.js';
+import CustomError from '../../utils/customError.js';
 
 const allowInsecureConnections = config.get('allowInsecureConnections');
 
@@ -148,6 +149,7 @@ const refreshAccessTokenController = async (req, res) => {
 
       // Obtener usuario
       userData = await getUser({ idUser: userData.id, showSensitiveData: true });
+      if (!userData) throw new CustomError('El usuario proporcionado no existe.', 404);
 
       const {
         id, code, name, lastname, promotion, career, sex, role, hasImage,

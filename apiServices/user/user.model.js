@@ -15,7 +15,7 @@ import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.j
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
     const user = await UserSchema.findById(idUser).session(session);
-    if (user === null) throw new CustomError('El usuario indicado no existe.', 404);
+    if (!user) return null;
 
     return single(user, { showSensitiveData });
   } catch (ex) {

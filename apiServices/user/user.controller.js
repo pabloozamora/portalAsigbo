@@ -134,6 +134,7 @@ const sendManyUserRegisterEmail = async ({
 const getLoggedUserController = async (req, res) => {
   try {
     const user = await getUser({ idUser: req.session.id, showSensitiveData: true });
+    if (!user) throw new CustomError('El usuario indicado no existe.', 404);
     res.send(user);
   } catch (ex) {
     await errorSender({
@@ -146,6 +147,7 @@ const getUserController = async (req, res) => {
   const { idUser } = req.params || null;
   try {
     const user = await getUser({ idUser, showSensitiveData: true });
+    if (!user) throw new CustomError('El usuario indicado no existe.', 404);
 
     // Filtrar datos privados si no es admin
     let showSensitiveData = user.id === req.session.id;
@@ -173,6 +175,7 @@ const renewRegisterToken = async (req, res) => {
       throw new CustomError('El usuario no tiene acceso para realizar esta acción.', 403);
     }
     const user = await getUser({ idUser, showSensitiveData: true, session });
+    if (!user) throw new CustomError('El usuario indicado no existe.', 404);
 
     if (user.completeRegistration) {
       throw new CustomError('El usuario indicado ya ha sido activado.', 400);
