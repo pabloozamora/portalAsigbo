@@ -300,13 +300,15 @@ const deleteActivityController = async (req, res) => {
   try {
     session.startTransaction();
 
-    const {
-      responsible,
-      asigboArea: { id: idArea, blocked },
-    } = await getActivity({
+    const activity = await getActivity({
       idActivity,
       showSensitiveData: true,
     });
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
+    const {
+      responsible,
+      asigboArea: { id: idArea, blocked },
+    } = activity;
 
     if (!role.includes(consts.roles.admin)) {
       await validateAreaResponsible({ idUser, idArea });
@@ -448,6 +450,7 @@ const getActivityController = async (req, res) => {
 
   try {
     const result = await getActivity({ idActivity, showSensitiveData: true });
+    if (!result) throw new CustomError('No se encontró la actividad.', 404);
 
     // Para el área de asigbo, verificar si el usuario es encargado
     let isResponsible = false;
@@ -497,6 +500,7 @@ const disableActivityController = async (req, res) => {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity });
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
 
     // Si no es admin, verificar si es encargado de área
     if (!req.session.role.includes(consts.roles.admin)) {
@@ -535,6 +539,7 @@ const enableActivityController = async (req, res) => {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity });
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
 
     // Si no es admin, verificar si es encargado de área
     if (!req.session.role.includes(consts.roles.admin)) {

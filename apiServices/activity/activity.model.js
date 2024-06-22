@@ -222,13 +222,13 @@ const getActivities = async ({
  * Lanza una excepción CustomError si no encuentra resultados.
  * @param idActivity Id de la actividad.
  * @param showSensitiveData Boolean. Default false. Indica si se muestran los datos sensibles de la actividad.
- * @returns Activity dto.
+ * @returns Activity dto. Retorna null si no existe.
  */
 const getActivity = async ({ idActivity, showSensitiveData = false }) => {
   try {
     const result = await ActivitySchema.findById(idActivity);
 
-    if (result === null) throw new CustomError('No se encontró la actividad.', 404);
+    if (result === null) return null;
 
     return singleActivityDto(result, { showSensitiveData });
   } catch (ex) {

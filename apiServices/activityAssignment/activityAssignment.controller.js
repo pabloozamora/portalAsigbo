@@ -163,6 +163,8 @@ const assignUserToActivityController = async (req, res) => {
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
+
     const isCurrentUser = idUser === sessionIdUser;
     const isResponsible = await validateActivityResponsibleAccess({
       role,
@@ -253,6 +255,8 @@ const unassignUserFromActivityController = async (req, res) => {
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
+
     // Validar acceso
     const isCurrentUser = idUser === sessionIdUser;
     const isResponsible = await validateActivityResponsibleAccess({
@@ -309,6 +313,8 @@ const updateActivityAssignmentController = async (req, res) => {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
+
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
 
     // Validar acceso
     const isResponsible = await validateActivityResponsibleAccess({

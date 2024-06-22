@@ -381,6 +381,7 @@ const createActivityPaymentController = async (req, res) => {
 
     // Retorna 404 si no encuentra actividad
     const activity = await getActivity({ idActivity });
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
 
     // Validar si es encargado del area de asigbo de la actividad
     if (!role.includes(consts.roles.admin)) {
