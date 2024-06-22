@@ -25,6 +25,13 @@ import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 const activityAssignmentRouter = express.Router();
 
 activityAssignmentRouter.post(
+  '/:idActivity/assignment',
+  ensureRolesAuth(null),
+  validateParams(requiredIdActivitySchema),
+  assignUserToActivityController,
+);
+
+activityAssignmentRouter.post(
   '/:idActivity/assignment/:idUser',
   ensureActivityResponsibleAuth,
   validateParams(requiredIdUserSchema, requiredIdActivitySchema),

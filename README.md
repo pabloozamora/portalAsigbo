@@ -214,6 +214,17 @@
   - upperDate: limite superior inlusivo para la fecha de la actividad.
   - search: cadena a buscar dentro del nombre de la actividad.
 
+- **/activity/:idActivity/assignment**
+
+  Método: Post
+  Acceso: Todos los usuarios.
+
+  Permite asignar al usuario en sesión a una actividad.
+
+  Parámetros requeridos en la ruta:
+
+  - idActivity: id de la actividad en la que se va a inscribir.
+
 - **/activity/:idActivity/assignment/:idUser**
 
   Método: Post
@@ -225,10 +236,6 @@
 
   - idUser: id del usuario a inscribir.
   - idActivity: id de la actividad en la que se va a inscribir.
-
-  Parámetros opcionales:
-
-  - completed: indíca si el becado ya completo la actividad en la que se va a inscribir. (Valor por defecto false)
 
 - **/activity/:idActivity/assignment/**
 

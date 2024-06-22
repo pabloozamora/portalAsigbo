@@ -31,20 +31,17 @@ import {
 const validateActivityResponsibleAccess = async ({
   role, idUser, idArea, idActivity,
 }) => {
-  if (role.includes(consts.roles.admin)) return;
+  if (role.includes(consts.roles.admin)) return true;
   if (role.includes(consts.roles.asigboAreaResponsible)) {
     const hasAccess = await validateAreaResponsible({ idUser, idArea, preventError: true });
-    if (hasAccess) return;
+    if (hasAccess) return true;
   }
   if (role.includes(consts.roles.activityResponsible)) {
     const hasAccess = await validateActivityResponsible({ idUser, idActivity, preventError: true });
-    if (hasAccess) return;
+    if (hasAccess) return true;
   }
 
-  throw new CustomError(
-    'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
-    403,
-  );
+  return false;
 };
 
 const getActivitiesAssigmentsController = async (req, res) => {
@@ -135,25 +132,33 @@ const getLoggedActivitiesController = async (req, res) => {
 };
 
 const assignUserToActivityController = async (req, res) => {
-  const { idUser, idActivity } = req.params;
+  const { idUser: paramIdUser, idActivity } = req.params;
   const { completed } = req.body;
   const { role, id: sessionIdUser } = req.session;
 
-  const isCurrentUser = idUser === sessionIdUser;
+  // Asignar a usuario en sesión si no se proporciona parámetro
+  const idUser = paramIdUser ?? sessionIdUser;
+
   const session = await connection.startSession();
   try {
     session.startTransaction();
 
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
-    // Validar acceso si no se desea asignar a si mismo
-    if (!isCurrentUser) {
-      await validateActivityResponsibleAccess({
-        role,
-        idUser: sessionIdUser,
-        idActivity,
-        idArea: activity.asigboArea.id,
-      });
+    const isCurrentUser = idUser === sessionIdUser;
+    const isResponsible = await validateActivityResponsibleAccess({
+      role,
+      idUser: sessionIdUser,
+      idActivity,
+      idArea: activity.asigboArea.id,
+    });
+
+    // Validar acceso
+    if (!isCurrentUser && !isResponsible) {
+      throw new CustomError(
+        'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
+        403,
+      );
     }
 
     // Validar que la actividad y eje estén habilitados
@@ -166,16 +171,19 @@ const assignUserToActivityController = async (req, res) => {
 
     const user = await getUser({ idUser, showSensitiveData: true });
 
-    const promotionObj = new Promotion();
-    const userPromotionGroup = await promotionObj.getPromotionGroup(user.promotion);
-
     // validar que la promoción esté incluida
-    if (
-      activity.participatingPromotions !== null
+    // Si es "engargado" puede asignar usuarios fuera de los grupos asignados
+    if (!isResponsible) {
+      const promotionObj = new Promotion();
+      const userPromotionGroup = await promotionObj.getPromotionGroup(user.promotion);
+
+      if (
+        activity.participatingPromotions !== null
       && !activity.participatingPromotions.includes(user.promotion)
       && !activity.participatingPromotions.includes(userPromotionGroup)
-    ) {
-      throw new CustomError('La actividad no está disponible para la promoción del usuario.');
+      ) {
+        throw new CustomError('La actividad no está disponible para la promoción del usuario.', 403);
+      }
     }
 
     // verificar que hayan espacios disponibles
@@ -200,29 +208,9 @@ const assignUserToActivityController = async (req, res) => {
     // Añadir un participante
     await addActivityParticipants({ idActivity, value: 1, session });
 
-    const {
-      serviceHours,
-      asigboArea: { id: asigboAreaId },
-    } = activity;
-
-    // si es una actividad completada, modificar total de horas de servicio
-    if (parseBoolean(completed) === true && serviceHours > 0) {
-      await updateServiceHours({
-        userId: idUser,
-        asigboAreaId,
-        hoursToAdd: serviceHours,
-        session,
-      });
-    }
-
-    // Aumentar en 1 la cantidad de activ. completadas
-    if (parseBoolean(completed)) {
-      await updateActivitiesCompletedNumber({ idUser, add: 1, session });
-    }
-
     await session.commitTransaction();
 
-    res.sendStatus(204);
+    res.status(204).send({ ok: true });
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al asignar usuarios a una actividad.', session,
@@ -244,12 +232,18 @@ const unassignUserFromActivityController = async (req, res) => {
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
     // Validar acceso
-    await validateActivityResponsibleAccess({
+    const isResponsible = await validateActivityResponsibleAccess({
       role,
       idUser: sessionIdUser,
       idActivity,
       idArea: activity.asigboArea.id,
     });
+    if (!isResponsible) {
+      throw new CustomError(
+        'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
+        403,
+      );
+    }
 
     // Validar que la actividad y eje estén habilitados
     if (activity.asigboArea.blocked) {
@@ -316,12 +310,18 @@ const updateActivityAssignmentController = async (req, res) => {
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
     // Validar acceso
-    await validateActivityResponsibleAccess({
+    const isResponsible = await validateActivityResponsibleAccess({
       role,
       idUser: sessionIdUser,
       idActivity,
       idArea: activity.asigboArea.id,
     });
+    if (!isResponsible) {
+      throw new CustomError(
+        'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
+        403,
+      );
+    }
 
     // Validar que la actividad y eje estén habilitados
     if (activity.asigboArea.blocked) {
