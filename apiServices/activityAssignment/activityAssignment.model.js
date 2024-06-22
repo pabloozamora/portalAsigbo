@@ -16,7 +16,7 @@ import { single as singleUserDto } from '../user/user.dto.js';
  * @param upperDate Límite superior en la fecha de la actividad asignada. (Opcional)
  * @param page Pagina a consultar. Inicia en cero. Si es null devuelve el listado completo.
  * @param includeUserPromotionGroup Boolean. Indica si se debe agregar el grupo de promoción del usuario.
- * @returns
+ * @returns Multiple AssignmentDto con grupo de promoción de usuario. Null si no hay resultados.
  */
 const getActivityAssignments = async ({
   idUser, idActivity, search = null, lowerDate = null, upperDate = null, page = null, includeUserPromotionGroup = true,
@@ -47,9 +47,7 @@ const getActivityAssignments = async ({
       'paymentAssignment.confirmed': -1,
       'paymentAssignment.completed': -1,
     });
-    if (assignments.length === 0) {
-      throw new CustomError('No se encontraron resultados.', 404);
-    }
+    if (assignments.length === 0) return null;
 
     const parsedAssignments = multipleAssignmentActivityDto(assignments);
 

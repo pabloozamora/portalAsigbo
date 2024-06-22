@@ -318,15 +318,10 @@ const deleteActivityController = async (req, res) => {
     }
 
     // Verificar que la actividad no tenga asignaciones
-    let assignments;
-    try {
-      assignments = await getActivityAssignments({
-        idActivity,
-        includeUserPromotionGroup: false,
-      });
-    } catch (err) {
-      // Error no crítico. Se espera un 404
-    }
+    const assignments = await getActivityAssignments({
+      idActivity,
+      includeUserPromotionGroup: false,
+    });
 
     if (assignments?.length > 0) {
       throw new CustomError(
@@ -476,11 +471,9 @@ const getActivityController = async (req, res) => {
     }
 
     // Adjuntar asignación (si existe) del usuario en sesión
-    try {
-      const [userAssignment] = await getActivityAssignments({ idUser: req.session.id, idActivity });
-      result.userAssignment = userAssignment;
-    } catch (err) {
-      // error no critico (404)
+    const assignment = await getActivityAssignments({ idUser: req.session.id, idActivity });
+    if (assignment !== null) {
+      result.userAssignment = assignment;
     }
 
     // Añadir grupo de promoción de responsables

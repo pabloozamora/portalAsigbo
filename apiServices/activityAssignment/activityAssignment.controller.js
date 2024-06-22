@@ -62,6 +62,9 @@ const getActivitiesAssigmentsController = async (req, res) => {
         lowerDate,
         upperDate,
       });
+      if (completeResult === null) {
+        throw new CustomError('No se encontraron resultados de asignaciones.', 404);
+      }
       pagesNumber = completeResult.length;
     }
 
@@ -72,6 +75,10 @@ const getActivitiesAssigmentsController = async (req, res) => {
       upperDate,
       page,
     });
+
+    if (!result) {
+      throw new CustomError('No se encontraron resultados de asignaciones.', 404);
+    }
 
     res.send({
       pages: Math.ceil((pagesNumber ?? result.length) / consts.resultsNumberPerPage),
@@ -88,8 +95,11 @@ const getActivitiesAssigmentsController = async (req, res) => {
 const getActivitiesAssigmentsByActivityController = async (req, res) => {
   const { idActivity } = req.params;
   try {
-    const activities = await getActivityAssignments({ idActivity });
-    res.send(activities);
+    const activityAssignments = await getActivityAssignments({ idActivity });
+    if (!activityAssignments) {
+      throw new CustomError('No se encontraron resultados de asignaciones.', 404);
+    }
+    res.send(activityAssignments);
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al obtener las asignaciones de la actividad.',
@@ -101,6 +111,11 @@ const getActivityAssigmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
   try {
     const activities = await getActivityAssignments({ idActivity, idUser });
+
+    if (!activities) {
+      throw new CustomError('No se encontraron resultados.', 404);
+    }
+
     const activityAssignment = activities[0];
 
     if (activityAssignment.paymentAssignment) {
@@ -123,6 +138,9 @@ const getActivityAssigmentController = async (req, res) => {
 const getLoggedActivitiesController = async (req, res) => {
   try {
     const activities = await getActivityAssignments({ idUser: req.session.id });
+    if (!activities) {
+      throw new CustomError('No se encontraron resultados.', 404);
+    }
     res.send(activities);
   } catch (ex) {
     await errorSender({
