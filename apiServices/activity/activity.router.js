@@ -18,10 +18,10 @@ import createActivitySchema from './validationSchemas/createActivitySchema.js';
 import updateActivitySchema from './validationSchemas/updateActivitySchema.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
-import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import ensureAreaResponsibleAuth from '../../middlewares/ensureAreaResponsibleAuth.js';
 import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityResponsibleAuth.js';
 import consts from '../../utils/consts.js';
+import uploadBannerImage from '../../services/uploadFiles/uploadBannerImage.js';
 
 const activityRouter = express.Router();
 
@@ -38,14 +38,14 @@ activityRouter.get('/:idActivity', ensureRolesAuth(null), getActivityController)
 activityRouter.post(
   '/',
   ensureAreaResponsibleAuth,
-  multerMiddleware(uploadImage.single('banner')),
+  multerMiddleware(uploadBannerImage.single('banner'), consts.uploadFileSizeLimit.banner),
   validateBody(createActivitySchema),
   createActivityController,
 );
 activityRouter.patch(
   '/:idActivity',
   ensureAreaResponsibleAuth,
-  multerMiddleware(uploadImage.single('banner')),
+  multerMiddleware(uploadBannerImage.single('banner'), consts.uploadFileSizeLimit.banner),
   validateBody(updateActivitySchema),
   updateActivityController,
 );

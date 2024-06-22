@@ -32,6 +32,10 @@ const consts = {
     activityPaymentTargetUsers: 'Actividad',
   },
   activityFileHeaders: ['Actividad', 'Area', 'Fecha', 'Participante', 'Horas'],
+  uploadFileSizeLimit: {
+    default: 1000000, // 1MB
+    banner: 5000000,
+  },
 };
 
 consts.imagePath.user = `${consts.apiPath}/user`;
