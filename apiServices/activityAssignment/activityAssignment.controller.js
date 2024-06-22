@@ -221,8 +221,11 @@ const assignUserToActivityController = async (req, res) => {
 };
 
 const unassignUserFromActivityController = async (req, res) => {
-  const { idActivity, idUser } = req.params;
+  const { idActivity, idUser: paramIdUser } = req.params;
   const { role, id: sessionIdUser } = req.session;
+
+  // Asignar a usuario en sesión si no se proporciona parámetro
+  const idUser = paramIdUser ?? sessionIdUser;
 
   const session = await connection.startSession();
 
@@ -232,13 +235,14 @@ const unassignUserFromActivityController = async (req, res) => {
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
     // Validar acceso
+    const isCurrentUser = idUser === sessionIdUser;
     const isResponsible = await validateActivityResponsibleAccess({
       role,
       idUser: sessionIdUser,
       idActivity,
       idArea: activity.asigboArea.id,
     });
-    if (!isResponsible) {
+    if (!isResponsible && !isCurrentUser) {
       throw new CustomError(
         'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
         403,
@@ -253,32 +257,10 @@ const unassignUserFromActivityController = async (req, res) => {
       throw new CustomError('La actividad se encuentra deshabilitada.', 409);
     }
 
-    const result = await unassignUserFromActivity({ idActivity, idUser, session });
-    const {
-      activity: {
-        serviceHours,
-        asigboArea: { _id: asigboAreaId },
-      },
-      completed,
-    } = result;
+    await unassignUserFromActivity({ idActivity, idUser, session });
 
     // Remover participantes en la actividad
     await addActivityParticipants({ idActivity, value: -1, session });
-
-    // si es una actividad completada, modificar total de horas de servicio
-    if (completed === true && serviceHours > 0) {
-      await updateServiceHours({
-        userId: idUser,
-        asigboAreaId,
-        hoursToRemove: serviceHours,
-        session,
-      });
-    }
-
-    // Reducir en 1 la cantidad de activ. completadas
-    if (parseBoolean(completed)) {
-      await updateActivitiesCompletedNumber({ idUser, remove: 1, session });
-    }
 
     // Si existe un pago en la actividad, eliminar asignación (si no fue completado el pago aún)
     if (activity.payment) {
@@ -287,7 +269,7 @@ const unassignUserFromActivityController = async (req, res) => {
 
     await session.commitTransaction();
 
-    res.sendStatus(204);
+    res.status(204).send({ ok: true });
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al desasignar al usuario de la actividad.', session,

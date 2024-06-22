@@ -102,7 +102,12 @@ const unassignUserFromActivity = async ({ idActivity, idUser, session }) => {
     { session },
   );
 
-  if (!assignmentData) { throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403); }
+  if (!assignmentData) {
+    throw new CustomError('El usuario no se encuentra inscrito en la actividad.', 403);
+  }
+  if (assignmentData.completed) {
+    throw new CustomError('No se puede desasignar a un usuario cuya participación fue completada.', 400);
+  }
 
   return singleAssignmentActivityDto(assignmentData);
 };

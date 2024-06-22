@@ -277,12 +277,23 @@
   Método: Delete
   Acceso: admin, encargado del área y encargado de la actividad.
 
-  Permite eliminar la inscripción de un usuario a una actividad.
+  Permite eliminar la inscripción de un usuario a una actividad siempre y cuando el usuario no haya completado la actividad.
 
   Parámetros obligatorios en la ruta:
 
   - idActivity: id de la actividad a completar.
   - idUser: id del usuario correspondiente.
+
+- **/activity/:idActivity/assignment**
+
+  Método: Delete
+  Acceso: Todos los usuarios loggeados.
+
+  Permite eliminar la inscripción del usuario en SESIÓN a una actividad siempre y cuando el usuario no haya completado la actividad.
+
+  Parámetros obligatorios en la ruta:
+
+  - idActivity: id de la actividad a completar.
 
 
 ### Configuración de promociones
