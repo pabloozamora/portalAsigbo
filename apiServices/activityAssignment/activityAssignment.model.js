@@ -94,26 +94,6 @@ const assignUserToActivity = async ({
   }
 };
 
-/**
- * Permite asignar a varios usuarios a una actividad de forma simultánea.
- * @param assignmentsList Array of objects. Los objetos del arreglo deben tener la forma
- * {user: objeto del usuario, activity: objeto de la actividad, pendingPayment: boolean, completed: boolean}
- */
-const assignManyUsersToActivity = async ({ assignmentsList, session }) => {
-  try {
-    await ActivityAssignmentSchema.insertMany(assignmentsList, { session });
-  } catch (ex) {
-    if (ex?.code === 11000) {
-      // indice duplicado
-      throw new CustomError(
-        'Alguno de los usuarios ya se encuentra inscrito en la actividad.',
-        400,
-      );
-    }
-    throw ex;
-  }
-};
-
 const getCompletedActivityAssignmentsById = async (id) => ActivityAssignmentSchema.find({ 'activity._id': id, completed: true });
 
 const unassignUserFromActivity = async ({ idActivity, idUser, session }) => {
@@ -248,7 +228,6 @@ export {
   getActivityAssignments,
   unassignUserFromActivity,
   updateActivityAssignment,
-  assignManyUsersToActivity,
   getActivityAssignment,
   addPaymentsToActivityAssignments,
   getActivityAssignedUsers,

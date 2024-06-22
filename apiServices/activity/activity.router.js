@@ -10,7 +10,6 @@ import {
   enableActivityController,
   disableActivityController,
   getActivitiesWhereUserIsResponsibleController,
-  uploadActivitiesDataController,
   getAvailableActivitiesToParticipateController,
 } from './activity.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
@@ -71,19 +70,6 @@ activityRouter.get(
   '/responsible/:idUser',
   ensureRolesAuth(null),
   getActivitiesWhereUserIsResponsibleController,
-);
-
-activityRouter.post(
-  '/uploadData',
-  ensureRolesAuth(
-    [
-      consts.roles.admin,
-      consts.roles.asigboAreaResponsible,
-      consts.roles.activityResponsible,
-    ],
-    'El usuario no cuenta con privilegios de administrador, encargado de eje de asigbo, encargado de actividad o encargado de promoción.',
-  ),
-  uploadActivitiesDataController,
 );
 
 export default activityRouter;

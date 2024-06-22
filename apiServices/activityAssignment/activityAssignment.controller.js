@@ -17,12 +17,10 @@ import {
 import Promotion from '../promotion/promotion.model.js';
 import {
   getUser,
-  getUsersInList,
   updateActivitiesCompletedNumber,
   updateServiceHours,
 } from '../user/user.model.js';
 import {
-  assignManyUsersToActivity,
   assignUserToActivity,
   getActivityAssignments,
   getUserActivityAssignments,
@@ -234,75 +232,6 @@ const assignUserToActivityController = async (req, res) => {
   }
 };
 
-const assignManyUsersToActivityController = async (req, res) => {
-  const { idUsersList, idActivity, completed } = req.body;
-  const session = await connection.startSession();
-  try {
-    session.startTransaction();
-
-    const activity = await getActivity({ idActivity, showSensitiveData: true });
-
-    // Validar que la actividad y eje estén habilitados
-    if (activity.asigboArea.blocked) {
-      throw new CustomError('El eje de ASIGBO correspondiente se encuentra bloqueado.', 409);
-    }
-    if (activity.blocked) {
-      throw new CustomError('La actividad se encuentra deshabilitada.', 409);
-    }
-
-    const users = await getUsersInList({ idUsersList, showSensitiveData: true });
-
-    // Asignar a todos los usuarios.
-    const assignmentsList = [];
-    const promotionObj = new Promotion();
-
-    await Promise.all(
-      idUsersList.forEach(async (idUser) => {
-        const user = users.find((u) => u.id === idUser);
-
-        const userPromotionGroup = await promotionObj.getPromotionGroup(user.promotion);
-
-        // validar que la promoción esté incluida
-        if (
-          activity.participatingPromotions !== null
-          && !activity.participatingPromotions.includes(user.promotion)
-          && !activity.participatingPromotions.includes(userPromotionGroup)
-        ) {
-          throw new CustomError(
-            `La actividad no está disponible para la promoción del usuario ${user.name} ${user.lastname}.`,
-          );
-        }
-
-        const availableSpaces = activity.maxParticipants - activity.participantsNumber;
-        // verificar que hayan espacios disponibles
-        if (availableSpaces < users.length) {
-          throw new CustomError(
-            'La actividad no cuenta con suficientes espacios disponibles.',
-            403,
-          );
-        }
-
-        assignmentsList.push({ user, activity, completed });
-      }),
-    );
-
-    await assignManyUsersToActivity({ assignmentsList, session });
-
-    // Añadir x cantidad de participantes
-    await addActivityParticipants({ idActivity, value: users.length, session });
-
-    await session.commitTransaction();
-
-    res.sendStatus(204);
-  } catch (ex) {
-    await errorSender({
-      res, ex, defaultError: 'Ocurrio un error al asignar lista de usuarios a una actividad.', session,
-    });
-  } finally {
-    session.endSession();
-  }
-};
-
 const unassignUserFromActivityController = async (req, res) => {
   const { idActivity, idUser } = req.params;
   const { role, id: sessionIdUser } = req.session;
@@ -499,7 +428,6 @@ const getUserNotCompletedAssignmentsController = async (req, res) => {
 
 export {
   assignUserToActivityController,
-  assignManyUsersToActivityController,
   getActivitiesAssigmentsByActivityController,
   getLoggedActivitiesController,
   unassignUserFromActivityController,

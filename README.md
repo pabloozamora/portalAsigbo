@@ -230,22 +230,6 @@
 
   - completed: indíca si el becado ya completo la actividad en la que se va a inscribir. (Valor por defecto false)
 
-- **/activity/assignMany**
-
-  Método: Post
-  Acceso: admin.
-
-  Permite asignar a una lista de usuarios a una actividad existente.
-
-  Parámetros requeridos:
-
-  - idUsersList: (array) lista de los id's de usuarios a inscribir.
-  - idActivity: id de la actividad en la que se va a inscribir.
-
-  Parámetros opcionales:
-
-  - completed: indíca si los becados ya completaron la actividad en la que se va a inscribir. (Valor por defecto false)
-
 - **/activity/:idActivity/assignment/**
 
   Método: Get

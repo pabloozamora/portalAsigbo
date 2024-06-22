@@ -2,7 +2,6 @@ import express from 'express';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 
 import {
-  assignManyUsersToActivityController,
   assignUserToActivityController,
   getActivitiesAssigmentsByActivityController,
   getActivitiesAssigmentsController,
@@ -13,7 +12,6 @@ import {
   updateActivityAssignmentController,
 } from './activityAssignment.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
-import assignManyUsersToActivitySchema from './validationSchemas/assignManyUsersToActivitySchema.js';
 import validateParams from '../../middlewares/validateParams.js';
 import requiredIdUserSchema, {
   optionalIdUserSchema,
@@ -31,12 +29,6 @@ activityAssignmentRouter.post(
   ensureActivityResponsibleAuth,
   validateParams(requiredIdUserSchema, requiredIdActivitySchema),
   assignUserToActivityController,
-);
-activityAssignmentRouter.post(
-  '/assignMany',
-  ensureAdminAuth,
-  validateBody(assignManyUsersToActivitySchema),
-  assignManyUsersToActivityController,
 );
 
 activityAssignmentRouter.get(

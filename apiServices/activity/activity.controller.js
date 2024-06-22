@@ -1,30 +1,23 @@
 /* eslint-disable no-await-in-loop */
 import fs from 'node:fs';
-import helper from 'csvtojson';
-import path from 'node:path';
 import { connection } from '../../db/connection.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import {
-  assignManyUsersToActivity,
-  getActivityAssignment,
   getActivityAssignments,
   getCompletedActivityAssignmentsById,
   getUserActivityAssignments,
 } from '../activityAssignment/activityAssignment.model.js';
 import {
-  getAreas,
   getAreasWhereUserIsResponsible,
   validateResponsible as validateAreaResponsible,
 } from '../asigboArea/asigboArea.model.js';
 import { forceSessionTokenToUpdate } from '../session/session.model.js';
 import {
   addRoleToUser,
-  getUsersList,
   removeRoleFromUser,
-  updateActivitiesCompletedNumber,
   updateServiceHours,
 } from '../user/user.model.js';
 import { multiple, single } from './activity.dto.js';
@@ -39,7 +32,6 @@ import {
   updateActivity,
   updateActivityBlockedStatus,
   updateActivityInAllAssignments,
-  uploadActivities,
 } from './activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import Promotion from '../promotion/promotion.model.js';
@@ -631,171 +623,6 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
   }
 };
 
-const uploadActivitiesDataController = async (req, res) => {
-  const { path: filePath } = req.body;
-  const session = await connection.startSession();
-
-  try {
-    session.startTransaction();
-
-    const fileExtension = path.extname(filePath);
-    if (fileExtension !== '.csv') { throw new CustomError('El archivo de importación debe estar en formato .csv'); }
-
-    const problems = [];
-    const assignments = [];
-    const activities = [];
-    const usersToUpdate = [];
-    const { result: admins } = await getUsersList({ role: consts.roles.admin });
-    const { result: users } = await getUsersList({
-      promotion: null,
-      university: null,
-      search: null,
-      role: null,
-      promotionMin: null,
-      promotionMax: null,
-      priority: null,
-    });
-    const areas = await getAreas();
-
-    const rows = await helper().fromFile(filePath, { encoding: 'binary' });
-    const headers = Object.keys(rows[0]);
-    if (!consts.activityFileHeaders.every((header) => headers.includes(header))) {
-      throw new CustomError(
-        `Las cabeceras del archivo deben ser '${consts.activityFileHeaders.join(', ')}'`,
-      );
-    }
-
-    const currentActivities = await getActivities(session);
-
-    for (let i = 0; i < rows.length; i += 1) {
-      const row = rows[i];
-      const {
-        Actividad: activityName,
-        Area: area,
-        Fecha: activityDate,
-        Participante: attendantCode,
-        Horas,
-      } = row;
-      const serviceHours = Horas.trim() !== '' ? parseInt(Horas.trim(), 10) : undefined;
-      // eslint-disable-next-line no-continue
-      if (!serviceHours) continue;
-      const existsActivity = currentActivities && currentActivities.length > 0
-        ? currentActivities.find(
-          (current) => current.name === activityName && current.asigboArea._id.toString() === area,
-        )
-        : undefined;
-
-      const existsArea = areas && areas.length > 0 ? areas.find((a) => a._id === area) : undefined;
-      const existsUser = users && users.length > 0
-        ? users.find((u) => u.code.toString() === attendantCode)
-        : undefined;
-      if (!existsArea || !existsUser) {
-        const reason = !existsArea ? 'El área indicada no existe' : 'El usuario indicado no existe';
-        problems.push({ row, index: i + 1, reason });
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      if (existsActivity) {
-        const existsAssignment = await getActivityAssignment({
-          idUser: existsUser._id,
-          idActivity: existsActivity._id,
-          session,
-        });
-
-        if (existsAssignment && existsAssignment.length > 0) {
-          problems.push({
-            row,
-            index: i + 1,
-            reason: `El usuario con el código ${attendantCode} ya está asignado a la actividad '${activityName}'`,
-          });
-          // eslint-disable-next-line no-continue
-          continue;
-        }
-      }
-
-      const foundAssignment = assignments.find(
-        (a) => a.activity.name === activityName && a.activity.asigboArea._id === area,
-      );
-
-      const activity = existsActivity || (foundAssignment ? foundAssignment.activity : undefined);
-
-      const attendant = {
-        user: existsUser,
-        completed: true,
-        aditionalServiceHours: serviceHours,
-        session,
-      };
-
-      const formatedDate = new Date(activityDate.trim());
-
-      if (activity) {
-        assignments.push({ ...attendant, activity });
-        activity.participantsNumber += 1;
-        activity.maxParticipants += 1;
-      } else {
-        const newActivity = {
-          name: activityName.trim(),
-          date: formatedDate,
-          serviceHours: 0,
-          responsible: admins.map((admin) => ({ ...admin, hasImage: false })),
-          asigboArea: existsArea,
-          payment: null,
-          registrationStartDate: formatedDate,
-          registrationEndDate: formatedDate,
-          participatingPromotions: null,
-          participantsNumber: 1,
-          maxParticipants: 1,
-          description: 'Sin descripción',
-          hasBanner: false,
-        };
-        assignments.push({ ...attendant, activity: newActivity });
-        activities.push(newActivity);
-      }
-      usersToUpdate.push({
-        userId: existsUser._id,
-        asigboAreaId: area,
-        hoursToAdd: serviceHours,
-      });
-    }
-    const savedActivities = activities.length > 0 ? await uploadActivities({ activities, session }) : undefined;
-    assignments.forEach((assignment) => {
-      if (assignment.activity._id) return;
-
-      const savedActivity = savedActivities.find(
-        (act) => act.name === assignment.activity.name
-          && act.asigboArea._id.toString() === assignment.activity.asigboArea._id,
-      );
-      // eslint-disable-next-line no-param-reassign
-      assignment.activity = savedActivity;
-    });
-    if (assignments.length > 0) {
-      await assignManyUsersToActivity({ assignmentsList: assignments.flat(), session });
-    }
-
-    for (const user of usersToUpdate) {
-      const { userId, asigboAreaId, hoursToAdd } = user;
-      await updateServiceHours({
-        userId,
-        asigboAreaId,
-        hoursToAdd,
-        session,
-      });
-      await updateActivitiesCompletedNumber({ idUser: userId, add: 1, session });
-    }
-
-    await session.commitTransaction();
-    // await session.abortTransaction();
-    res.send({ success: true, problems });
-  } catch (ex) {
-    await errorSender({
-      res, ex, defaultError: 'Ocurrio un error al insertar la información.', session,
-    });
-  } finally {
-    session.endSession();
-  }
-};
-
 const getAvailableActivitiesToParticipateController = async (req, res) => {
   const { id: idUser, promotion } = req.session;
   const { lowerDate, upperDate, search } = req.query;
@@ -830,6 +657,5 @@ export {
   disableActivityController,
   enableActivityController,
   getActivitiesWhereUserIsResponsibleController,
-  uploadActivitiesDataController,
   getAvailableActivitiesToParticipateController,
 };
