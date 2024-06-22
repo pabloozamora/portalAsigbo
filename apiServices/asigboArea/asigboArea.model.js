@@ -175,12 +175,12 @@ const getArea = async ({ idArea }) => {
  * Devuelve el listado de áreas en donde el usuario es responsable.
  * @param {string} idUser: Id del usuario a consultar.
  * @param {session} object: Objeto sesión.
- * @returns Area dto array.
+ * @returns Area dto array. Null si no encuentra resultados.
  */
 const getAreasWhereUserIsResponsible = async ({ idUser, session }) => {
   const results = await AsigboAreaSchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
 
-  if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+  if (results.length === 0) return null;
 
   return multiple(results);
 };

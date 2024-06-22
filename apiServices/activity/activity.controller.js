@@ -399,11 +399,9 @@ const getActivitiesController = async (req, res) => {
 
     // Obtener áreas donde es encargado el usuario
     if (req.session.role.includes(consts.roles.asigboAreaResponsible)) {
-      try {
-        const areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+      const areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+      if (areas) {
         areasWhereUserIsResponsible.push(...areas.map((area) => area.id));
-      } catch (err) {
-        // Error no crítico: no se obtuvieron resultados
       }
     }
 
@@ -453,11 +451,9 @@ const getActivityController = async (req, res) => {
 
     // Para el área de asigbo, verificar si el usuario es encargado
     let isResponsible = false;
-    try {
-      const areas = await getAreasWhereUserIsResponsible({ idUser: sessionIdUser });
+    const areas = await getAreasWhereUserIsResponsible({ idUser: sessionIdUser });
+    if (areas) {
       isResponsible = areas?.some((area) => area.id === result.asigboArea.id);
-    } catch (err) {
-      // Error no critico
     }
 
     result.asigboArea.isResponsible = isResponsible;

@@ -28,16 +28,13 @@ import errorSender from '../../utils/errorSender.js';
 }; */
 
 const removeAsigboAreaResponsibleRole = async ({ idUser, session }) => {
-  try {
-    await getAreasWhereUserIsResponsible({ idUser, session });
-  } catch (ex) {
-    if (ex instanceof CustomError) { // 404
-      // El unico eje en el que es responsable es en el que se le eliminó, retirar permiso
-      await removeRoleFromUser({ idUser, role: consts.roles.asigboAreaResponsible, session });
+  const areas = await getAreasWhereUserIsResponsible({ idUser, session });
+  if (areas === null) {
+    // El unico eje en el que es responsable es en el que se le eliminó, retirar permiso
+    await removeRoleFromUser({ idUser, role: consts.roles.asigboAreaResponsible, session });
 
-      // Forzar actualizar sesión del usuario
-      await forceSessionTokenToUpdate({ idUser, session });
-    } else throw ex;
+    // Forzar actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
   }
 };
 
@@ -222,6 +219,8 @@ const getAreasController = async (req, res) => {
     let areas;
     if (req.session.role.includes(consts.roles.admin)) areas = await getAreas();
     else areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+
+    if (!areas) throw new CustomError('No se encontraron resultados.', 404);
 
     res.send(areas);
   } catch (ex) {

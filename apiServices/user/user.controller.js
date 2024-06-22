@@ -645,12 +645,8 @@ const deleteUserController = async (req, res) => {
     }
 
     // verificar que el usuario no haya realizado acciones
-    let responsibleAreas;
-    try {
-      responsibleAreas = await getAreasWhereUserIsResponsible({ idUser, session });
-    } catch (ex) {
-      // Se espera un error al no encontrar resultados
-    }
+    const responsibleAreas = await getAreasWhereUserIsResponsible({ idUser, session });
+
     if (responsibleAreas?.length > 0) {
       throw new CustomError(
         'No es posible eliminar el usuario, pues este figura como encargado de al menos un eje de ASIGBO.',
