@@ -93,6 +93,8 @@ const createActivityController = async (req, res) => {
     participatingPromotions,
     participantsNumber,
     description,
+    registrationAvailable,
+
   } = req.body;
 
   const session = await connection.startSession();
@@ -120,6 +122,7 @@ const createActivityController = async (req, res) => {
       participatingPromotions,
       participantsNumber,
       description,
+      registrationAvailable,
       hasBanner,
       session,
     });
@@ -164,6 +167,8 @@ const updateActivityController = async (req, res) => {
     participantsNumber,
     removeBanner,
     description,
+    registrationAvailable,
+
   } = req.body;
 
   const session = await connection.startSession();
@@ -193,6 +198,7 @@ const updateActivityController = async (req, res) => {
       registrationEndDate,
       participatingPromotions,
       maxParticipantsNumber: participantsNumber,
+      registrationAvailable,
       hasBanner,
       description,
     });

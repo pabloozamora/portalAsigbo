@@ -33,6 +33,7 @@ const createActivity = async ({
   registrationEndDate,
   participatingPromotions,
   participantsNumber,
+  registrationAvailable,
   description,
   hasBanner,
   session,
@@ -65,6 +66,7 @@ const createActivity = async ({
   activity.maxParticipants = participantsNumber;
   activity.description = description;
   activity.hasBanner = hasBanner;
+  activity.registrationAvailable = registrationAvailable;
 
   const result = await activity.save({ session });
   return singleActivityDto(result);
@@ -87,6 +89,7 @@ const updateActivity = async ({
   registrationEndDate,
   participatingPromotions,
   maxParticipantsNumber,
+  registrationAvailable,
   hasBanner,
   description,
 }) => {
@@ -121,6 +124,7 @@ const updateActivity = async ({
     }
     if (exists(hasBanner)) activity.hasBanner = hasBanner;
     if (exists(description)) activity.description = description;
+    if (exists(registrationAvailable)) activity.registrationAvailable = registrationAvailable;
     if (exists(maxParticipantsNumber)) {
       if (maxParticipantsNumber >= activity.participantsNumber) {
         activity.maxParticipants = maxParticipantsNumber;

@@ -7,6 +7,9 @@ export default yup.object().shape({
     .boolean()
     .nullable()
     .typeError("El campo 'removeBanner' debe ser un valor booleano."),
+  registrationAvailable: yup.boolean()
+    .nullable()
+    .typeError("El campo 'registrationAvailable' debe tener un valor booleano.'"),
   participantsNumber: yup
     .number()
     .nullable()

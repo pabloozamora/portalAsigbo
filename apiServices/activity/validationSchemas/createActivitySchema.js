@@ -3,6 +3,10 @@ import validateId from '../../../utils/validateId.js';
 import consts from '../../../utils/consts.js';
 
 export default yup.object().shape({
+  registrationAvailable: yup.boolean()
+    .nullable()
+    .typeError("El campo 'registrationAvailable' debe tener un valor booleano.'")
+    .required("El campo 'registrationAvailable' es obligatorio."),
   participantsNumber: yup
     .number()
     .nullable()

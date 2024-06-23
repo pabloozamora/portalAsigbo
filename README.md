@@ -79,6 +79,8 @@
   - registrationStartDate: fecha en que la actividad se muestra disponible a los becados para su inscripción.
   - registrationEndDate: fecha límite de inscripción.
   - participantsNumber: número máximo de participantes.
+  - registrationAvailable: bool. Indica si los usuarios pueden inscribirse por sí mismos.
+
 
   Parámetros opcionales (formData):
 
@@ -113,6 +115,7 @@
   banner previo, el banner es reemplazado.
   - removeBanner: valor booleano que indica si se debe de eliminar el banner para la actividad. Si se
   agregó un archivo en la propiedad banner, este valor es ignorado.
+  - registrationAvailable: bool. Indica si los usuarios pueden inscribirse por sí mismos.
 
   Nota: El eje de asigbo al que pertenece la actividad no puede ser modificado.
 
