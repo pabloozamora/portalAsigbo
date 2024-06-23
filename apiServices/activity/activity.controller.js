@@ -446,25 +446,25 @@ const getActivitiesController = async (req, res) => {
 
 const getActivityController = async (req, res) => {
   const { idActivity } = req.params;
-  const { id: sessionIdUser } = req.session;
+  const { id: sessionIdUser, promotion: sessionUserPromotion } = req.session;
 
   try {
-    const result = await getActivity({ idActivity, showSensitiveData: true });
-    if (!result) throw new CustomError('No se encontró la actividad.', 404);
+    const activity = await getActivity({ idActivity, showSensitiveData: true });
+    if (!activity) throw new CustomError('No se encontró la actividad.', 404);
 
     // Para el área de asigbo, verificar si el usuario es encargado
     let isResponsible = false;
     const areas = await getAreasWhereUserIsResponsible({ idUser: sessionIdUser });
     if (areas) {
-      isResponsible = areas?.some((area) => area.id === result.asigboArea.id);
+      isResponsible = areas?.some((area) => area.id === activity.asigboArea.id);
     }
 
-    result.asigboArea.isResponsible = isResponsible;
+    activity.asigboArea.isResponsible = isResponsible;
 
     // Especificar si el usuario es tesorero del pago de la actividad
-    if (result.payment) {
-      result.payment.isTreasurer = await verifyIfUserIsTreasurer({
-        idPayment: result.payment._id,
+    if (activity.payment) {
+      activity.payment.isTreasurer = await verifyIfUserIsTreasurer({
+        idPayment: activity.payment._id,
         idUser: sessionIdUser,
       });
     }
@@ -472,19 +472,46 @@ const getActivityController = async (req, res) => {
     // Adjuntar asignación (si existe) del usuario en sesión
     const assignment = await getActivityAssignments({ idUser: req.session.id, idActivity });
     if (assignment !== null) {
-      result.userAssignment = assignment;
+      // eslint-disable-next-line prefer-destructuring
+      activity.userAssignment = assignment[0];
     }
 
-    // Añadir grupo de promoción de responsables
     const promotionObj = new Promotion();
-    result.responsible = await Promise.all(
-      result.responsible.map(async (user) => ({
+
+    /// Verificar si el usuario puede asignarse (si no lo está ya)
+    let registrationAvailable;
+
+    // Si no hay asignación previa
+    if (!assignment) {
+      const isActivityBlocked = activity.blocked;
+      const isRegistrationUnavailable = !activity.registrationAvailable;
+      const isMaxParticipantsReached = activity.participantsNumber >= activity.maxParticipants;
+
+      if (isActivityBlocked || isRegistrationUnavailable || isMaxParticipantsReached) {
+        registrationAvailable = false; // La actividad no recibe más inscripciones
+      } else {
+        const promotions = activity.participatingPromotions;
+        const isPromotionAvailable = promotions === null
+            || promotions.includes(sessionUserPromotion)
+            || promotions.includes(await promotionObj.getPromotionGroup(sessionUserPromotion));
+
+        // Verificar si está disponible para su promoción
+        registrationAvailable = isPromotionAvailable;
+      }
+    } else {
+      registrationAvailable = false;
+    }
+    activity.registrationAvailable = registrationAvailable;
+
+    // Añadir grupo de promoción de responsables
+    activity.responsible = await Promise.all(
+      activity.responsible.map(async (user) => ({
         ...user,
         promotionGroup: await promotionObj.getPromotionGroup(user.promotion),
       })),
     );
 
-    res.send(result);
+    res.send(activity);
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al obtener información de la actividad.',
