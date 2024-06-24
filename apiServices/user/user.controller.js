@@ -742,6 +742,8 @@ const recoverPasswordController = async (req, res) => {
 
     // Verificar que el email ingresado existe en la base de datos
     const user = await getUserByMail({ email });
+    if (!user) throw new CustomError('El email indicado no corresponde a ningún usuario.', 404);
+    if (user.blocked) throw new CustomError('El usuario se encuentra bloqueado.', 403);
 
     // guardar token para completar registro
     const token = signRecoverPasswordToken({

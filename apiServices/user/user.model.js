@@ -42,8 +42,8 @@ const getUserByCode = async ({ code, session }) => {
 
 const getUserByMail = async ({ email }) => {
   const user = await UserSchema.findOne({ email });
-  if (user === null) throw new CustomError('El email indicado no corresponde a ningún usuario.', 404);
-  return user;
+  if (!user) return null;
+  return single(user, { showSensitiveData: true });
 };
 
 const getUsersInList = async ({
