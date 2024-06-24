@@ -60,6 +60,10 @@
   Si el usuario en sesión está inscrito en la actividad, incluye el parámetro **userAssignment**
   con la información de la asignación.
 
+  El parámetro **registrationAvailable** indíca que en la actividad los usuarios pueden inscribirse
+  por sí mismos, mientras que **registrationAvailableForUser** indica que el usuario en sesión
+  puede inscribirse.
+
 - **/activity/**
 
   Método: Post

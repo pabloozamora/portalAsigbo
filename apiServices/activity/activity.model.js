@@ -7,6 +7,7 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
 import { multiple as multipleActivityDto, single as singleActivityDto } from './activity.dto.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 /**
  * Permite validar si un usuario es un encargado de un eje de asigbo.
@@ -56,12 +57,12 @@ const createActivity = async ({
   // guardar actividad
   const activity = new ActivitySchema();
   activity.name = name;
-  activity.date = new Date(date);
+  activity.date = getUTCDate(date);
   activity.serviceHours = serviceHours;
   activity.responsible = responsiblesData;
   activity.asigboArea = asigboAreaData;
-  activity.registrationStartDate = registrationStartDate;
-  activity.registrationEndDate = registrationEndDate;
+  activity.registrationStartDate = getUTCDate(registrationStartDate);
+  activity.registrationEndDate = getUTCDate(registrationEndDate);
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
   activity.maxParticipants = participantsNumber;
   activity.description = description;
@@ -113,12 +114,11 @@ const updateActivity = async ({
     // actualizar actividad
 
     if (name !== undefined) activity.name = name;
-    if (date !== undefined) activity.date = new Date(date);
+    if (date !== undefined) activity.date = getUTCDate(date);
     if (serviceHours !== undefined) activity.serviceHours = serviceHours;
     if (responsible !== undefined) activity.responsible = responsiblesData;
     if (idPayment !== undefined) activity.payment = idPayment;
-    if (registrationStartDate !== undefined) activity.registrationStartDate = registrationStartDate;
-    if (registrationEndDate !== undefined) activity.registrationEndDate = registrationEndDate;
+
     if (participatingPromotions !== undefined) {
       activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
     }
@@ -136,6 +136,15 @@ const updateActivity = async ({
           400,
         );
       }
+    }
+
+    if (exists(registrationStartDate)) {
+      const utcDate = getUTCDate(registrationStartDate);
+      activity.registrationStartDate = utcDate;
+    }
+    if (exists(registrationEndDate)) {
+      const utcDate = getUTCDate(registrationEndDate);
+      activity.registrationEndDate = utcDate;
     }
 
     const result = await activity.save({ session });
@@ -356,6 +365,7 @@ const assignPaymentToActivity = async ({ idActivity, payment, session }) => {
 const getAvailableActivitiesToParticipate = async ({
   promotionYear, promotionGroup, activitiesToIgnore, lowerDate, upperDate, search,
 }) => {
+  const currentDate = getUTCDate(new Date());
   const query = {
     $or: [
       { participatingPromotions: null },
@@ -364,6 +374,8 @@ const getAvailableActivitiesToParticipate = async ({
     registrationAvailable: true,
     blocked: false,
     _id: { $nin: activitiesToIgnore },
+    registrationStartDate: { $lte: currentDate },
+    registrationEndDate: { $gte: currentDate },
   };
   if (someExists(lowerDate, upperDate)) query.date = {};
   if (exists(lowerDate)) query.date.$gte = lowerDate;

@@ -3,6 +3,7 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import errorSender from '../../utils/errorSender.js';
 import exists from '../../utils/exists.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import {
   addActivityParticipants,
@@ -204,6 +205,17 @@ const assignUserToActivityController = async (req, res) => {
       && !activity.participatingPromotions.includes(userPromotionGroup)
       ) {
         throw new CustomError('La actividad no está disponible para la promoción del usuario.', 403);
+      }
+    }
+
+    // Verificar que la fecha de inscripción esté en el rango disponible
+    if (!isResponsible) {
+      const currentDate = getUTCDate();
+      const registrationStartDate = new Date(activity.registrationStartDate);
+      const registrationEndDate = new Date(activity.registrationEndDate);
+
+      if (currentDate < registrationStartDate || currentDate > registrationEndDate) {
+        throw new CustomError('La actividad ya no se encuentra disponible.', 400);
       }
     }
 

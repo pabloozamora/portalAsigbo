@@ -37,6 +37,7 @@ import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.j
 import Promotion from '../promotion/promotion.model.js';
 import errorSender from '../../utils/errorSender.js';
 import { verifyIfUserIsTreasurer } from '../payment/payment.model.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
   try {
@@ -489,11 +490,17 @@ const getActivityController = async (req, res) => {
 
     // Si no hay asignación previa
     if (!assignment) {
+      const currentDate = getUTCDate();
+      const registrationStartDate = getUTCDate(activity.registrationStartDate);
+      const registrationEndDate = getUTCDate(activity.registrationEndDate);
+
       const isActivityBlocked = activity.blocked;
       const isRegistrationUnavailable = !activity.registrationAvailable;
+      const isRegistrationOutOfDate = registrationStartDate > currentDate
+      || registrationEndDate < currentDate;
       const isMaxParticipantsReached = activity.participantsNumber >= activity.maxParticipants;
 
-      if (isActivityBlocked || isRegistrationUnavailable || isMaxParticipantsReached) {
+      if (isActivityBlocked || isRegistrationUnavailable || isRegistrationOutOfDate || isMaxParticipantsReached) {
         registrationAvailable = false; // La actividad no recibe más inscripciones
       } else {
         const promotions = activity.participatingPromotions;
@@ -507,7 +514,7 @@ const getActivityController = async (req, res) => {
     } else {
       registrationAvailable = false;
     }
-    activity.registrationAvailable = registrationAvailable;
+    activity.registrationAvailableForUser = registrationAvailable;
 
     // Añadir grupo de promoción de responsables
     activity.responsible = await Promise.all(
