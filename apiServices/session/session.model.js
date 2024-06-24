@@ -68,6 +68,13 @@ const forceSessionTokenToUpdate = async ({ idUser, session }) => {
   await deleteAccessTokens({ idUser, session }); // Eliminar tokens viejos
 };
 
+/**
+ * Elimina todos los session tokens de un usuario
+ * @param {string} idUser id del usuario.
+ * @param {sessionObject} session Objeto de sesión de la transacción en la bd.
+ */
+const deleteAllUserSessionTokens = async ({ idUser, session }) => SessionSchema.deleteMany({ idUser }, { session });
+
 export {
   storeSessionToken,
   deleteSessionToken,
@@ -77,4 +84,5 @@ export {
   forceUserLogout,
   forceSessionTokenToUpdate,
   deleteAccessTokens,
+  deleteAllUserSessionTokens,
 };

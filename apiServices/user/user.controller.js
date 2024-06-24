@@ -28,7 +28,7 @@ import NewUserEmail from '../../services/email/NewUserEmail.js';
 import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import Promotion from '../promotion/promotion.model.js';
-import { forceSessionTokenToUpdate, forceUserLogout } from '../session/session.model.js';
+import { deleteAllUserSessionTokens, forceSessionTokenToUpdate, forceUserLogout } from '../session/session.model.js';
 import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import {
   getActivitiesWhereUserIsResponsible,
@@ -605,10 +605,11 @@ const disableUserController = async (req, res) => {
 
     await updateUserBlockedStatus({ idUser, blocked: true });
 
-    // Forzar logout
-    await forceUserLogout(idUser, session);
+    // Eliminar session y alteruser tokens
+    await deleteAllUserSessionTokens({ idUser, session });
+    await deleteAllUserAlterTokens({ idUser, session });
 
-    session.commitTransaction();
+    await session.commitTransaction();
     res.sendStatus(204);
   } catch (ex) {
     await errorSender({
@@ -687,6 +688,10 @@ const deleteUserController = async (req, res) => {
     // Forzar logout
     await forceUserLogout(idUser, session);
 
+    // Eliminar session y alteruser tokens
+    await deleteAllUserSessionTokens({ idUser, session });
+    await deleteAllUserAlterTokens({ idUser, session });
+
     // eliminar foto de perfil
     try {
       const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
@@ -695,7 +700,7 @@ const deleteUserController = async (req, res) => {
       // Error no critico. Fallo al eliminar foto
     }
 
-    session.commitTransaction();
+    await session.commitTransaction();
     res.sendStatus(204);
   } catch (ex) {
     await errorSender({
