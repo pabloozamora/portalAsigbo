@@ -59,7 +59,7 @@ const updateAsigboArea = async ({
 
     const dataBeforeChange = single(area);
 
-    area.name = name.trim();
+    area.name = name?.trim();
     area.responsible = users;
     area.color = color;
 
@@ -87,7 +87,7 @@ const createAsigboArea = async ({
 
     const area = new AsigboAreaSchema();
 
-    area.name = name.trim();
+    area.name = name?.trim();
     area.responsible = users;
     area.color = color;
 

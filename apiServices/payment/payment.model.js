@@ -33,12 +33,12 @@ const createPayment = async ({
 }) => {
   const payment = new PaymentSchema();
 
-  payment.name = name;
+  payment.name = name?.trim();
   payment.limitDate = getUTCDate(limitDate);
   payment.amount = parseFloat(amount);
-  payment.description = description;
+  payment.description = description?.trim();
   payment.treasurer = treasurer;
-  payment.targetUsers = targetUsers;
+  payment.targetUsers = targetUsers?.trim();
   payment.activityPayment = activityPayment;
 
   await payment.save({ session });
@@ -152,9 +152,9 @@ const updatePayment = async ({
 
   const dataBeforeChange = singlePaymentDto(payment);
 
-  if (exists(name)) payment.name = name.trim();
+  if (exists(name)) payment.name = name?.trim();
   if (exists(amount)) payment.amount = amount;
-  if (exists(description)) payment.description = description.trim();
+  if (exists(description)) payment.description = description?.trim();
   if (exists(limitDate)) payment.limitDate = getUTCDate(limitDate);
   if (exists(treasurer)) payment.treasurer = treasurer;
 

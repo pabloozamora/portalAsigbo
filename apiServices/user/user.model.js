@@ -95,16 +95,16 @@ const createUser = async ({
     const user = new UserSchema();
 
     user.code = code ?? null;
-    user.name = name;
-    user.lastname = lastname;
-    user.email = email;
+    user.name = name?.trim();
+    user.lastname = lastname?.trim();
+    user.email = email?.trim();
     user.promotion = promotion;
-    user.career = career;
+    user.career = career?.trim();
     user.role = role;
     user.passwordHash = null;
-    user.sex = sex;
-    user.university = university;
-    user.campus = campus;
+    user.sex = sex?.trim();
+    user.university = university?.trim();
+    user.campus = campus?.trim();
 
     await user.save({ session });
     return single(user, { showSensitiveData: true });
@@ -196,16 +196,16 @@ const updateUser = async ({
 
     const dataBeforeChange = single(user, { showSensitiveData: true });
 
-    if (exists(name)) user.name = name;
-    if (exists(lastname)) user.lastname = lastname;
-    if (exists(email)) user.email = email;
+    if (exists(name)) user.name = name?.trim();
+    if (exists(lastname)) user.lastname = lastname?.trim();
+    if (exists(email)) user.email = email?.trim();
     if (exists(promotion)) user.promotion = promotion;
-    if (exists(career)) user.career = career;
-    if (exists(sex)) user.sex = sex;
+    if (exists(career)) user.career = career?.trim();
+    if (exists(sex)) user.sex = sex?.trim();
     if (exists(passwordHash)) user.passwordHash = passwordHash;
     if (exists(hasImage)) user.hasImage = hasImage;
-    if (exists(university)) user.university = university;
-    if (exists(campus)) user.campus = campus;
+    if (exists(university)) user.university = university?.trim();
+    if (exists(campus)) user.campus = campus?.trim();
 
     await user.save({ session });
 

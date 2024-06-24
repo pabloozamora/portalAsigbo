@@ -56,7 +56,7 @@ const createActivity = async ({
 
   // guardar actividad
   const activity = new ActivitySchema();
-  activity.name = name;
+  activity.name = name?.trim();
   activity.date = getUTCDate(date);
   activity.serviceHours = serviceHours;
   activity.responsible = responsiblesData;
@@ -65,7 +65,7 @@ const createActivity = async ({
   activity.registrationEndDate = getUTCDate(registrationEndDate);
   activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
   activity.maxParticipants = participantsNumber;
-  activity.description = description;
+  activity.description = description?.trim();
   activity.hasBanner = hasBanner;
   activity.registrationAvailable = registrationAvailable;
 
@@ -113,7 +113,7 @@ const updateActivity = async ({
 
     // actualizar actividad
 
-    if (name !== undefined) activity.name = name;
+    if (name !== undefined) activity.name = name?.trim();
     if (date !== undefined) activity.date = getUTCDate(date);
     if (serviceHours !== undefined) activity.serviceHours = serviceHours;
     if (responsible !== undefined) activity.responsible = responsiblesData;
@@ -123,7 +123,7 @@ const updateActivity = async ({
       activity.participatingPromotions = participatingPromotions?.length > 0 ? participatingPromotions : null;
     }
     if (exists(hasBanner)) activity.hasBanner = hasBanner;
-    if (exists(description)) activity.description = description;
+    if (exists(description)) activity.description = description?.trim();
     if (exists(registrationAvailable)) activity.registrationAvailable = registrationAvailable;
     if (exists(maxParticipantsNumber)) {
       if (maxParticipantsNumber >= activity.participantsNumber) {
