@@ -8,6 +8,7 @@ import CustomError from '../../utils/customError.js';
 import exists from '../../utils/exists.js';
 import { multiplePaymentDto, singlePaymentDto } from './payment.dto.js';
 import { multiplePaymentAssignmentDto, singlePaymentAssignmentDto } from './paymentAssignment.dto.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 /**
  *
@@ -33,7 +34,7 @@ const createPayment = async ({
   const payment = new PaymentSchema();
 
   payment.name = name;
-  payment.limitDate = limitDate;
+  payment.limitDate = getUTCDate(limitDate);
   payment.amount = parseFloat(amount);
   payment.description = description;
   payment.treasurer = treasurer;
@@ -154,7 +155,7 @@ const updatePayment = async ({
   if (exists(name)) payment.name = name.trim();
   if (exists(amount)) payment.amount = amount;
   if (exists(description)) payment.description = description.trim();
-  if (exists(limitDate)) payment.limitDate = new Date(limitDate);
+  if (exists(limitDate)) payment.limitDate = getUTCDate(limitDate);
   if (exists(treasurer)) payment.treasurer = treasurer;
 
   await payment.save({ session });
@@ -349,7 +350,7 @@ const getPaymentAssignments = async ({
     case 3:
       query.completed = false;
       query.confirmed = false;
-      query['payment.limitDate'] = { $lt: new Date() };
+      query['payment.limitDate'] = { $lt: getUTCDate() };
       break;
     default:
       // Sin filtro adicionales

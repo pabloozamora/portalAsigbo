@@ -200,8 +200,8 @@ const getActivities = async ({
 
   if (exists(idAsigboArea)) query['asigboArea._id'] = idAsigboArea;
   if (someExists(lowerDate, upperDate)) query.date = {};
-  if (exists(lowerDate)) query.date.$gte = lowerDate;
-  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(lowerDate)) query.date.$gte = getUTCDate(lowerDate);
+  if (exists(upperDate)) query.date.$lte = getUTCDate(upperDate);
   if (exists(search)) {
     // buscar cadena en nombre de la actividad
     const searchRegex = new RegExp(search, 'i');
@@ -266,8 +266,8 @@ const getActivitiesWhereUserIsResponsible = async ({
   const query = { responsible: { $elemMatch: { _id: idUser } } };
 
   if (someExists(lowerDate, upperDate)) query.date = {};
-  if (exists(lowerDate)) query.date.$gte = lowerDate;
-  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(lowerDate)) query.date.$gte = getUTCDate(lowerDate);
+  if (exists(upperDate)) query.date.$lte = getUTCDate(upperDate);
   if (exists(search)) {
     // buscar cadena en nombre de la actividad
     const searchRegex = new RegExp(search, 'i');
@@ -378,8 +378,8 @@ const getAvailableActivitiesToParticipate = async ({
     registrationEndDate: { $gte: currentDate },
   };
   if (someExists(lowerDate, upperDate)) query.date = {};
-  if (exists(lowerDate)) query.date.$gte = lowerDate;
-  if (exists(upperDate)) query.date.$lte = upperDate;
+  if (exists(lowerDate)) query.date.$gte = getUTCDate(lowerDate);
+  if (exists(upperDate)) query.date.$lte = getUTCDate(upperDate);
   if (exists(search)) {
     // buscar cadena en nombre de la actividad
     const searchRegex = new RegExp(search, 'i');

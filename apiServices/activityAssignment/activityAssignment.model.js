@@ -6,6 +6,7 @@ import exists, { someExists } from '../../utils/exists.js';
 import Promotion from '../promotion/promotion.model.js';
 import { multiple as multipleAssignmentActivityDto, single as singleAssignmentActivityDto } from './activityAssignment.dto.js';
 import { single as singleUserDto } from '../user/user.dto.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 /**
  * Permite obtener las asignaciones de una actividad.
@@ -27,8 +28,8 @@ const getActivityAssignments = async ({
     if (exists(idUser)) query['user._id'] = idUser;
     if (exists(idActivity)) query['activity._id'] = idActivity;
     if (someExists(lowerDate, upperDate)) query['activity.date'] = {};
-    if (exists(lowerDate)) query['activity.date'].$gte = lowerDate;
-    if (exists(upperDate)) query['activity.date'].$lte = upperDate;
+    if (exists(lowerDate)) query['activity.date'].$gte = getUTCDate(lowerDate);
+    if (exists(upperDate)) query['activity.date'].$lte = getUTCDate(upperDate);
     if (exists(search)) {
       // buscar cadena en nombre de la actividad
       const searchRegex = new RegExp(search, 'i');
@@ -206,8 +207,8 @@ const getUserActivityAssignments = async ({
   if (someExists(lowerDate, upperDate)) {
     query['activity.date'] = {};
 
-    if (exists(lowerDate)) query['activity.date'].$gte = lowerDate;
-    if (exists(upperDate)) query['activity.date'].$lte = upperDate;
+    if (exists(lowerDate)) query['activity.date'].$gte = getUTCDate(lowerDate);
+    if (exists(upperDate)) query['activity.date'].$lte = getUTCDate(upperDate);
   }
   if (exists(search)) {
     // buscar cadena en nombre de la actividad
