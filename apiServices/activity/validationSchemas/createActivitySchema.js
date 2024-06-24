@@ -16,6 +16,12 @@ export default yup.object().shape({
     .required("El campo 'participantsNumber' es obligatorio."),
   participatingPromotions: yup
     .array()
+    .transform((value, originalValue) => {
+    // Si el valor original es "null", convertirlo a null
+      if (originalValue === 'null') return null;
+      return originalValue;
+    })
+    .nullable()
     .of(
       yup.lazy((value) => {
         if (!Number.isNaN(parseInt(value, 10))) {

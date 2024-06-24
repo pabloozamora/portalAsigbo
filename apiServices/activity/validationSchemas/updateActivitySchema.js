@@ -7,9 +7,6 @@ export default yup.object().shape({
     .boolean()
     .nullable()
     .typeError("El campo 'removeBanner' debe ser un valor booleano."),
-  registrationAvailable: yup.boolean()
-    .nullable()
-    .typeError("El campo 'registrationAvailable' debe tener un valor booleano.'"),
   participantsNumber: yup
     .number()
     .nullable()
@@ -18,6 +15,12 @@ export default yup.object().shape({
     .min(0, "El campo 'participantsNumber' debe contener valores mayores o iguales a 0."),
   participatingPromotions: yup
     .array()
+    .transform((value, originalValue) => {
+    // Si el valor original es "null", convertirlo a null
+      if (originalValue === 'null') return null;
+      return originalValue;
+    })
+    .nullable()
     .of(
       yup.lazy((value) => {
         if (!Number.isNaN(parseInt(value, 10))) {
