@@ -190,6 +190,10 @@ const assignUserToActivityController = async (req, res) => {
       throw new CustomError('La actividad se encuentra deshabilitada.', 409);
     }
 
+    if (!activity.registrationAvailable && !isResponsible) {
+      throw new CustomError('La inscripción de becados a esta actividad está deshabilitada.', 400);
+    }
+
     const user = await getUser({ idUser, showSensitiveData: true });
     if (!user) throw new CustomError('El usuario indicado no existe.', 404);
 
