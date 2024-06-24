@@ -655,12 +655,8 @@ const deleteUserController = async (req, res) => {
       );
     }
 
-    let responsibleActivities;
-    try {
-      responsibleActivities = await getActivitiesWhereUserIsResponsible({ idUser, session });
-    } catch (ex) {
-      // Se espera un error al no encontrar resultados
-    }
+    const responsibleActivities = await getActivitiesWhereUserIsResponsible({ idUser, session });
+
     if (responsibleActivities?.length > 0) {
       throw new CustomError(
         'No es posible eliminar el usuario, pues este figura como encargado de al menos una actividad.',

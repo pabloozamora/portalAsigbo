@@ -40,15 +40,12 @@ import { verifyIfUserIsTreasurer } from '../payment/payment.model.js';
 import getUTCDate from '../../utils/getUTCDate.js';
 
 const removeActivityResponsibleRole = async ({ idUser, session }) => {
-  try {
-    await getActivitiesWhereUserIsResponsible({ idUser, session });
-  } catch (ex) {
-    if (ex instanceof CustomError) {
-      // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
-      await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
-      // Forzar actualizar sesión del usuario
-      await forceSessionTokenToUpdate({ idUser, session });
-    } else throw ex;
+  const result = await getActivitiesWhereUserIsResponsible({ idUser, session });
+  if (!result) {
+    // La única actividad en la que es responsable es en la que se le eliminó, retirar permiso
+    await removeRoleFromUser({ idUser, role: consts.roles.activityResponsible, session });
+    // Forzar actualizar sesión del usuario
+    await forceSessionTokenToUpdate({ idUser, session });
   }
 };
 
@@ -416,12 +413,8 @@ const getActivitiesController = async (req, res) => {
 
     // Obtener id de actividades donde es encargado el usuario
     if (req.session.role.includes(consts.roles.activityResponsible)) {
-      try {
-        const activities = await getActivitiesWhereUserIsResponsible({ idUser: req.session.id });
-        activitiesWhereUserIsResponsible.push(...activities.map((ac) => ac.id));
-      } catch (err) {
-        // Error no crítico: no se obtuvieron resultados
-      }
+      const activities = await getActivitiesWhereUserIsResponsible({ idUser: req.session.id });
+      if (activities) activitiesWhereUserIsResponsible.push(...activities.map((ac) => ac.id));
     }
 
     const filteredCompleteResult = completeResult?.filter(
@@ -634,6 +627,7 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
         lowerDate,
         upperDate,
       });
+      if (!completeResult) throw new CustomError('No se encontraron resultados.', 404);
       pagesNumber = completeResult.length;
     }
 
@@ -644,6 +638,7 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
       upperDate,
       page,
     });
+    if (!result) throw new CustomError('No se encontraron resultados.', 404);
 
     res.send({
       pages: Math.ceil((pagesNumber ?? result.length) / consts.resultsNumberPerPage),

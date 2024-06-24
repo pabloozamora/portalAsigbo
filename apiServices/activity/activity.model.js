@@ -282,7 +282,7 @@ const getActivitiesWhereUserIsResponsible = async ({
 
   const results = await ActivitySchema.find(query, null, options).session(session);
 
-  if (results.length === 0) throw new CustomError('No se encontraron resultados.', 404);
+  if (results.length === 0) return null;
 
   return multipleActivityDto(results);
 };
