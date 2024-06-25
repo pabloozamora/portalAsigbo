@@ -10,7 +10,6 @@ export default class AgendaProcedures {
   static agenda;
 
   static async initAsyncAgenda() {
-    console.log(uri)
     const agenda = new Agenda({
       db: { address: uri, collection: 'agendaprocedures' },
     });

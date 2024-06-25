@@ -186,7 +186,7 @@ const renewRegisterToken = async (req, res) => {
       throw new CustomError('El usuario se encuentra bloqueado.', 403);
     }
 
-    const registerToken = await sendSingleUserRegisterEmail({
+    await sendSingleUserRegisterEmail({
       userId: user.id,
       name: user.name,
       lastname: user.lastname,
@@ -194,8 +194,6 @@ const renewRegisterToken = async (req, res) => {
       sex: user.sex,
       session,
     });
-
-    await saveAlterToken({ idUser: user.id, token: registerToken, type: consts.token.register, session });
 
     await session.commitTransaction();
 
@@ -232,7 +230,7 @@ const createUserController = async (req, res) => {
       session,
     });
 
-    const registerToken = await sendSingleUserRegisterEmail({
+    await sendSingleUserRegisterEmail({
       userId: user.id,
       name: user.name,
       lastname: user.lastname,
@@ -240,8 +238,6 @@ const createUserController = async (req, res) => {
       sex: user.sex,
       session,
     });
-
-    await saveAlterToken({ idUser: user.id, token: registerToken, type: consts.token.register, session });
 
     await session.commitTransaction();
 
