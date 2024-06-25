@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import moment from 'moment';
 import AlterUserTokenSchema from '../../db/schemas/alterUserToken.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import consts from '../../utils/consts.js';
@@ -11,9 +12,7 @@ import ActivitySchema from '../../db/schemas/activity.schema.js';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
-import moment from 'moment';
 import writeLog from '../../utils/writeLog.js';
-
 
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
@@ -73,8 +72,8 @@ const getUsersByPromotion = async ({
   if (!includeBlocked) query.blocked = false;
   if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
-  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
-  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (exists(promotionMin)) query.promotion.$gte = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lte = promotionMax;
 
   const user = await UserSchema.find(query).session(session);
 
@@ -472,7 +471,9 @@ const removeRoleFromUser = async ({ idUser, role, session }) => {
   }
 };
 
-const saveAlterToken = async ({ idUser, token, type, session }) => {
+const saveAlterToken = async ({
+  idUser, token, type, session,
+}) => {
   try {
     // eliminar tokens previos del usuario
     await AlterUserTokenSchema.deleteMany({ idUser }, { session });
@@ -498,7 +499,7 @@ const saveAlterToken = async ({ idUser, token, type, session }) => {
 const saveManyRegisterToken = async ({ data, session }) => {
   try {
     // eliminar tokens previos
-    const usersList = data.map((objectData) => ({idUser: objectData.idUser, tokenType: consts.token.register}));
+    const usersList = data.map((objectData) => ({ idUser: objectData.idUser, tokenType: consts.token.register }));
     await AlterUserTokenSchema.deleteMany({ idUser: { $in: usersList } });
 
     // guardar nuevos tokens
@@ -601,16 +602,16 @@ const getUnregisteredUsers = async ({
  * Función que se encarga de eliminar todos los session tokens de más de un día de antiguedad.
  */
 const deleteExpiredAlterTokens = async () => {
-  try{
+  try {
     const registerExpiration = moment().subtract(consts.tokenExpiration.register_months_expiration, 'month').toDate();
     const recoverExpiration = moment().subtract(consts.tokenExpiration.recover_hours_expiration, 'hour').toDate();
 
-    await AlterUserTokenSchema.deleteMany({date: {$lt: registerExpiration}, tokenType: consts.token.register});
-    await AlterUserTokenSchema.deleteMany({date: {$lt: recoverExpiration}, tokenType: consts.token.recover});
-  }catch(ex){
+    await AlterUserTokenSchema.deleteMany({ date: { $lt: registerExpiration }, tokenType: consts.token.register });
+    await AlterUserTokenSchema.deleteMany({ date: { $lt: recoverExpiration }, tokenType: consts.token.recover });
+  } catch (ex) {
     writeLog(2, ex);
   }
-}
+};
 
 export {
   createUser,
@@ -638,5 +639,5 @@ export {
   getUnregisteredUsers,
   deleteAllAlterTokensFromManyUsers,
   getUsersByPromotion,
-  deleteExpiredAlterTokens
+  deleteExpiredAlterTokens,
 };
