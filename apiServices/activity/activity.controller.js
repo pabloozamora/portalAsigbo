@@ -20,7 +20,7 @@ import {
   removeRoleFromUser,
   updateServiceHours,
 } from '../user/user.model.js';
-import { multiple, single } from './activity.dto.js';
+import { single } from './activity.dto.js';
 import {
   createActivity,
   deleteActivity,
@@ -28,7 +28,6 @@ import {
   getActivitiesWhereUserIsResponsible,
   getActivity,
   getAvailableActivitiesToParticipate,
-  getUserActivities,
   updateActivity,
   updateActivityBlockedStatus,
   updateActivityInAllAssignments,
@@ -354,17 +353,6 @@ const deleteActivityController = async (req, res) => {
   }
 };
 
-const getLoggedActivitiesController = async (req, res) => {
-  try {
-    const activities = await getUserActivities(req.session.id);
-    res.send(multiple(activities));
-  } catch (ex) {
-    await errorSender({
-      res, ex, defaultError: 'Ocurrio un error al obtener las actividades del usuario.',
-    });
-  }
-};
-
 const getActivitiesController = async (req, res) => {
   const {
     asigboArea, search, lowerDate, upperDate, page,
@@ -682,7 +670,6 @@ export {
   deleteActivityController,
   getActivitiesController,
   getActivityController,
-  getLoggedActivitiesController,
   disableActivityController,
   enableActivityController,
   getActivitiesWhereUserIsResponsibleController,

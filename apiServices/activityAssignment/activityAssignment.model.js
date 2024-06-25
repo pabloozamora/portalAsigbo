@@ -226,6 +226,11 @@ const getUserActivityAssignments = async ({
   return multipleAssignmentActivityDto(assignments);
 };
 
+const verifyIfUserIsAssignedToAnyActivity = async ({ idUser, session }) => {
+  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser }).session(session);
+  return assignments.length > 0;
+};
+
 export {
   assignUserToActivity,
   getCompletedActivityAssignmentsById,
@@ -236,4 +241,5 @@ export {
   addPaymentsToActivityAssignments,
   getActivityAssignedUsers,
   getUserActivityAssignments,
+  verifyIfUserIsAssignedToAnyActivity,
 };

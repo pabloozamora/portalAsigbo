@@ -32,13 +32,13 @@ import { deleteAllUserSessionTokens, forceSessionTokenToUpdate, forceUserLogout 
 import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import {
   getActivitiesWhereUserIsResponsible,
-  getUserActivities,
 } from '../activity/activity.model.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import parseBoolean from '../../utils/parseBoolean.js';
 import RecoverPasswordEmail from '../../services/email/RecoverPasswordEmail.js';
 import exists from '../../utils/exists.js';
 import errorSender from '../../utils/errorSender.js';
+import { verifyIfUserIsAssignedToAnyActivity } from '../activityAssignment/activityAssignment.model.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -664,13 +664,8 @@ const deleteUserController = async (req, res) => {
       );
     }
 
-    let activitiesAssignments;
-    try {
-      activitiesAssignments = await getUserActivities(idUser);
-    } catch (ex) {
-      // Se espera un error al no encontrar resultados
-    }
-    if (activitiesAssignments?.length > 0) {
+    const hasActivityAssignments = await verifyIfUserIsAssignedToAnyActivity({ idUser, session });
+    if (hasActivityAssignments) {
       throw new CustomError(
         'No es posible eliminar el usuario, pues este ha sido inscrito en al menos una actividad.',
         400,

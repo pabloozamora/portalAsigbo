@@ -171,22 +171,6 @@ const deleteActivity = async ({ idActivity, session }) => {
   }
 };
 
-const getUserActivities = async (idUser) => {
-  const assignments = await ActivityAssignmentSchema.find({ 'user._id': idUser });
-  if (assignments.length === 0) { throw new CustomError('El usuario indicado no ha paraticipado en ninguna actividad', 404); }
-
-  const activities = [];
-
-  await Promise.all(
-    assignments.map(async (assignment) => {
-      const activity = await ActivitySchema.findById(assignment.activity._id);
-      activities.push(activity);
-    }),
-  );
-
-  return activities;
-};
-
 const getActivities = async ({
   idAsigboArea = null,
   search = null,
@@ -399,7 +383,6 @@ export {
   getActivities,
   getActivity,
   getActivitiesWhereUserIsResponsible,
-  getUserActivities,
   validateResponsible,
   addActivityParticipants,
   updateActivityBlockedStatus,

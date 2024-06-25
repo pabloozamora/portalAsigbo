@@ -6,7 +6,6 @@ import {
   getActivitiesController,
   getActivityController,
   updateActivityController,
-  getLoggedActivitiesController,
   enableActivityController,
   disableActivityController,
   getActivitiesWhereUserIsResponsibleController,
@@ -29,7 +28,6 @@ activityRouter.get(
   ensureActivityResponsibleAuth,
   getActivitiesController,
 );
-activityRouter.get('/logged', ensureRolesAuth(null), getLoggedActivitiesController);
 activityRouter.get('/available', ensureRolesAuth(null), getAvailableActivitiesToParticipateController);
 
 activityRouter.get('/:idActivity', ensureRolesAuth(null), getActivityController);

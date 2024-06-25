@@ -130,12 +130,6 @@
 
   Permite eliminar una actividad, siempre y cuando no hayan personas inscritas en la misma.
 
-- **/activity/logged**
-
-  Método: Get
-  Acceso: Todos los usuario loggeados.
-
-  Devuelve el listado de actividades en las que ha participado el usuario actualmente loggeado.
 
 - **/activity/available**
 
