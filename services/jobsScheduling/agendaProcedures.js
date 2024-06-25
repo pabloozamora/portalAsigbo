@@ -1,4 +1,4 @@
-import Agenda from 'agenda'
+import Agenda from 'agenda';
 import config from 'config';
 import AgendaSchema from '../../db/schemas/agenda.schema.js';
 import { deleteExpiredSessionTokens } from '../../apiServices/session/session.model.js';
@@ -30,7 +30,7 @@ export default class AgendaProcedures {
   }
 
   static async startProcedures() {
-    if (!AgendaProcedures.agenda) throw null;
+    if (!AgendaProcedures.agenda) return;
 
     await AgendaSchema.deleteMany({});
 
@@ -39,4 +39,4 @@ export default class AgendaProcedures {
 
     AgendaProcedures.agenda.every('0 50 23 */5 * *', 'deleteTokens'); // every 5 days
   }
-};
+}
