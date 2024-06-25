@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import indexRoutes from './routes/index.js';
 import connect from './db/connection.js';
 import getDirname from './utils/getDirname.js';
+import AgendaProcedures from './services/jobsScheduling/agendaProcedures.js';
 
 const app = express();
 
@@ -18,5 +19,9 @@ app.use(express.json());
 app.use(express.static('./public'));
 
 app.use('/', indexRoutes);
+
+// Iniciar procesos agendados
+await AgendaProcedures.initAsyncAgenda();
+await AgendaProcedures.startProcedures();
 
 export default app;

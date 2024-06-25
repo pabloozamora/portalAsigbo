@@ -74,7 +74,7 @@ const sendSingleUserRegisterEmail = async ({
     sex,
   });
 
-  await saveAlterToken({ idUser: userId, token, session });
+  await saveAlterToken({ idUser: userId, token, type: consts.token.register, session });
 
   // enviar email de notificación
   await emailSender.sendEmail({
@@ -195,7 +195,7 @@ const renewRegisterToken = async (req, res) => {
       session,
     });
 
-    await saveAlterToken({ idUser: user.id, token: registerToken, session });
+    await saveAlterToken({ idUser: user.id, token: registerToken, type: consts.token.register, session });
 
     await session.commitTransaction();
 
@@ -241,7 +241,7 @@ const createUserController = async (req, res) => {
       session,
     });
 
-    await saveAlterToken({ idUser: user.id, token: registerToken, session });
+    await saveAlterToken({ idUser: user.id, token: registerToken, type: consts.token.register, session });
 
     await session.commitTransaction();
 
@@ -754,7 +754,7 @@ const recoverPasswordController = async (req, res) => {
       lastname: user.lastname,
       email: user.email,
     });
-    await saveAlterToken({ idUser: user.id, token, session });
+    await saveAlterToken({ idUser: user.id, token, type:consts.token.recover, session });
 
     // enviar email de notificación
     const emailSender = new RecoverPasswordEmail();
