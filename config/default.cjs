@@ -21,4 +21,5 @@ module.exports = {
   sendErrorObj: true,
   emailSendingRate: 14,
   verbose: 2,
+  avoidCors: true,
 };

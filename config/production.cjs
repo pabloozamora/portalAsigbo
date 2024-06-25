@@ -7,4 +7,5 @@ module.exports = {
   awsBucketAccess: process.env.AWS_BUCKET_ACCESS,
   awsBucketSecret: process.env.AWS_BUCKET_SECRET,
   bucketName: process.env.BUCKET_NAME,
+  avoidCors: false,
 };
