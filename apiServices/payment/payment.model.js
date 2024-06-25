@@ -379,6 +379,11 @@ const getPaymentAssignments = async ({
   return { pages, result: multiplePaymentAssignmentDto(paymentAssignments) };
 };
 
+const verifyIfUserHasPaymentAssignments = async ({ idUser, session }) => {
+  const payAssignments = await PaymentAssignmentSchema.find({ 'user._id': idUser }).session(session);
+  return payAssignments.length > 0;
+};
+
 export {
   createPayment,
   assignPaymentToUsers,
@@ -398,4 +403,5 @@ export {
   verifyIfUserIsTreasurer,
   getPaymentAssignments,
   hasPaymentsAsTreasurer,
+  verifyIfUserHasPaymentAssignments,
 };

@@ -39,6 +39,7 @@ import RecoverPasswordEmail from '../../services/email/RecoverPasswordEmail.js';
 import exists from '../../utils/exists.js';
 import errorSender from '../../utils/errorSender.js';
 import { verifyIfUserIsAssignedToAnyActivity } from '../activityAssignment/activityAssignment.model.js';
+import { hasPaymentsAsTreasurer, verifyIfUserHasPaymentAssignments } from '../payment/payment.model.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -673,6 +674,16 @@ const deleteUserController = async (req, res) => {
     }
 
     // verificar que no haya realizado pagos (pendiente)
+    const hasPaymentAssignments = await verifyIfUserHasPaymentAssignments({ idUser, session });
+    if (hasPaymentAssignments) {
+      throw new CustomError('No es posible eliminar al usuario, pues este tiene pagos asignados.');
+    }
+
+    // Verificar que no sea tesorero
+    const isTreasurer = await hasPaymentsAsTreasurer({ idUser, session });
+    if (isTreasurer) {
+      throw new CustomError('No es posible eliminar al usuario, pues este figura como tesorero en al menos un pago.');
+    }
 
     await deleteUser({ idUser, session });
 
