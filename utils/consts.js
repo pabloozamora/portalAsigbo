@@ -18,7 +18,7 @@ const consts = {
     refresh_days_expiration: 7,
     access_hours_expiration: 1,
     register_months_expiration: 6,
-    recover_hours_expiration: 1
+    recover_hours_expiration: 1,
   },
   promotionsGroups: {
     chick: 'chick',

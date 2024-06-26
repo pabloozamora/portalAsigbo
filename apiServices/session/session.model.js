@@ -1,9 +1,9 @@
+import moment from 'moment';
 import CustomError from '../../utils/customError.js';
 import SessionSchema from '../../db/schemas/session.schema.js';
 import UserSchema from '../../db/schemas/user.schema.js';
 import single from './session.dto.js';
 import consts from '../../utils/consts.js';
-import moment from 'moment';
 import writeLog from '../../utils/writeLog.js';
 
 const storeSessionToken = async ({
@@ -81,17 +81,16 @@ const deleteAllUserSessionTokens = async ({ idUser, session }) => SessionSchema.
  * Función que se encarga de eliminar todos los session tokens de más de un día de antiguedad.
  */
 const deleteExpiredSessionTokens = async () => {
-
-  try{
+  try {
     const accessExpiration = moment().subtract(consts.tokenExpiration.access_hours_expiration, 'hour').toDate();
     const refreshExpiration = moment().subtract(consts.tokenExpiration.refresh_days_expiration, 'day').toDate();
 
-    await SessionSchema.deleteMany({date: {$lt: accessExpiration}, tokenType: consts.token.access});
-    await SessionSchema.deleteMany({date: {$lt: refreshExpiration}, tokenType: consts.token.refresh});
-  }catch(ex){
+    await SessionSchema.deleteMany({ date: { $lt: accessExpiration }, tokenType: consts.token.access });
+    await SessionSchema.deleteMany({ date: { $lt: refreshExpiration }, tokenType: consts.token.refresh });
+  } catch (ex) {
     writeLog(2, ex);
   }
-}
+};
 export {
   storeSessionToken,
   deleteSessionToken,

@@ -28,8 +28,8 @@ const ensureRolesAuth = (roles, errorMessage) => async (req, res, next) => {
 
     // Verificar si no cuenta con al menos uno de los roles solicitados
     if (exists(roles)
-       && (Array.isArray(roles) && roles.length > 0 && !roles.some((role) => userData.role?.includes(role)))
-      && !userData.role?.includes(roles)) {
+        && (Array.isArray(roles) && roles.length > 0 && !roles.some((role) => userData.role?.includes(role)))
+        && !userData.role?.includes(roles)) {
       throw new CustomError(errorMessage ?? 'No se cuenta con los privilegios necesarios.', 403);
     }
 

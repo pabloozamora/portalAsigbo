@@ -8,7 +8,7 @@ const alterUserTokenSchema = Schema({
   },
   token: { type: String, required: true },
   tokenType: { type: String, required: true },
-  date: {type:Date, default: getUTCDate()}
+  date: { type: Date, default: getUTCDate() },
 });
 
 const AlterUserTokenSchema = model('alterUserToken', alterUserTokenSchema);
