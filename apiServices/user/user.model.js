@@ -499,7 +499,7 @@ const saveAlterToken = async ({
 const saveManyRegisterToken = async ({ data, session }) => {
   try {
     // eliminar tokens previos
-    const usersList = data.map((objectData) => ({ idUser: objectData.idUser, tokenType: consts.token.register }));
+    const usersList = data.map((objectData) => objectData.idUser);
     await AlterUserTokenSchema.deleteMany({ idUser: { $in: usersList } });
 
     // guardar nuevos tokens

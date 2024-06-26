@@ -74,7 +74,9 @@ const sendSingleUserRegisterEmail = async ({
     sex,
   });
 
-  await saveAlterToken({ idUser: userId, token, type: consts.token.register, session });
+  await saveAlterToken({
+    idUser: userId, token, type: consts.token.register, session,
+  });
 
   // enviar email de notificación
   await emailSender.sendEmail({
@@ -105,7 +107,7 @@ const sendManyUserRegisterEmail = async ({
     });
 
     return {
-      idUser: user.id, email: user.email, name: user.name, token,
+      idUser: user.id, email: user.email, name: user.name, token, tokenType: consts.token.register,
     };
   });
 
@@ -750,7 +752,9 @@ const recoverPasswordController = async (req, res) => {
       lastname: user.lastname,
       email: user.email,
     });
-    await saveAlterToken({ idUser: user.id, token, type:consts.token.recover, session });
+    await saveAlterToken({
+      idUser: user.id, token, type: consts.token.recover, session,
+    });
 
     // enviar email de notificación
     const emailSender = new RecoverPasswordEmail();
