@@ -324,7 +324,7 @@ const verifyIfUserIsTreasurer = async ({ idPayment, idUser, session }) => {
  *  2: pagos confirmados, 3: pagos atrasados. Cualquier otro valor muestra la lista completa.
  */
 const getPaymentAssignments = async ({
-  idUser, idPayment, state, page, session,
+  idUser, idPayment, state, promotion, promotionMin, promotionMax, page, session,
 }) => {
   const query = {};
 
@@ -356,6 +356,11 @@ const getPaymentAssignments = async ({
       // Sin filtro adicionales
       break;
   }
+
+  // agregar filtro por promoción
+  if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query['user.promotion'] = { $eq: promotion };
+  if (exists(promotionMin)) query['user.promotion'] = { $gte: promotionMin };
+  if (exists(promotionMax)) query['user.promotion'] = { $lte: promotionMax };
 
   // Obtener total de resultados (sin paginación)
   const usersCount = await PaymentAssignmentSchema.countDocuments(query);

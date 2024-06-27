@@ -522,7 +522,7 @@ const getPaymentAssignmentController = async (req, res) => {
 const getPaymentAssignmentsListController = async (req, res) => {
   const { idPayment } = req.params;
   const { role, id: sessionIdUser } = req.session;
-  const { state, page } = req.query;
+  const { state, page, promotion } = req.query;
   try {
     // Validar acceso a asignaciones de pago
     const isAdmin = role?.includes(consts.roles.admin);
@@ -540,8 +540,21 @@ const getPaymentAssignmentsListController = async (req, res) => {
       }
     }
 
+    const promotionObj = new Promotion();
+
+    let promotionMin = null;
+    let promotionMax = null;
+    // si se da un grupo de usuarios, definir rango de promociones
+    if (promotion && Number.isNaN(parseInt(promotion, 10))) {
+      const result = await promotionObj.getPromotionRange({ promotionGroup: promotion });
+      promotionMin = result.promotionMin;
+      promotionMax = result.promotionMax;
+    }
+
     // Obtener asignaciones de pago
-    const result = await getPaymentAssignments({ idPayment, state, page });
+    const result = await getPaymentAssignments({
+      idPayment, state, page, promotion, promotionMin, promotionMax,
+    });
     if (result === null) throw new CustomError('No se encontraron resultados.', 404);
     res.send(result);
   } catch (ex) {
