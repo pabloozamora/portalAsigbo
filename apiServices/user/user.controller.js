@@ -29,7 +29,7 @@ import consts from '../../utils/consts.js';
 import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import Promotion from '../promotion/promotion.model.js';
 import { deleteAllUserSessionTokens, forceSessionTokenToUpdate, forceUserLogout } from '../session/session.model.js';
-import { getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
+import { getAreas, getAreasWhereUserIsResponsible } from '../asigboArea/asigboArea.model.js';
 import {
   getActivitiesWhereUserIsResponsible,
 } from '../activity/activity.model.js';
@@ -842,6 +842,68 @@ const renewManyRegisterTokensController = async (req, res) => {
   }
 };
 
+const generateUsersReport = async ({ users }) => {
+  const areas = await getAreas({ showSensitiveData: true });
+  if (!areas) throw new CustomError('No se encontraron áreas de ASIGBO.', 404);
+
+  const areasNames = areas.map((area) => area.name);
+
+  const report = users.map((user) => {
+    const result = {
+      id: user.id,
+      name: user.name,
+      lastname: user.lastname,
+      promotion: user.promotion,
+      career: user.career,
+      university: user.university,
+      campus: user.campus,
+      sex: user.sex,
+      totalHours: user.serviceHours?.total ?? 0,
+    };
+
+    // Agregar todas las áreas con un default de 0
+    areasNames.forEach((area) => {
+      result[area] = 0;
+    });
+
+    // Reemplazar valores de áreas con valores reales
+    user.serviceHours?.areas?.forEach((area) => {
+      result[area.asigboArea.name] = area.total;
+    });
+
+    return result;
+  });
+
+  return report;
+};
+
+const getUserReportController = async (req, res) => {
+  const { promotion, page } = req.query;
+  try {
+    const promotionObj = new Promotion();
+
+    let promotionMin = null;
+    let promotionMax = null;
+    // si se da un grupo de usuarios, definir rango de promociones
+    if (promotion && Number.isNaN(parseInt(promotion, 10))) {
+      const result = await promotionObj.getPromotionRange({ promotionGroup: promotion });
+      promotionMin = result.promotionMin;
+      promotionMax = result.promotionMax;
+    }
+
+    const listResult = await getUsersList({
+      promotion, promotionMin, promotionMax, page,
+    });
+    if (!listResult) throw new CustomError('No se encontraron usuarios.', 404);
+
+    const { pages, result: users } = listResult;
+    const report = await generateUsersReport({ users });
+    res.send({ pages, result: report });
+  } catch (ex) {
+    await errorSender({ res, ex, defaultError: 'Ocurrió un error al obtener reporte de usuarios.' });
+  }
+};
+
 export {
   createUserController,
   getUsersListController,
@@ -865,4 +927,5 @@ export {
   removePromotionResponsibleRoleController,
   getPromotionResponsibleUsersController,
   renewManyRegisterTokensController,
+  getUserReportController,
 };

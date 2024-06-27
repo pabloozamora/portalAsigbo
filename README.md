@@ -493,6 +493,19 @@
 
   Devuelve el listado de todos los usuarios administradores.
 
+- **/user/report**
+
+  Método: Get
+  Acceso: Admin.
+
+  Devuelve un reporte de usuarios con datos de las actividades en las que participó.
+
+  Query Params opcionales (?params):
+
+  - promotion: año de la promoción a mostrar. También recibe grupo de promociones.
+  - page: número de página a mostrar. Inicia en cero. Si no se proporciona se muestra listado completo.
+
+
 - **/user/:idUser/role/admin**
 
   Método: Patch
