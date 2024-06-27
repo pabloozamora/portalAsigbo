@@ -42,6 +42,7 @@ import errorSender from '../../utils/errorSender.js';
 import { verifyIfUserIsAssignedToAnyActivity } from '../activityAssignment/activityAssignment.model.js';
 import { hasPaymentsAsTreasurer, verifyIfUserHasPaymentAssignments } from '../payment/payment.model.js';
 import jsonToExcel from '../../services/reportMaker/jsonToExcel.js';
+import writeLog from '../../utils/writeLog.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -927,7 +928,11 @@ const getUserReportFileController = async (req, res) => {
     const report = await generateUsersReport({ users });
     const filePath = `${global.dirname}/files/${Date.now()}.xlsx`;
     await jsonToExcel({ data: report, outputPath: filePath, sheetName: 'Reporte de usuarios' });
-    res.status(200).sendFile(filePath);
+
+    res.status(200).sendFile(filePath, () => {
+      // eliminar archivo generado
+      fs.unlink(filePath, (err) => { writeLog('Error al eliminar archivo de reporte de usuarios: ', err); });
+    });
   } catch (ex) {
     await errorSender({ res, ex, defaultError: 'Ocurrió un error al obtener reporte de usuarios.' });
   }
