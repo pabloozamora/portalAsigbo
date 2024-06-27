@@ -23,6 +23,7 @@ import {
   getPromotionResponsibleUsersController,
   renewManyRegisterTokensController,
   getUserReportController,
+  getUserReportFileController,
 } from './user.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import createUserSchema from './validationSchemas/createUserSchema.js';
@@ -85,6 +86,7 @@ userRouter.get('/logged', ensureRefreshTokenAuth, getLoggedUserController);
 userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTokenController);
 userRouter.get('/validateRecoverToken', ensureRecoverAuth, validateRecoverTokenController);
 userRouter.get('/report', ensureAdminAuth, getUserReportController);
+userRouter.get('/report/file', ensureAdminAuth, getUserReportFileController);
 userRouter.get('/:idUser', ensureRefreshTokenAuth, getUserController);
 userRouter.patch('/:idUser/role/admin', ensureAdminAuth, assignAdminRoleController);
 userRouter.delete('/:idUser/role/admin', ensureAdminAuth, removeAdminRoleController);

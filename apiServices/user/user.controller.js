@@ -21,6 +21,7 @@ import {
   getUnregisteredUsers,
   saveManyRegisterToken,
   deleteAllAlterTokensFromManyUsers,
+  getUsersByPromotion,
 } from './user.model.js';
 import { connection } from '../../db/connection.js';
 import { signRecoverPasswordToken, signRegisterToken } from '../../services/jwt.js';
@@ -40,6 +41,7 @@ import exists from '../../utils/exists.js';
 import errorSender from '../../utils/errorSender.js';
 import { verifyIfUserIsAssignedToAnyActivity } from '../activityAssignment/activityAssignment.model.js';
 import { hasPaymentsAsTreasurer, verifyIfUserHasPaymentAssignments } from '../payment/payment.model.js';
+import jsonToExcel from '../../services/reportMaker/jsonToExcel.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -859,6 +861,7 @@ const generateUsersReport = async ({ users }) => {
       campus: user.campus,
       sex: user.sex,
       totalHours: user.serviceHours?.total ?? 0,
+      activitiesCompleted: user.serviceHours?.activitiesCompleted ?? 0,
     };
 
     // Agregar todas las áreas con un default de 0
@@ -904,6 +907,32 @@ const getUserReportController = async (req, res) => {
   }
 };
 
+const getUserReportFileController = async (req, res) => {
+  const { promotion } = req.query;
+  try {
+    const promotionObj = new Promotion();
+
+    let promotionMin = null;
+    let promotionMax = null;
+    // si se da un grupo de usuarios, definir rango de promociones
+    if (promotion && Number.isNaN(parseInt(promotion, 10))) {
+      const result = await promotionObj.getPromotionRange({ promotionGroup: promotion });
+      promotionMin = result.promotionMin;
+      promotionMax = result.promotionMax;
+    }
+
+    const users = await getUsersByPromotion({
+      promotion, promotionMin, promotionMax, showSensitiveData: true,
+    });
+    const report = await generateUsersReport({ users });
+    const filePath = `${global.dirname}/files/${Date.now()}.xlsx`;
+    await jsonToExcel({ data: report, outputPath: filePath, sheetName: 'Reporte de usuarios' });
+    res.status(200).sendFile(filePath);
+  } catch (ex) {
+    await errorSender({ res, ex, defaultError: 'Ocurrió un error al obtener reporte de usuarios.' });
+  }
+};
+
 export {
   createUserController,
   getUsersListController,
@@ -928,4 +957,5 @@ export {
   getPromotionResponsibleUsersController,
   renewManyRegisterTokensController,
   getUserReportController,
+  getUserReportFileController,
 };
