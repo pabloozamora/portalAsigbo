@@ -261,8 +261,8 @@ const getUsersList = async ({
   if (!includeBlocked) query.blocked = false;
   if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
-  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
-  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (exists(promotionMin)) query.promotion.$gte = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lte = promotionMax;
   if (exists(university)) query.university.$eq = university;
   if (exists(role)) query.role = { $in: [role] };
   if (search) {
@@ -602,8 +602,8 @@ const getUnregisteredUsers = async ({
 
   if (someExists(promotion, promotionMin, promotionMax)) query.promotion = {};
   if (exists(promotion) && !exists(promotionMin) && !exists(promotionMax)) query.promotion.$eq = promotion;
-  if (exists(promotionMin)) query.promotion.$gt = promotionMin;
-  if (exists(promotionMax)) query.promotion.$lt = promotionMax;
+  if (exists(promotionMin)) query.promotion.$gte = promotionMin;
+  if (exists(promotionMax)) query.promotion.$lte = promotionMax;
   if (!includeBlocked) query.blocked = false;
 
   const users = await UserSchema.find(query);

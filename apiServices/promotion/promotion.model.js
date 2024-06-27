@@ -68,14 +68,14 @@ class Promotion {
 
     if (promotionGroup === consts.promotionsGroups.chick) {
       // si son pollitos
-      promotionMin = firstYearPromotion;
+      promotionMin = firstYearPromotion + 1;
     } else if (promotionGroup === consts.promotionsGroups.student) {
       // si son estudiantes
-      promotionMin = lastYearPromotion - 1;
-      promotionMax = firstYearPromotion + 1;
+      promotionMin = lastYearPromotion;
+      promotionMax = firstYearPromotion;
     } else {
       // si son graduados
-      promotionMax = lastYearPromotion;
+      promotionMax = lastYearPromotion - 1;
     }
 
     return { promotionMin, promotionMax };
