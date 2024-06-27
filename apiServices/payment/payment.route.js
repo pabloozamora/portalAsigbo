@@ -108,7 +108,7 @@ paymentRouter.get(
 );
 
 paymentRouter.get(
-  '/:idPayment/assignments',
+  '/:idPayment/assignment',
   ensureRolesAuth(null),
   validateParams(paymentParamSchema),
   getPaymentAssignmentsListController,

@@ -789,7 +789,7 @@
     Parámetro obligatorio en la ruta:
   - idPayment: id del pago.
 
-- **/payment/assignment:idPaymentAssignment**
+- **/payment/assignment/:idPaymentAssignment**
 
   Método: Get
   Acceso: Admin, tesorero del pago, encargado del área asigbo padre o el usuario dueño de la asignación
@@ -799,10 +799,12 @@
     Parámetro obligatorio en la ruta:
   - idPaymentAssignment: id de la asignación del pago (no confundir con el id del pago).
 
-- **/payment/:idPayment/paymentAssignment**
+- **/payment/:idPayment/assignment**
 
   Método: Get
   Acceso: Admin, encargado del área asigbo padre o tesorero del pago.
+
+  Permite obtener el listado de asignaciones de un pago en específico.
 
   Parámetro obligatorio en la ruta:
   - idPayment: id del usuario a consultar.
@@ -814,6 +816,7 @@
       2: pagos confirmados
       3: pagos atrasados. Cualquier otro valor muestra la lista completa.
   - page: Página a consultar. Empieza por cero. Si no se proporciona devuelve toda la lista.
+  - promotion: año de promoción de estudiantes a mostrar. También permite el nombre del grupo de becados.
 
 
 - **/payment/treasurer**
