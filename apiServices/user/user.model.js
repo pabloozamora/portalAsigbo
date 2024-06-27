@@ -79,7 +79,7 @@ const getUsersByPromotion = async ({
 
   if (user.length === 0) return null;
 
-  return multiple(user, showSensitiveData);
+  return multiple(user, { showSensitiveData });
 };
 
 const createUser = async ({
