@@ -77,6 +77,8 @@ const getUsersByPromotion = async ({
 
   const user = await UserSchema.find(query).session(session);
 
+  if (user.length === 0) return null;
+
   return multiple(user, showSensitiveData);
 };
 
