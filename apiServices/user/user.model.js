@@ -570,7 +570,20 @@ const deleteUser = async ({ idUser, session }) => {
 const uploadUsers = async ({ users, session }) => {
   try {
     if (!users || users.length === 0) throw new CustomError('Debe enviar por lo menos un registro.', 400);
-    const savedUsers = await UserSchema.insertMany(users, { session });
+
+    // Realizar .trim() a los campos de texto
+    const parsedUsers = users.map((user) => ({
+      ...user,
+      name: user.name?.trim(),
+      lastname: user.lastname?.trim(),
+      university: user.university?.trim(),
+      campus: user.campus?.trim(),
+      email: user.email?.trim(),
+      career: user.career?.trim(),
+      sex: user.sex?.trim(),
+    }));
+
+    const savedUsers = await UserSchema.insertMany(parsedUsers, { session });
     return savedUsers;
   } catch (ex) {
     if (ex.errors) throw new CustomError(ex.errors[Object.keys(ex.errors)].message, 400);
