@@ -143,11 +143,11 @@ const updateAsigboAreaBlockedStatus = async ({ idArea, blocked, session }) => {
 
 /**
  * Devuelve el listado de áreas de asigbo.
- * @returns Area dto array.
+ * @returns Area dto array. Null si no hay resultados.
  */
 const getAreas = async () => {
   const asigboAreas = await AsigboAreaSchema.find();
-  if (asigboAreas.length === 0) throw new CustomError('No se han encontrado ejes de asigbo.', 404);
+  if (asigboAreas.length === 0) return null;
   return multiple(asigboAreas);
 };
 
