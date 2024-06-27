@@ -356,7 +356,7 @@ const getUsersListController = async (req, res) => {
       }
     }
 
-    const { pages, result } = await getUsersList({
+    const usersResult = await getUsersList({
       idUser: req.session.id,
       promotion: forcedPromotionFilter ?? (parseInt(promotion, 10) || null),
       university,
@@ -368,6 +368,9 @@ const getUsersListController = async (req, res) => {
       priority: Array.isArray(priority) ? priority : [priority],
       includeBlocked,
     });
+
+    if (!usersResult) throw new CustomError('No se encontraron resultados.', 404);
+    const { pages, result } = usersResult;
 
     const parsedUsers = multiple(result, { showSensitiveData: isAdmin });
 
@@ -392,12 +395,14 @@ const getUsersListController = async (req, res) => {
 
 const getAdminUsersController = async (req, res) => {
   try {
-    const { result } = await getUsersList({
+    const usersResult = await getUsersList({
       idUser: req.session.id,
       role: consts.roles.admin,
       page: null,
       showRole: true, // mostrar role si es admin
     });
+    if (!usersResult) throw new CustomError('No se encontraron resultados.', 404);
+    const { result } = usersResult;
     res.send(multiple(result));
   } catch (ex) {
     await errorSender({
@@ -498,13 +503,13 @@ const removeAdminRoleController = async (req, res) => {
     session.startTransaction();
 
     // verificar que haya más de dos admins
-    const { result } = await getUsersList({
+    const usersResult = await getUsersList({
       idUser: req.session.id,
       role: consts.roles.admin,
       page: null,
     });
 
-    if (result.length <= 1) {
+    if (!usersResult || usersResult.result.length <= 1) {
       throw new CustomError(
         'No es posible eliminar a todos los administradores. En todo momento debe existir por lo menos uno.',
         400,
@@ -578,11 +583,14 @@ const removePromotionResponsibleRoleController = async (req, res) => {
 const getPromotionResponsibleUsersController = async (req, res) => {
   const { promotion } = req.query;
   try {
-    const { result } = await getUsersList({
+    const usersResult = await getUsersList({
       role: consts.roles.promotionResponsible,
       page: null,
       promotion,
     });
+    if (!usersResult) throw new CustomError('No se encontraron resultados.', 404);
+    const { result } = usersResult;
+
     res.send(multiple(result));
   } catch (ex) {
     await errorSender({

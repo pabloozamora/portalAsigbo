@@ -256,7 +256,6 @@ const getUsersList = async ({
   priority,
   page = 0,
   includeBlocked = false,
-  emptyResultError = 'No se han encontrado usuarios.',
 }) => {
   const query = {};
 
@@ -323,7 +322,7 @@ const getUsersList = async ({
 
   const users = await UserSchema.aggregate(queryPipeline);
 
-  if (users.length === 0) throw new CustomError(emptyResultError, 404);
+  if (users.length === 0) return null;
 
   return { pages, result: multiple(users, { showSensitiveData: true }) };
 };
