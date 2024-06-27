@@ -845,7 +845,7 @@ const renewManyRegisterTokensController = async (req, res) => {
   }
 };
 
-const generateUsersReport = async ({ users }) => {
+const generateUsersReport = async ({ users, includeHasImageParam = false }) => {
   const areas = await getAreas({ showSensitiveData: true });
   if (!areas) throw new CustomError('No se encontraron áreas de ASIGBO.', 404);
 
@@ -863,6 +863,7 @@ const generateUsersReport = async ({ users }) => {
       sex: user.sex,
       totalHours: user.serviceHours?.total ?? 0,
       activitiesCompleted: user.serviceHours?.activitiesCompleted ?? 0,
+      hasImage: includeHasImageParam ? user.hasImage : undefined,
     };
 
     // Agregar todas las áreas con un default de 0
@@ -901,7 +902,7 @@ const getUserReportController = async (req, res) => {
     if (!listResult) throw new CustomError('No se encontraron usuarios.', 404);
 
     const { pages, result: users } = listResult;
-    const report = await generateUsersReport({ users });
+    const report = await generateUsersReport({ users, includeHasImageParam: true });
     res.send({ pages, result: report });
   } catch (ex) {
     await errorSender({ res, ex, defaultError: 'Ocurrió un error al obtener reporte de usuarios.' });
