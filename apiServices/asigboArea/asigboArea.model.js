@@ -159,13 +159,11 @@ const getAreas = async () => {
 const getArea = async ({ idArea }) => {
   try {
     const result = await AsigboAreaSchema.findById(idArea);
-    if (result === null) {
-      throw new CustomError('No se encontró la información del área proporcionada.', 404);
-    }
+    if (!result) return null;
     return single(result);
   } catch (ex) {
     if (ex?.kind === 'ObjectId') {
-      throw new CustomError('No se encontró la información del área proporcionada.', 404);
+      throw new CustomError('El id de área no es válido.', 400);
     }
     throw ex;
   }

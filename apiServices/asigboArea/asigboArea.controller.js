@@ -157,6 +157,7 @@ const getAsigboAreaController = async (req, res) => {
     }
 
     const areaData = await getArea({ idArea });
+    if (!areaData) throw new CustomError('No se encontró la información del área proporcionada.', 404);
 
     // get user promotion group
     const promotionObj = new Promotion();
