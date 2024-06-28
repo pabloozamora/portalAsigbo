@@ -8,6 +8,7 @@ import CustomError from '../../utils/customError.js';
 import exists, { someExists } from '../../utils/exists.js';
 import { multiple as multipleActivityDto, single as singleActivityDto } from './activity.dto.js';
 import getUTCDate from '../../utils/getUTCDate.js';
+import getSearchRegex from '../../utils/getSearchRegex.js';
 
 /**
  * Permite validar si un usuario es un encargado de un eje de asigbo.
@@ -189,7 +190,7 @@ const getActivities = async ({
   if (exists(upperDate)) query.date.$lte = getUTCDate(upperDate);
   if (exists(search)) {
     // buscar cadena en nombre de la actividad
-    const searchRegex = new RegExp(search, 'i');
+    const searchRegex = new RegExp(getSearchRegex(search), 'i');
     query.name = { $regex: searchRegex };
   }
 
@@ -373,7 +374,7 @@ const getAvailableActivitiesToParticipate = async ({
   if (exists(upperDate)) query.date.$lte = getUTCDate(upperDate);
   if (exists(search)) {
     // buscar cadena en nombre de la actividad
-    const searchRegex = new RegExp(search, 'i');
+    const searchRegex = new RegExp(getSearchRegex(search), 'i');
     query.name = { $regex: searchRegex };
   }
 
