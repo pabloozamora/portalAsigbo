@@ -926,7 +926,7 @@ const getUserReportFileController = async (req, res) => {
     }
 
     const users = await getUsersByPromotion({
-      promotion, promotionMin, promotionMax, showSensitiveData: true,
+      promotion, promotionMin, promotionMax, showSensitiveData: true, sort: true,
     });
     const report = await generateUsersReport({ users });
     const filePath = `${global.dirname}/files/${Date.now()}.xlsx`;

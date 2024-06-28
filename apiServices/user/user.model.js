@@ -65,7 +65,7 @@ const getUsersInList = async ({
 };
 
 const getUsersByPromotion = async ({
-  promotion, promotionMin, promotionMax, includeBlocked = false, showSensitiveData = false, session,
+  promotion, promotionMin, promotionMax, includeBlocked = false, showSensitiveData = false, sort = false, session,
 }) => {
   const query = {};
 
@@ -75,7 +75,10 @@ const getUsersByPromotion = async ({
   if (exists(promotionMin)) query.promotion.$gte = promotionMin;
   if (exists(promotionMax)) query.promotion.$lte = promotionMax;
 
-  const user = await UserSchema.find(query).session(session);
+  let userQuery = UserSchema.find(query).session(session);
+  if (sort) userQuery = userQuery.sort({ promotion: -1, _id: -1 });
+
+  const user = await userQuery;
 
   if (user.length === 0) return null;
 
@@ -306,6 +309,7 @@ const getUsersList = async ({
       $sort: {
         order: -1, // priorizar id's que si aparecen
         priorityIndex: 1,
+        promotion: -1,
         _id: 1,
       },
     },
