@@ -218,8 +218,8 @@ const deleteAsigboAreaController = async (req, res) => {
 const getAreasController = async (req, res) => {
   try {
     let areas;
-    if (req.session.role.includes(consts.roles.admin)) areas = await getAreas();
-    else areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id });
+    if (req.session.role.includes(consts.roles.admin)) areas = await getAreas({ sort: true });
+    else areas = await getAreasWhereUserIsResponsible({ idUser: req.session.id, sort: true });
 
     if (!areas) throw new CustomError('No se encontraron resultados.', 404);
 

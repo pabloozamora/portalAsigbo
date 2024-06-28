@@ -145,8 +145,10 @@ const updateAsigboAreaBlockedStatus = async ({ idArea, blocked, session }) => {
  * Devuelve el listado de áreas de asigbo.
  * @returns Area dto array. Null si no hay resultados.
  */
-const getAreas = async () => {
-  const asigboAreas = await AsigboAreaSchema.find();
+const getAreas = async ({ sort = false } = {}) => {
+  let promise = AsigboAreaSchema.find();
+  if (sort) promise = promise.sort({ _id: 1 });
+  const asigboAreas = await promise;
   if (asigboAreas.length === 0) return null;
   return multiple(asigboAreas);
 };
@@ -175,8 +177,10 @@ const getArea = async ({ idArea }) => {
  * @param {session} object: Objeto sesión.
  * @returns Area dto array. Null si no encuentra resultados.
  */
-const getAreasWhereUserIsResponsible = async ({ idUser, session }) => {
-  const results = await AsigboAreaSchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
+const getAreasWhereUserIsResponsible = async ({ idUser, sort, session }) => {
+  let resultPromise = AsigboAreaSchema.find({ responsible: { $elemMatch: { _id: idUser } } }).session(session);
+  if (sort) resultPromise = resultPromise.sort({ _id: 1 });
+  const results = await resultPromise;
 
   if (results.length === 0) return null;
 
