@@ -863,8 +863,10 @@ const generateUsersReport = async ({ users, includeHasImageParam = false }) => {
       sex: user.sex,
       totalHours: user.serviceHours?.total ?? 0,
       activitiesCompleted: user.serviceHours?.activitiesCompleted ?? 0,
-      hasImage: includeHasImageParam ? user.hasImage : undefined,
+      hasImage: user.hasImage,
     };
+
+    if (!includeHasImageParam) delete result.hasImage;
 
     // Agregar todas las áreas con un default de 0
     areasNames.forEach((area) => {
