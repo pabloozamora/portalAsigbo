@@ -341,6 +341,16 @@ const deleteActivityController = async (req, res) => {
       responsible?.map((user) => removeActivityResponsibleRole({ idUser: user.id, session })),
     );
 
+    // Eliminar banner si existe
+    if (activity.hasBanner) {
+      try {
+        const fileKey = `${consts.bucketRoutes.activity}/${activity.id}`;
+        await deleteFileInBucket(fileKey);
+      } catch (err) {
+        // error al eliminar archivo (no critico)
+      }
+    }
+
     await session.commitTransaction();
 
     res.sendStatus(204);
