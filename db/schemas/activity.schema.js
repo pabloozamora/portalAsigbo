@@ -61,7 +61,7 @@ const activitySchema = Schema({
   },
   blocked: { type: Boolean, default: false },
   hasBanner: { type: Boolean, default: false },
-  registrationAvailable: { type: Boolean, default: true },
+  registrationAvailable: { type: Boolean, default: false },
 });
 
 const activitySubSchema = Schema({
