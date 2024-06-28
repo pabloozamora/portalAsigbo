@@ -19,7 +19,7 @@ const jsonToExcel = async ({ data, sheetName, outputPath }) => new Promise((reso
     let columnIndex = 1;
     Object.keys(record).forEach((columnName) => {
       ws.cell(rowIndex, columnIndex)
-        .string(record[columnName].toString());
+        .string(record[columnName]?.toString() ?? '');
       columnIndex += 1;
     });
     rowIndex += 1;
