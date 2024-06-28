@@ -376,6 +376,7 @@ const getActivitiesController = async (req, res) => {
       lowerDate,
       upperDate,
       page,
+      sort: true,
     });
 
     // Si es admin, retornar lista completa

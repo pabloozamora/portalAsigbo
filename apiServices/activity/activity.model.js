@@ -178,6 +178,7 @@ const getActivities = async ({
   upperDate = null,
   page = null,
   throwNotFoundError = true,
+  sort = false,
   session,
 }) => {
   const query = {};
@@ -199,7 +200,10 @@ const getActivities = async ({
   }
 
   try {
-    const result = await ActivitySchema.find(query, null, options).session(session);
+    let activityPromise = ActivitySchema.find(query, null, options).session(session);
+    if (sort) activityPromise = activityPromise.sort({ date: -1, _id: -1 });
+
+    const result = await activityPromise;
 
     if (result.length === 0) {
       if (!throwNotFoundError) return null;
