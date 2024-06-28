@@ -43,7 +43,7 @@ const getActivityAssignments = async ({
     }
 
     const assignments = await ActivityAssignmentSchema.find(query, null, options).sort({
-      'activity._id': 1,
+      'activity.date': -1,
       completed: -1,
       'paymentAssignment.confirmed': -1,
       'paymentAssignment.completed': -1,
