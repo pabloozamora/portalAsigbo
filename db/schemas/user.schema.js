@@ -32,5 +32,7 @@ const userSchema = Schema({
   hasImage: { type: Boolean, default: false },
 });
 
+userSchema.index({ name: 'text', lastname: 'text' });
+
 const UserSchema = model('user', userSchema);
 export default UserSchema;

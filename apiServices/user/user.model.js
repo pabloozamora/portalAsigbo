@@ -13,6 +13,7 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
 import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 import writeLog from '../../utils/writeLog.js';
+import getSearchRegex from '../../utils/getSearchRegex.js';
 
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
@@ -271,7 +272,7 @@ const getUsersList = async ({
   if (exists(role)) query.role = { $in: [role] };
   if (search) {
     // buscar cadena en nombre completo
-    const searchRegex = new RegExp(search, 'i');
+    const searchRegex = new RegExp(getSearchRegex(search), 'i');
     query.$or = [
       { $expr: { $regexMatch: { input: { $concat: ['$name', ' ', '$lastname'] }, regex: searchRegex } } },
     ];
@@ -289,6 +290,9 @@ const getUsersList = async ({
 
   // obtener número de páginas
   const usersCount = await UserSchema.countDocuments(query);
+
+  if (usersCount === 0) return null;
+
   const pages = Math.ceil(usersCount / consts.resultsNumberPerPage);
 
   const queryPipeline = [
