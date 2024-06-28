@@ -626,6 +626,7 @@ const getActivitiesWhereUserIsResponsibleController = async (req, res) => {
       lowerDate,
       upperDate,
       page,
+      sort: true,
     });
     if (!result) throw new CustomError('No se encontraron resultados.', 404);
 

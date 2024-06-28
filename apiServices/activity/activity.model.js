@@ -249,6 +249,7 @@ const getActivitiesWhereUserIsResponsible = async ({
   lowerDate = null,
   upperDate = null,
   page = null,
+  sort = false,
   session,
 }) => {
   const query = { responsible: { $elemMatch: { _id: idUser } } };
@@ -268,7 +269,9 @@ const getActivitiesWhereUserIsResponsible = async ({
     options.limit = consts.resultsNumberPerPage;
   }
 
-  const results = await ActivitySchema.find(query, null, options).session(session);
+  const activityPromise = ActivitySchema.find(query, null, options).session(session);
+  if (sort) activityPromise.sort({ date: -1, _id: -1 });
+  const results = await activityPromise;
 
   if (results.length === 0) return null;
 
