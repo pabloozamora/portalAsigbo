@@ -434,7 +434,8 @@ const getUserPaymentAssignmentsController = async (req, res) => {
   const { state, page } = req.query;
   try {
     // Validar privilegios
-    if (idUser !== sessionIdUser && !role.contains(consts.roles.admin)) {
+    console.log('This is the role >>>>>>>>>>>>>>>>', role)
+    if (idUser !== sessionIdUser && !role.includes(consts.roles.admin)) {
       throw new CustomError('No estás autorizado para obtener esta información.', 403);
     }
 
