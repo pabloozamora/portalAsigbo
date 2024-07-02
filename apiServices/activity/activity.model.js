@@ -19,9 +19,14 @@ import getSearchRegex from '../../utils/getSearchRegex.js';
  * @return Boolean. Indica si el usuario es encargado del eje.
  */
 const validateResponsible = async ({ idUser, idActivity, preventError = false }) => {
-  const { responsible } = await ActivitySchema.findById(idActivity);
-  const isResponsible = responsible.some((user) => user._id.toString() === idUser);
-  if (!isResponsible && !preventError) { throw new CustomError('El usuario no es encargado de la actividad.', 403); }
+  const activity = await ActivitySchema.findOne({
+    _id: idActivity,
+    responsible: { $elemMatch: { _id: idUser } },
+  });
+  const isResponsible = !!activity; // Esto será true si la actividad fue encontrada
+  if (!isResponsible && !preventError) {
+    throw new CustomError('El usuario no es encargado de la actividad.', 403);
+  }
   return isResponsible;
 };
 

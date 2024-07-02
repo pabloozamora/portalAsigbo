@@ -16,8 +16,11 @@ import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema
 const validateResponsible = async ({
   idUser, idArea, preventError = false, defaultError = 'El usuario no es encargado de la actividad.',
 }) => {
-  const { responsible } = await AsigboAreaSchema.findById(idArea);
-  const isResponsible = responsible.some((user) => user._id.toString() === idUser);
+  const area = await AsigboAreaSchema.findOne({
+    _id: idArea,
+    responsible: { $elemMatch: { _id: idUser } },
+  });
+  const isResponsible = !!area; // Esto será true si el área fue encontrada
   if (!isResponsible && !preventError) throw new CustomError(defaultError, 403);
   return isResponsible;
 };
