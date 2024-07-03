@@ -1,5 +1,4 @@
 import express from 'express';
-import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 
 import {
   assignUserToActivityController,
@@ -21,6 +20,8 @@ import updateAssignmentSchema from './validationSchemas/updateAssignmentSchema.j
 import validateQuery from '../../middlewares/validateQuery.js';
 import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityResponsibleAuth.js';
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
+import uploadImageOrDocument from '../../services/uploadFiles/uploadImageOrDocument.js';
+import multerMiddleware from '../../middlewares/multerMiddleware.js';
 
 const activityAssignmentRouter = express.Router();
 
@@ -52,7 +53,7 @@ activityAssignmentRouter.get(
 );
 activityAssignmentRouter.get(
   '/:idActivity/assignment/:idUser',
-  ensureAdminAuth,
+  ensureActivityResponsibleAuth,
   validateParams(requiredIdActivitySchema, requiredIdUserSchema),
   getActivityAssigmentController,
 );
@@ -70,7 +71,7 @@ activityAssignmentRouter.get(
 activityAssignmentRouter.patch(
   '/:idActivity/assignment/:idUser',
   ensureActivityResponsibleAuth,
-  validateParams(requiredIdUserSchema),
+  multerMiddleware(uploadImageOrDocument.array('files'), 1000),
   validateBody(updateAssignmentSchema),
   updateActivityAssignmentController,
 );

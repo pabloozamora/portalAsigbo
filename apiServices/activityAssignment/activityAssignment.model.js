@@ -18,10 +18,17 @@ import getSearchRegex from '../../utils/getSearchRegex.js';
  * @param upperDate Límite superior en la fecha de la actividad asignada. (Opcional)
  * @param page Pagina a consultar. Inicia en cero. Si es null devuelve el listado completo.
  * @param includeUserPromotionGroup Boolean. Indica si se debe agregar el grupo de promoción del usuario.
+ * @param showSensitiveData Boolean. Indica si se debe mostrar la información sensible.
  * @returns Multiple AssignmentDto con grupo de promoción de usuario. Null si no hay resultados.
  */
 const getActivityAssignments = async ({
-  idUser, idActivity, search = null, lowerDate = null, upperDate = null, page = null, includeUserPromotionGroup = true,
+  idUser, idActivity,
+  search = null,
+  lowerDate = null,
+  upperDate = null,
+  page = null,
+  includeUserPromotionGroup = true,
+  showSensitiveData = false,
 }) => {
   try {
     const query = {};
@@ -51,7 +58,7 @@ const getActivityAssignments = async ({
     });
     if (assignments.length === 0) return null;
 
-    const parsedAssignments = multipleAssignmentActivityDto(assignments);
+    const parsedAssignments = multipleAssignmentActivityDto(assignments, { showSensitiveData });
 
     if (!includeUserPromotionGroup) return parsedAssignments;
     const promotion = new Promotion();
@@ -115,19 +122,39 @@ const unassignUserFromActivity = async ({ idActivity, idUser, session }) => {
 /**
  * Permite modificar el estado de completado de la asignación a la actividad.
  * @param {idUser, idActivity, completed, session}
+ * @param {array} filesToSave. Array de objetos {name, fileKey}
+ * @param {array} filesKeyToRemove. Array de strings con los keys de los archivos a eliminar.
  * @returns ActivityAssignment object. Datos de la asignación previo a la modificación.
  */
 const updateActivityAssignment = async ({
-  idUser, idActivity, completed, aditionalServiceHours, session,
+  idUser, idActivity, completed, aditionalServiceHours, notes, filesToSave, filesToRemove, session,
 }) => {
-  const dataToUpdate = {};
+  const updateOperations = [];
 
-  if (exists(completed)) dataToUpdate.completed = completed;
-  if (exists(aditionalServiceHours)) dataToUpdate.aditionalServiceHours = aditionalServiceHours;
+  // Agregar otras actualizaciones a la pipeline
+  if (exists(completed)) {
+    updateOperations.push({ $set: { completed } });
+  }
+  if (exists(aditionalServiceHours)) {
+    updateOperations.push({ $set: { aditionalServiceHours } });
+  }
+  if (exists(notes)) {
+    updateOperations.push({ $set: { notes } });
+  }
+
+  // Agregar archivos para eliminar y luego agregar en la misma pipeline
+  if (exists(filesToRemove)) {
+    updateOperations.push({
+      $set: { files: { $filter: { input: '$files', as: 'file', cond: { $not: { $in: ['$$file', filesToRemove] } } } } },
+    });
+  }
+  if (exists(filesToSave)) {
+    updateOperations.push({ $set: { files: { $concatArrays: ['$files', filesToSave] } } });
+  }
 
   const assignmentData = await ActivityAssignmentSchema.findOneAndUpdate(
     { 'user._id': idUser, 'activity._id': idActivity },
-    dataToUpdate,
+    updateOperations,
     { session },
   );
 

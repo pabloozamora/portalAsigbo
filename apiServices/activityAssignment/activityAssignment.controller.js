@@ -1,4 +1,6 @@
+import fs from 'node:fs';
 import { connection } from '../../db/connection.js';
+import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import errorSender from '../../utils/errorSender.js';
@@ -28,6 +30,8 @@ import {
   unassignUserFromActivity,
   updateActivityAssignment,
 } from './activityAssignment.model.js';
+import writeLog from '../../utils/writeLog.js';
+import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
 const validateActivityResponsibleAccess = async ({
   role, idUser, idArea, idActivity,
@@ -110,14 +114,27 @@ const getActivitiesAssigmentsByActivityController = async (req, res) => {
 
 const getActivityAssigmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
+  const { role, id: sessionIdUser } = req.session;
   try {
-    const activities = await getActivityAssignments({ idActivity, idUser });
+    const activities = await getActivityAssignments({ idActivity, idUser, showSensitiveData: true });
 
     if (!activities) {
       throw new CustomError('No se encontraron resultados.', 404);
     }
 
     const activityAssignment = activities[0];
+
+    // Verificar permisos para acceder a información
+    const isResponsible = await validateActivityResponsibleAccess({
+      role,
+      idUser: sessionIdUser,
+      idActivity,
+      idArea: activityAssignment.activity.asigboArea.id,
+    });
+
+    if (!isResponsible) {
+      throw new CustomError('El usuario no figura como encargado de esta actividad ni del área al que pertenece.', 403);
+    }
 
     if (activityAssignment.paymentAssignment) {
       // Verificar si el usuario actual es tesorero
@@ -318,16 +335,37 @@ const unassignUserFromActivityController = async (req, res) => {
   }
 };
 
+const saveAssignmentFile = async ({ fileName, type }) => {
+  const filePath = `${global.dirname}/files/${fileName}`;
+
+  // subir archivos
+
+  const fileKey = `${consts.bucketRoutes.assignment}/${fileName}`;
+
+  try {
+    await uploadFileToBucket(fileKey, filePath, type);
+  } catch (ex) {
+    fs.unlink(filePath, (err) => {
+      if (err) writeLog(2, 'Error al eliminar archivo temporal:', err);
+    }); // eliminar archivos temporales
+
+    writeLog(2, 'Error al subir archivo a bucket:', ex);
+    throw new CustomError('No se pudo cargar el archivo de asignación.', 500);
+  }
+};
+
 const updateActivityAssignmentController = async (req, res) => {
   const { idActivity, idUser } = req.params;
-  const { completed, aditionalServiceHours } = req.body;
+  const {
+    completed, aditionalServiceHours, notes, filesToRemove,
+  } = req.body;
   const { role, id: sessionIdUser } = req.session;
+  const filesToSave = [];
 
   const session = await connection.startSession();
 
   try {
     session.startTransaction();
-
     const activity = await getActivity({ idActivity, showSensitiveData: true });
 
     if (!activity) throw new CustomError('No se encontró la actividad.', 404);
@@ -354,11 +392,23 @@ const updateActivityAssignmentController = async (req, res) => {
       throw new CustomError('La actividad se encuentra deshabilitada.', 409);
     }
 
+    // Subir archivos a storage
+    if (req.uploadedFiles?.length > 0) {
+      await Promise.all(req.uploadedFiles.map(async (file) => {
+        const { fileName, type } = file;
+        await saveAssignmentFile({ fileName, type });
+        filesToSave.push(fileName);
+      }));
+    }
+
     const result = await updateActivityAssignment({
       idUser,
       idActivity,
       completed,
       aditionalServiceHours,
+      notes,
+      filesToRemove,
+      filesToSave,
       session,
     });
 
@@ -421,13 +471,34 @@ const updateActivityAssignmentController = async (req, res) => {
       }
     }
 
+    // Eliminar archivos de storage
+    if (filesToRemove?.length > 0) {
+      try {
+        await Promise.all(filesToRemove?.map(async (fileName) => deleteFileInBucket(`${consts.bucketRoutes.assignment}/${fileName}`)));
+      } catch (err) {
+      // Error no crítico
+        writeLog(2, 'Error al eliminar archivos en bucket: ', err);
+      }
+    }
+
     await session.commitTransaction();
 
-    res.sendStatus(204);
+    res.status(200).send({ filesSaved: filesToSave });
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar la asignación de la actividad.', session,
     });
+
+    // eliminar archivos temporales
+    req.uploadedFiles?.forEach((file) => {
+      fs.unlink(file, (err) => {
+        if (err) writeLog(2, 'Error al eliminar archivo temporal:', err);
+      });
+    });
+
+    // Si ocurrió un error, eliminar archivos cargados
+    filesToSave?.map((fileKey) => deleteFileInBucket(fileKey)
+      .catch((err) => writeLog(2, 'Error al eliminar archivos en bucket: ', err)));
   } finally {
     session.endSession();
   }

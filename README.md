@@ -270,9 +270,16 @@
 
   Parámetros opcionales body (campos a editar):
 
+  Se debe enviar un formData y no colocar headers de content-type.
+
   - completed: boolean. Indica si la actividad ha sido completada.
   - aditionalServiceHours: Number. Horas de servicio adicionales que corresponden únicamente a un usuario asignado en una acividad.
+  - notes: String. Notas de la asignación.
+  - files: Array Files. Arreglo de archivos a cargar.
+  - filesToRemove: Array String. Nombre de los archivos a eliminar.
 
+  Returns: {filesSaved: Arreglo del nombre (almacenado en el servidor) de imagenes nuevas guardadas.}
+  
 - **/activity/:idActivity/assignment/:idUser**
 
   Método: Delete

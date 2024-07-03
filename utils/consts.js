@@ -30,6 +30,7 @@ const consts = {
     area: 'area',
     activity: 'activity',
     paymentVoucher: 'payment-voucher',
+    assignment: 'assignment',
   },
   resultsNumberPerPage: 7,
   imagePath: {
@@ -48,5 +49,6 @@ consts.imagePath.user = `${consts.apiPath}/user`;
 consts.imagePath.area = `${consts.apiPath}/area`;
 consts.imagePath.activity = `${consts.apiPath}/activity`;
 consts.imagePath.paymentVoucher = `${consts.apiPath}/image/paymentVoucher`;
+consts.imagePath.assignment = `${consts.apiPath}/image/assignment`;
 
 export default consts;
