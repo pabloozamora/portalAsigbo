@@ -45,13 +45,9 @@ const savePaymentVoucherPicture = async ({ file, idPayment, idUser }) => {
   try {
     await uploadFileToBucket(fileKey, filePath, file.type);
   } catch (ex) {
-    fs.unlink(filePath, () => {}); // eliminar archivos temporales
-
     throw new CustomError('No se pudo cargar los comprobantes de pago.', 500);
   }
 
-  // eliminar archivos temporales
-  fs.unlink(filePath, () => {});
   return imageId;
 };
 
@@ -202,6 +198,14 @@ const completePaymentController = async (req, res) => {
     voucherKeys?.map((fileKey) => deleteFileInBucket(fileKey).catch((err) => writeLog(2, err)));
   } finally {
     session.endSession();
+
+    // Eliminar archivos temporales
+    voucherFiles.forEach(({ fileName }) => {
+      const filePath = `${global.dirname}/files/${fileName}`;
+      fs.unlink(filePath, (err) => {
+        if (err) writeLog(2, 'Error al eliminar archivos temporales vouchers: ', err);
+      });
+    });
   }
 };
 
@@ -434,7 +438,6 @@ const getUserPaymentAssignmentsController = async (req, res) => {
   const { state, page } = req.query;
   try {
     // Validar privilegios
-    console.log('This is the role >>>>>>>>>>>>>>>>', role)
     if (idUser !== sessionIdUser && !role.includes(consts.roles.admin)) {
       throw new CustomError('No estás autorizado para obtener esta información.', 403);
     }
