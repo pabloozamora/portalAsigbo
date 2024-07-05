@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import ActivityAssignmentSchema from '../../db/schemas/activityAssignment.schema.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
@@ -79,6 +78,30 @@ const getActivityAssignments = async ({
   }
 };
 
+/**
+ * Permite buscar una asignación de actividad por id de usuario y actividad.
+ * @returns ActivityAssignmentDto. Null si no se encuentra la asignación.
+ */
+const getActivityAssignment = async ({
+  idUser, idActivity, session, showSensitiveData = false,
+}) => {
+  try {
+    const assignments = await ActivityAssignmentSchema
+      .find({ 'user._id': idUser, 'activity._id': idActivity })
+      .session(session);
+
+    if (assignments.length === 0) return null;
+
+    const assignment = singleAssignmentActivityDto(assignments[0], { showSensitiveData });
+    return assignment;
+  } catch (ex) {
+    if (ex?.kind === 'ObjectId') {
+      throw new CustomError('Los ids proporcionados no son válidos.', 400);
+    }
+    throw ex;
+  }
+};
+
 const assignUserToActivity = async ({
   user, completed, activity, paymentAssignment, session, aditionalServiceHours = 0,
 }) => {
@@ -124,6 +147,7 @@ const unassignUserFromActivity = async ({ idActivity, idUser, session }) => {
  * @param {idUser, idActivity, completed, session}
  * @param {array} filesToSave. Array de objetos {name, fileKey}
  * @param {array} filesKeyToRemove. Array de strings con los keys de los archivos a eliminar.
+ * @throws CustomError si la asignación no existe.
  * @returns ActivityAssignment object. Datos de la asignación previo a la modificación.
  */
 const updateActivityAssignment = async ({
@@ -163,22 +187,6 @@ const updateActivityAssignment = async ({
   }
 
   return singleAssignmentActivityDto(assignmentData);
-};
-
-const getActivityAssignment = async ({
-  idUser, idActivity, session,
-}) => {
-  try {
-    const assignments = await ActivityAssignmentSchema.find({ 'user._id': new ObjectId(idUser), 'activity._id': new ObjectId(idActivity) });
-
-    return assignments;
-  } catch (ex) {
-    await session.abortTransaction();
-    if (ex?.kind === 'ObjectId') {
-      throw new CustomError('Los ids proporcionados no son válidos.', 400);
-    }
-    throw ex;
-  }
 };
 
 /**

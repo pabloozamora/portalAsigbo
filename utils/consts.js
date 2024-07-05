@@ -42,6 +42,7 @@ const consts = {
   uploadFileSizeLimit: {
     default: 1000000, // 1MB
     banner: 5000000,
+    files: 3000000, // 3MB
   },
 };
 

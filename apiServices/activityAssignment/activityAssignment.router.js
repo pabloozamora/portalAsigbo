@@ -22,6 +22,7 @@ import ensureActivityResponsibleAuth from '../../middlewares/ensureActivityRespo
 import ensureRolesAuth from '../../middlewares/ensureRolesAuth.js';
 import uploadImageOrDocument from '../../services/uploadFiles/uploadImageOrDocument.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
+import consts from '../../utils/consts.js';
 
 const activityAssignmentRouter = express.Router();
 
@@ -71,7 +72,7 @@ activityAssignmentRouter.get(
 activityAssignmentRouter.patch(
   '/:idActivity/assignment/:idUser',
   ensureActivityResponsibleAuth,
-  multerMiddleware(uploadImageOrDocument.array('files'), 1000),
+  multerMiddleware(uploadImageOrDocument.array('files', 5), consts.uploadFileSizeLimit.files),
   validateBody(updateAssignmentSchema),
   updateActivityAssignmentController,
 );

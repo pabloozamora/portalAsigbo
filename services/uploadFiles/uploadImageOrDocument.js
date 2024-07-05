@@ -4,7 +4,7 @@ import storage from './storage.js';
 import consts from '../../utils/consts.js';
 
 const limits = {
-  fileSize: consts.uploadFileSizeLimit.default,
+  fileSize: consts.uploadFileSizeLimit.files,
 };
 
 export default multer({ storage, fileFilter: imageFileFilter, limits });

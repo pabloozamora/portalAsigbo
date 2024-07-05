@@ -25,6 +25,7 @@ import {
 } from '../user/user.model.js';
 import {
   assignUserToActivity,
+  getActivityAssignment,
   getActivityAssignments,
   getUserActivityAssignments,
   unassignUserFromActivity,
@@ -345,10 +346,6 @@ const saveAssignmentFile = async ({ fileName, type }) => {
   try {
     await uploadFileToBucket(fileKey, filePath, type);
   } catch (ex) {
-    fs.unlink(filePath, (err) => {
-      if (err) writeLog(2, 'Error al eliminar archivo temporal:', err);
-    }); // eliminar archivos temporales
-
     writeLog(2, 'Error al subir archivo a bucket:', ex);
     throw new CustomError('No se pudo cargar el archivo de asignación.', 500);
   }
@@ -401,7 +398,7 @@ const updateActivityAssignmentController = async (req, res) => {
       }));
     }
 
-    const result = await updateActivityAssignment({
+    const assignmentPrevUpdate = await updateActivityAssignment({
       idUser,
       idActivity,
       completed,
@@ -412,6 +409,17 @@ const updateActivityAssignmentController = async (req, res) => {
       session,
     });
 
+    // Si se subieron nuevos files, validar que no excedan el límite de 5
+    if (filesToSave.length > 0) {
+      // Buscar documento actualizado
+      const updatedAssignment = await getActivityAssignment({
+        idUser, idActivity, session, showSensitiveData: true,
+      });
+      if (updatedAssignment?.files?.length > 5) {
+        throw new CustomError('No se pueden subir más de 5 archivos por asignación.', 400);
+      }
+    }
+
     // Valores de asignación previos a la modificación
     const {
       activity: {
@@ -420,7 +428,7 @@ const updateActivityAssignmentController = async (req, res) => {
       },
       completed: prevCompletedResultValue,
       aditionalServiceHours: prevAditionalServiceHours,
-    } = result;
+    } = assignmentPrevUpdate;
 
     const parsedAditionalServiceHours = exists(aditionalServiceHours)
       ? parseInt(aditionalServiceHours, 10)
@@ -484,23 +492,26 @@ const updateActivityAssignmentController = async (req, res) => {
     await session.commitTransaction();
 
     res.status(200).send({ filesSaved: filesToSave });
+
+    session.endSession();
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar la asignación de la actividad.', session,
     });
 
+    session.endSession();
+
+    // Si ocurrió un error, eliminar archivos cargados
+    filesToSave?.map((fileName) => deleteFileInBucket(`${consts.bucketRoutes.assignment}/${fileName}`)
+      .catch((err) => writeLog(2, 'Error al eliminar archivos en bucket: ', err)));
+  } finally {
     // eliminar archivos temporales
-    req.uploadedFiles?.forEach((file) => {
-      fs.unlink(file, (err) => {
+    req.uploadedFiles?.forEach(({ fileName }) => {
+      const filePath = `${global.dirname}/files/${fileName}`;
+      fs.unlink(filePath, (err) => {
         if (err) writeLog(2, 'Error al eliminar archivo temporal:', err);
       });
     });
-
-    // Si ocurrió un error, eliminar archivos cargados
-    filesToSave?.map((fileKey) => deleteFileInBucket(fileKey)
-      .catch((err) => writeLog(2, 'Error al eliminar archivos en bucket: ', err)));
-  } finally {
-    session.endSession();
   }
 };
 
