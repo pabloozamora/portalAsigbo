@@ -56,9 +56,6 @@ const saveUserProfilePicture = async ({ file, idUser }) => {
   } catch (ex) {
     throw new CustomError('No se pudo cargar la foto de perfil del usuario.', 500);
   }
-
-  // eliminar archivos temporales
-  fs.unlink(filePath, () => {});
 };
 
 /**
@@ -267,6 +264,8 @@ const updateUserController = async (req, res) => {
   const isCurrentUser = req.session.id === idUser;
   const removePicture = parseBoolean(removeProfilePicture);
 
+  let imageUploadedToBucket = false;
+
   try {
     session.startTransaction();
 
@@ -296,6 +295,9 @@ const updateUserController = async (req, res) => {
       session,
     });
 
+    // Actualizar tokens de usuario editado
+    await forceSessionTokenToUpdate({ idUser, session });
+
     const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
     if (dataBeforeChange.hasImage && (removePicture || hasImage)) {
       // Eliminar foto de perfil previa
@@ -312,10 +314,8 @@ const updateUserController = async (req, res) => {
     if (hasImage) {
       // Subir nueva foto
       await saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
+      imageUploadedToBucket = true;
     }
-
-    // Actualizar tokens de usuario editado
-    await forceSessionTokenToUpdate({ idUser, session });
 
     await session.commitTransaction();
 
@@ -324,8 +324,24 @@ const updateUserController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar usuario.', session,
     });
+
+    // En caso de error, eliminar imagen cargada al bucket
+    if (imageUploadedToBucket) {
+      const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
+      deleteFileInBucket(fileKey).catch((err) => {
+        if (err) writeLog(2, 'Error al eliminar imagen de usuario en bucket: ', err);
+      });
+    }
   } finally {
     session.endSession();
+
+    // Eliminar archivo temporal
+    if (exists(req.uploadedFiles?.[0])) {
+      const filePath = `${global.dirname}/files/${req.uploadedFiles[0].fileName}`;
+      fs.unlink(filePath, (err) => {
+        if (err) writeLog(2, 'Error al eliminar archivo temporal de usuario: ', err);
+      });
+    }
   }
 };
 
@@ -450,6 +466,8 @@ const finishRegistrationController = async (req, res) => {
   const hasImage = exists(req.uploadedFiles?.[0]);
   const session = await connection.startSession();
 
+  let imageUploadedToBucket = false;
+
   try {
     session.startTransaction();
 
@@ -461,7 +479,10 @@ const finishRegistrationController = async (req, res) => {
     await deleteAllUserAlterTokens({ idUser, session });
 
     // Subir imagen al bucket
-    if (hasImage) saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
+    if (hasImage) {
+      await saveUserProfilePicture({ file: req.uploadedFiles[0], idUser });
+      imageUploadedToBucket = true;
+    }
 
     await session.commitTransaction();
 
@@ -470,8 +491,24 @@ const finishRegistrationController = async (req, res) => {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al finalizar registro de nuevo usuario.', session,
     });
+
+    // En caso de error, eliminar imagen cargada al bucket
+    if (imageUploadedToBucket) {
+      const fileKey = `${consts.bucketRoutes.user}/${idUser}`;
+      deleteFileInBucket(fileKey).catch((err) => {
+        if (err) writeLog(2, 'Error al eliminar imagen de usuario en bucket: ', err);
+      });
+    }
   } finally {
     session.endSession();
+
+    // Eliminar archivo temporal
+    if (hasImage) {
+      const filePath = `${global.dirname}/files/${req.uploadedFiles[0].fileName}`;
+      fs.unlink(filePath, (err) => {
+        if (err) writeLog(2, 'Error al eliminar archivo temporal de usuario: ', err);
+      });
+    }
   }
 };
 
