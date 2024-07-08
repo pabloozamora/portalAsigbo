@@ -43,6 +43,7 @@ import { verifyIfUserIsAssignedToAnyActivity } from '../activityAssignment/activ
 import { hasPaymentsAsTreasurer, verifyIfUserHasPaymentAssignments } from '../payment/payment.model.js';
 import jsonToExcel from '../../services/reportMaker/jsonToExcel.js';
 import writeLog from '../../utils/writeLog.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 const saveUserProfilePicture = async ({ file, idUser }) => {
   const filePath = `${global.dirname}/files/${file.fileName}`;
@@ -107,7 +108,12 @@ const sendManyUserRegisterEmail = async ({
     });
 
     return {
-      idUser: user.id, email: user.email, name: user.name, token, tokenType: consts.token.register,
+      idUser: user.id,
+      email: user.email,
+      name: user.name,
+      token,
+      tokenType: consts.token.register,
+      date: getUTCDate(),
     };
   });
 

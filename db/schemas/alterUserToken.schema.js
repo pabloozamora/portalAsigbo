@@ -1,6 +1,5 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import getUTCDate from '../../utils/getUTCDate.js';
 
 const alterUserTokenSchema = Schema({
   idUser: {
@@ -8,7 +7,7 @@ const alterUserTokenSchema = Schema({
   },
   token: { type: String, required: true },
   tokenType: { type: String, required: true },
-  date: { type: Date, default: getUTCDate() },
+  date: { type: Date, required: true },
 });
 
 const AlterUserTokenSchema = model('alterUserToken', alterUserTokenSchema);

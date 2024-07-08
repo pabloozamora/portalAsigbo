@@ -14,6 +14,7 @@ import PaymentSchema from '../../db/schemas/payment.schema.js';
 import PaymentAssignmentSchema from '../../db/schemas/paymentAssignment.schema.js';
 import writeLog from '../../utils/writeLog.js';
 import getSearchRegex from '../../utils/getSearchRegex.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 const getUser = async ({ idUser, showSensitiveData, session }) => {
   try {
@@ -492,6 +493,7 @@ const saveAlterToken = async ({
     alterUserToken.idUser = idUser;
     alterUserToken.token = token;
     alterUserToken.tokenType = type;
+    alterUserToken.date = getUTCDate();
 
     await alterUserToken.save({ session });
   } catch (ex) {

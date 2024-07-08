@@ -5,6 +5,7 @@ import UserSchema from '../../db/schemas/user.schema.js';
 import single from './session.dto.js';
 import consts from '../../utils/consts.js';
 import writeLog from '../../utils/writeLog.js';
+import getUTCDate from '../../utils/getUTCDate.js';
 
 const storeSessionToken = async ({
   idUser, token, tokenType, linkedToken, session,
@@ -15,6 +16,7 @@ const storeSessionToken = async ({
   sessionObj.token = token;
   sessionObj.tokenType = tokenType;
   sessionObj.linkedToken = linkedToken;
+  sessionObj.date = getUTCDate();
 
   return sessionObj.save({ session });
 };
