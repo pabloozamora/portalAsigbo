@@ -319,11 +319,15 @@ const updateUserController = async (req, res) => {
 
     await session.commitTransaction();
 
+    session.endSession();
+
     res.sendStatus(204);
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al actualizar usuario.', session,
     });
+
+    session.endSession();
 
     // En caso de error, eliminar imagen cargada al bucket
     if (imageUploadedToBucket) {
@@ -333,8 +337,6 @@ const updateUserController = async (req, res) => {
       });
     }
   } finally {
-    session.endSession();
-
     // Eliminar archivo temporal
     if (exists(req.uploadedFiles?.[0])) {
       const filePath = `${global.dirname}/files/${req.uploadedFiles[0].fileName}`;
@@ -486,11 +488,15 @@ const finishRegistrationController = async (req, res) => {
 
     await session.commitTransaction();
 
+    session.endSession();
+
     res.sendStatus(204);
   } catch (ex) {
     await errorSender({
       res, ex, defaultError: 'Ocurrio un error al finalizar registro de nuevo usuario.', session,
     });
+
+    session.endSession();
 
     // En caso de error, eliminar imagen cargada al bucket
     if (imageUploadedToBucket) {
@@ -500,8 +506,6 @@ const finishRegistrationController = async (req, res) => {
       });
     }
   } finally {
-    session.endSession();
-
     // Eliminar archivo temporal
     if (hasImage) {
       const filePath = `${global.dirname}/files/${req.uploadedFiles[0].fileName}`;
