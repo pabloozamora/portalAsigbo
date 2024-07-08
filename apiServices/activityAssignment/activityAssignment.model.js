@@ -173,7 +173,17 @@ const updateActivityAssignment = async ({
     });
   }
   if (exists(filesToSave)) {
-    updateOperations.push({ $set: { files: { $concatArrays: ['$files', filesToSave] } } });
+    updateOperations.push({
+      $set: {
+        files: {
+          $cond: {
+            if: { $isArray: '$files' },
+            then: { $concatArrays: ['$files', filesToSave] },
+            else: filesToSave,
+          },
+        },
+      },
+    });
   }
 
   const assignmentData = await ActivityAssignmentSchema.findOneAndUpdate(
