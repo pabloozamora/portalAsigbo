@@ -82,11 +82,5 @@ activityAssignmentRouter.delete(
   validateParams(requiredIdUserSchema, requiredIdActivitySchema),
   unassignUserFromActivityController,
 );
-activityAssignmentRouter.delete(
-  '/:idActivity/assignment',
-  ensureRolesAuth(null),
-  validateParams(requiredIdActivitySchema),
-  unassignUserFromActivityController,
-);
 
 export default activityAssignmentRouter;

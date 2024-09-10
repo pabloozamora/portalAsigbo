@@ -276,11 +276,8 @@ const assignUserToActivityController = async (req, res) => {
 };
 
 const unassignUserFromActivityController = async (req, res) => {
-  const { idActivity, idUser: paramIdUser } = req.params;
+  const { idActivity, idUser } = req.params;
   const { role, id: sessionIdUser } = req.session;
-
-  // Asignar a usuario en sesión si no se proporciona parámetro
-  const idUser = paramIdUser ?? sessionIdUser;
 
   const session = await connection.startSession();
 
@@ -292,14 +289,13 @@ const unassignUserFromActivityController = async (req, res) => {
     if (!activity) throw new CustomError('No se encontró la actividad.', 404);
 
     // Validar acceso
-    const isCurrentUser = idUser === sessionIdUser;
     const isResponsible = await validateActivityResponsibleAccess({
       role,
       idUser: sessionIdUser,
       idActivity,
       idArea: activity.asigboArea.id,
     });
-    if (!isResponsible && !isCurrentUser) {
+    if (!isResponsible) {
       throw new CustomError(
         'El usuario no figura como encargado de esta actividad ni del área al que pertenece.',
         403,
