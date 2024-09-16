@@ -22,4 +22,5 @@ module.exports = {
   emailSendingRate: 14,
   verbose: 2,
   avoidCors: true,
+  gitWebhookSecret: process.env.GIT_WEBHOOK_SECRET,
 };

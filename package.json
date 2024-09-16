@@ -13,6 +13,7 @@
     "production": "export NODE_ENV=production && pm2 start ./bin/www.js --name asigboApp --update-env",
     "qa": "export NODE_ENV=qa && pm2 start ./bin/www.js --name asigboApp-qa --update-env",
     "dev-qa": "cross-env NODE_ENV=qa nodemon ./bin/www.js",
+    "reload-server": "export NODE_ENV= && pm2 start ./gitReloadServer.js --name gitReloadServer --update-env",
     "lint": "eslint ./**/*.js"
   },
   "repository": {
