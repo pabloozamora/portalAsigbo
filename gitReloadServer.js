@@ -18,7 +18,7 @@ function verifySignature(req) {
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
 }
 
-app.post('/webhook', (req, res) => {
+app.post('/', (req, res) => {
   if (!verifySignature(req)) {
     console.error('Firma para reiniciar servidor no válida');
     return res.status(401).send('Firma no válida');
