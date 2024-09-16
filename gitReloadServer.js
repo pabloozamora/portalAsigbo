@@ -30,7 +30,7 @@ app.post('/', (req, res) => {
   // Solo aceptamos push a la rama master
   if (payload.ref === 'refs/heads/master') {
     // Reiniciar el servidor
-    exec('git pull && npm run production', { cwd: './' }, (err) => {
+    exec('git fetch origin && git reset --hard origin/master && pm2 stop asigboApp && npm run production', { cwd: './' }, (err) => {
       if (err) {
         console.error(`Error al ejecutar el script: ${err}`);
         return res.status(500).send('Error');
