@@ -14,7 +14,8 @@ const secret = config.get('gitWebhookSecret');
 function verifySignature(req) {
   const signature = req.headers['x-hub-signature-256'];
   const hmac = crypto.createHmac('sha256', secret);
-  const digest = `sha256=${hmac.update(req.body).digest('hex')}`;
+  const bodyBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+  const digest = `sha256=${hmac.update(bodyBuffer).digest('hex')}`;
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
 }
 
@@ -29,7 +30,7 @@ app.post('/', (req, res) => {
   // Solo aceptamos push a la rama master
   if (payload.ref === 'refs/heads/master') {
     // Reiniciar el servidor
-    exec('git pull && npm run production', { cwd: '/.' }, (err) => {
+    exec('git pull && npm run production', { cwd: './' }, (err) => {
       if (err) {
         console.error(`Error al ejecutar el script: ${err}`);
         return res.status(500).send('Error');
@@ -38,6 +39,8 @@ app.post('/', (req, res) => {
       res.status(200).send('OK');
       return null;
     });
+  } else {
+    res.status(400).send('No se hizo push a la rama master');
   }
   return null;
 });
