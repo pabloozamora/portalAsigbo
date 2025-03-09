@@ -5,11 +5,6 @@ export default yup.object().shape({
     .string()
     .matches(/^[MF]$/, "El campo 'sex' debe ser 'M' o 'F'.")
     .required("El campo 'sex' es obligatorio."),
-  code: yup
-    .number()
-    .nullable()
-    .typeError("El campo 'code' debe ser un número.")
-    .integer("El campo 'code' debe ser un número entero."),
   promotion: yup
     .number()
     .nullable()

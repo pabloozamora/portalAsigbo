@@ -88,7 +88,6 @@ const getUsersByPromotion = async ({
 };
 
 const createUser = async ({
-  code,
   name,
   lastname,
   university,
@@ -103,7 +102,6 @@ const createUser = async ({
   try {
     const user = new UserSchema();
 
-    user.code = code ?? null;
     user.name = name?.trim();
     user.lastname = lastname?.trim();
     user.email = email?.trim();

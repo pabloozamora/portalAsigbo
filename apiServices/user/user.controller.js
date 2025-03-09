@@ -217,7 +217,7 @@ const renewRegisterToken = async (req, res) => {
 
 const createUserController = async (req, res) => {
   const {
-    code, name, lastname, email, promotion, career, sex, university, campus,
+    name, lastname, email, promotion, career, sex, university, campus,
   } = req.body;
 
   const session = await connection.startSession();
@@ -226,7 +226,6 @@ const createUserController = async (req, res) => {
     session.startTransaction();
 
     const user = await createUser({
-      code,
       name,
       lastname,
       university,
