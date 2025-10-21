@@ -1,0 +1,28 @@
+name: SonarCloud
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write   # para decorar PRs con issues/comentarios
+
+jobs:
+  scan:
+    name: sonar-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/[email protected] # v5.0.0
+
+      - name: Setup Node
+        uses: actions/[email protected] # v6.0.0
+        with:
+          node-version: "20"
+          
+      - name: Install deps
+        run: npm ci
+      - name: Test with coverage
+        run: npm test -- --coverage --coverageReporters=lcov
